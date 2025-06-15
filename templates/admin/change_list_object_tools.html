@@ -1,0 +1,24 @@
+{% load i18n admin_urls jazzmin %}
+{% load custom_tags %}
+{% get_jazzmin_ui_tweaks as jazzmin_ui %}
+
+{% block object-tools-items %}
+    {% if has_add_permission %}
+        {% url cl.opts|admin_urlname:'add' as add_url %}
+
+
+        <a href="{% add_preserved_filters add_url is_popup to_field %}"
+           class="btn {{ jazzmin_ui.button_classes.success }} float-right">
+            {% if cl.opts.model_name == "user" %}
+                <i class="fa fa-plus-circle"></i> &nbsp; Добавить пользователя
+            {% elif cl.opts.model_name == "group" %}
+                <i class="fa fa-plus-circle"></i> &nbsp; Добавить группу
+            {% elif cl.opts.model_name == "broadcast" %}
+                <i class="fa fa-plus-circle"></i> &nbsp; Сделать рассылку
+            {% else %}
+                <i class="fa fa-plus-circle"></i> &nbsp; {% blocktrans with cl.opts.verbose_name as name %}Add {{ name }}{% endblocktrans %}
+            {% endif %}
+        </a>
+
+    {% endif %}
+{% endblock %}
