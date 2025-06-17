@@ -187,7 +187,8 @@ INTERNAL_IPS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    DOMAIN_URL,
+    "http://95.216.19.125:8011",
+    "https://ai.excorp.tech"
 ]
 
 JAZZMIN_SETTINGS = {
