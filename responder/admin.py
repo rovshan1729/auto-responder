@@ -122,4 +122,4 @@ class FAQAdmin(admin.ModelAdmin):
 
 @admin.register(models.Data)
 class DataAdmin(SingletonModelAdmin):
-    pass
+    readonly_fields = ('channel_id',)

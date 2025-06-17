@@ -11,7 +11,13 @@ from bot import utils
 
 
 class Data(SingletonModel):
-    channel_id = models.BigIntegerField(help_text="Private channel id", blank=True, null=True, editable=False)
+    channel_id = models.BigIntegerField(
+        help_text="ID Канала для сохранения медиа файлов.",
+        blank=True,
+        null=True,
+        verbose_name="ID Канала",
+        editable=False
+    )
     is_sleep = models.BooleanField(default=False, help_text="включения/выключения бота", verbose_name="Спящий режим")
 
     class Meta:

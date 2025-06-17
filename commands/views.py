@@ -24,7 +24,7 @@ def admin_dashboard_view(request):
         TelegramUser.objects
         .exclude(username="GroupAnonymousBot")
         .annotate(message_count=models.Count("messages"))
-        .order_by("-message_count")[:10]
+        .order_by("-message_count")[:20]
     )
 
     top_faq = (
@@ -33,9 +33,9 @@ def admin_dashboard_view(request):
         ).order_by("-count")
     )
 
-    top_questions = top_faq[:10]
-    top_answers = top_faq.filter(answer__isnull=False)[:10]
-    top_not_answers = top_faq.filter(answer__isnull=True)[:10]
+    top_questions = top_faq[:20]
+    top_answers = top_faq.filter(answer__isnull=False)[:20]
+    top_not_answers = top_faq.filter(answer__isnull=True)[:20]
 
     context = {
         'title': 'Аналитика',
