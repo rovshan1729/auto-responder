@@ -24,6 +24,7 @@ class Media(BaseModel):
 
 
 class BroadcastTemplate(BaseModel):
+    title = models.CharField(max_length=255, blank=True, null=True, verbose_name="Название")
     content = HTMLField(blank=True, null=True, verbose_name="Контент")
     cleaned_content = models.TextField(blank=True, null=True, editable=False)
     medias = models.ManyToManyField(Media, blank=True, related_name='broadcast_templates',

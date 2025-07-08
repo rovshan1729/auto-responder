@@ -29,6 +29,7 @@ class BroadcastTemplateAdmin(admin.ModelAdmin):
 @admin.register(models.Broadcast)
 class BroadcastAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'percent', 'is_sent', 'created_at')
+    fields = ('title', 'template', 'groups', 'check_groups', 'medias', 'content', 'scheduled_at')
     inlines = (BButtonInline,)
 
     def response_add(self, request, obj, post_url_continue=None):

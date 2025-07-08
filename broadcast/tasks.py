@@ -21,12 +21,18 @@ def send_broadcast(broadcast_id: int):
         return
 
     if broadcast.check_groups:
-        groups = TelegramGroup.objects.all().values_list('telegram_id', flat=True)
+        groups = TelegramGroup.objects.all().exclude(
+            title__icontains="Archive"
+        ).values_list('telegram_id', flat=True)
     else:
-        groups = broadcast.groups.all().values_list("telegram_id", flat=True)
+        groups = broadcast.groups.all().exclude(
+            title__icontains="Archive"
+        ).values_list("telegram_id", flat=True)
 
     if not groups:
-        groups = TelegramGroup.objects.all().values_list("telegram_id", flat=True)
+        groups = TelegramGroup.objects.all().exclude(
+            title__icontains="Archive"
+        ).values_list("telegram_id", flat=True)
 
     if broadcast.template_id:
         content = broadcast.template.cleaned_content
