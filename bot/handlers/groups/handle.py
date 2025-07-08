@@ -45,9 +45,10 @@ async def command_handler(message: types.Message, state: FSMContext):
 async def respond_handler(message: types.Message):
     username = message.from_user.username
     credential = username if username else message.from_user.id
+    group_id = message.chat.id
 
     text_list = utils.get_clean_sorted_text_list(message.text)
-    mask = await utils.get_mask(text_list, credential)
+    mask = await utils.get_mask(text_list, credential, group_id)
 
     if mask is not None:
         await message.reply(mask.cleaned_content)

@@ -10,7 +10,7 @@ class RegexpReplace(models.Func):
     arity = 4
 
 
-async def get_mask(text_list: str, credential: str | int):
+async def get_mask(text_list: str, credential: str | int, group_id: int = None):
     q_object = models.Q(telegram_id=credential)
     if isinstance(credential, str):
         q_object = models.Q(username=credential)
@@ -20,9 +20,14 @@ async def get_mask(text_list: str, credential: str | int):
     ).exists()
 
     if not is_blocked:
-        return r_models.Mask.objects.filter(
+        mask= r_models.Mask.objects.filter(
             text_list=text_list
         ).first()
+        if group_id is not None and mask.groups.exists():
+            if mask.groups.filter(telegram_id=group_id).exists():
+                return mask
+            return None
+        return mask
 
         # return r_models.Mask.objects.annotate(
         #     normalized=RegexpReplace(

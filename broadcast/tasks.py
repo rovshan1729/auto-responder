@@ -20,7 +20,11 @@ def send_broadcast(broadcast_id: int):
     if broadcast is None:
         return
 
-    groups = broadcast.groups.all().values_list("telegram_id", flat=True)
+    if broadcast.check_groups:
+        groups = TelegramGroup.objects.all().values_list('telegram_id', flat=True)
+    else:
+        groups = broadcast.groups.all().values_list("telegram_id", flat=True)
+
     if not groups:
         groups = TelegramGroup.objects.all().values_list("telegram_id", flat=True)
 

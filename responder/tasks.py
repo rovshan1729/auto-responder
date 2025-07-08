@@ -174,3 +174,7 @@ def create_faq(message_text: str, mask_id: int = None):
     else:
         faq.count += 1
         faq.save(update_fields=["count"])
+
+
+
+

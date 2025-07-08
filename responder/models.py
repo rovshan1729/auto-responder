@@ -122,11 +122,13 @@ class TelegramCommand(BaseModel):
 
 
 class Mask(BaseModel):
+    groups = models.ManyToManyField(TelegramGroup, blank=True, related_name='masks',)
     text = models.CharField(max_length=4095, verbose_name="Текст")
     text_list = ArrayField(models.CharField(max_length=31), blank=True, editable=False)
     content = HTMLField(verbose_name="Контент", help_text="Текст ответа")
     cleaned_content = models.TextField(blank=True, null=True, editable=False)
     count = models.BigIntegerField(default=0, editable=False)
+
 
     class Meta:
         ordering = ('-created_at',)

@@ -72,6 +72,7 @@ class Broadcast(BaseModel):
     task_id = models.IntegerField(blank=True, null=True, editable=False)
     scheduled_at = models.DateTimeField(default=now(), verbose_name="Расписание")
     percent = models.CharField(max_length=15, editable=False, verbose_name="Процент")
+    check_groups = models.BooleanField(default=False, verbose_name="Выбрать все группы")
     is_sent = models.BooleanField(default=False, editable=False, verbose_name="Отправлено")
 
 

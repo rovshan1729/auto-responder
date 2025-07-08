@@ -184,3 +184,13 @@ def set_my_commands(commands: list[dict[str, str]], scope: dict = None):
     response = httpx.post(url, json=payload, timeout=15)
     return response
 
+
+def get_chat(chat_id: int):
+    url = URL + f"getChat"
+    params = {
+        'chat_id': chat_id,
+    }
+    response = httpx.post(url, params=params, timeout=15)
+    if response.status_code != 200:
+        return None
+    return response.json()

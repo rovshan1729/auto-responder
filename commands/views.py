@@ -23,6 +23,7 @@ def admin_dashboard_view(request):
     top_users = (
         TelegramUser.objects
         .exclude(username="GroupAnonymousBot")
+        .exclude(is_blocked=True)
         .annotate(message_count=models.Count("messages"))
         .order_by("-message_count")[:20]
     )
