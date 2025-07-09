@@ -94,6 +94,33 @@ class TelegramMessage(BaseModel):
         return str(self.message_id)
 
 
+class ReplyMessage(BaseModel):
+    message = models.OneToOneField(
+        TelegramMessage,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="reply"
+    )
+    text = HTMLField(verbose_name="Текст")
+    cleaned_text = models.TextField(blank=True, null=True, editable=False)
+    is_retry = models.BooleanField(default=False, verbose_name="Отправить заново")
+    is_sent = models.BooleanField(default=False, verbose_name="Отправлено", editable=False)
+
+
+    class Meta:
+        verbose_name = "Ответить"
+        verbose_name_plural = "Ответить"
+
+
+    def save(self, *args, **kwargs):
+        self.cleaned_text = utils.clean_from_html_v3(self.text)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Reply Message (pk = {self.pk})"
+
+
 class TelegramCommand(BaseModel):
     command = models.CharField(max_length=15, unique=True, verbose_name="Название")
     description = models.CharField(max_length=63, verbose_name="Описание")

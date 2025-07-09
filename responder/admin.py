@@ -18,6 +18,10 @@ def set_command_menu(modeladmin, request, queryset):
         modeladmin.message_user(request, "Не удалось установить команды бота!", level=messages.ERROR)
 
 
+class ReplyMessageInline(admin.TabularInline):
+    model = models.ReplyMessage
+    extra = 0
+
 class TelegramUserInline(admin.TabularInline):
     model = models.TelegramUser
     extra = 0
@@ -77,15 +81,17 @@ class TelegramGroupAdmin(admin.ModelAdmin):
 
 @admin.register(models.TelegramMessage)
 class TelegramMessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'message_id', 'group', 'user', 'text', 'created_at')
+    list_display = ('id', 'group', 'user', 'text', 'message_id', 'is_marked', 'created_at')
     list_display_links = ('id', 'message_id')
     list_filter = (
+        'is_marked',
         'group__title',
         'group__username',
         'user__first_name',
         'user__username',
         ('group', admin.EmptyFieldListFilter),
     )
+    inlines = [ReplyMessageInline, ]
 
     def has_add_permission(self, request):
         return False

@@ -178,8 +178,9 @@ def create_faq(message_text: str, mask_id: int = None):
 
 @shared_task
 def mark_message(message_id: int):
-
+    print(f"Worked on message {message_id}")
     message = r_models.TelegramMessage.objects.filter(message_id=message_id).first()
+    print(f"Message: {message}")
     if message is None:
         return
 

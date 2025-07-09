@@ -9,6 +9,24 @@ logger = logging.getLogger(__name__)
 URL = f'https://api.telegram.org/bot{settings.API_TOKEN}/'
 
 
+def reply(
+        chat_id: int | str,
+        text: str,
+        parse_mode: str = "HTML",
+        reply_to_message_id: int = None,
+):
+    url = URL +  "sendMessage"
+    params = {
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": parse_mode,
+        "reply_to_message_id": reply_to_message_id,
+    }
+
+    response = httpx.post(url, params=params, timeout=15)
+    return response
+
+
 def send_text(
         chat_id: int | str,
         text: str,
