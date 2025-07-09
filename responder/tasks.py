@@ -176,5 +176,15 @@ def create_faq(message_text: str, mask_id: int = None):
         faq.save(update_fields=["count"])
 
 
+@shared_task
+def mark_message(message_id: int):
+
+    message = r_models.TelegramMessage.objects.filter(message_id=message_id).first()
+    if message is None:
+        return
+
+    message.is_marked = True
+    message.save(update_fields=["is_marked"])
+
 
 

@@ -186,10 +186,11 @@ INTERNAL_IPS = [
     # ...
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://95.216.19.125:8011",
-    "https://ai.excorp.tech"
-]
+CSRF_TRUSTED_ORIGINS = []
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+if env.str("DOMAIN_URL"):
+    CSRF_TRUSTED_ORIGINS.append(env.str("DOMAIN_URL"))
 
 JAZZMIN_SETTINGS = {
     # title of the window (Will default to current_admin_site.site_title if absent or None)

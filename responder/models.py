@@ -75,6 +75,7 @@ class TelegramMessage(BaseModel):
                              verbose_name="Пользователь")
     text = models.CharField(max_length=4095, blank=True, null=True, verbose_name="Текст")
     message_id = models.BigIntegerField(verbose_name="ID сообщении")
+    is_marked = models.BooleanField(default=False, verbose_name="Отвечено")
     data = models.JSONField(blank=True, null=True, verbose_name="Дата")
 
     class Meta:
