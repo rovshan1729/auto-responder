@@ -57,6 +57,7 @@ def create_user_with_message(message_data: dict):
 
 @shared_task
 def create_user_with_message_on_group(message_data: dict):
+    print(f"{message_data['text'] = }")
     group = r_models.TelegramGroup.objects.filter(
         telegram_id=message_data['chat']['id']
     ).values_list('id', flat=True).first()
@@ -155,7 +156,7 @@ def get_file_id(class_name: str, class_id: int):
 
 
 @shared_task
-def create_faq(message_text: str, mask_id: int = None):
+def create_faq(message_text: str, mask_id: int = None, telegram_id: int | str = None):
     mask = None if not mask_id else r_models.Mask.objects.filter(id=mask_id).first()
 
     question = message_text
@@ -177,10 +178,18 @@ def create_faq(message_text: str, mask_id: int = None):
 
 
 @shared_task
-def mark_message(message_id: int):
-    print(f"Worked on message {message_id}")
-    message = r_models.TelegramMessage.objects.filter(message_id=message_id).first()
-    print(f"Message: {message}")
+def mark_message(message_id: int, sender_id: int | str, where="private"):
+    time.sleep(5)
+    if where == "private":
+        message = r_models.TelegramMessage.objects.filter(
+            message_id=message_id,
+            user__telegram_id=sender_id
+        ).first()
+    else:
+        message = r_models.TelegramMessage.objects.filter(
+            message_id=message_id,
+            group__telegram_id=sender_id
+        ).first()
     if message is None:
         return
 

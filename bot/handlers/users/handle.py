@@ -39,8 +39,8 @@ async def respond_handler(message: types.Message):
 
     if mask is not None:
         await message.reply(mask.cleaned_content)
-        tasks.create_faq.delay(message.text, mask.id)
-        tasks.mark_message(message.message_id)
+        tasks.create_faq.delay(message.text, mask.id, telegram_id=message.from_user.id)
+        tasks.mark_message(message.message_id, message.from_user.id)
 
     elif "?" in message.text:
-        tasks.create_faq.delay(message.text)
+        tasks.create_faq.delay(message.text, telegram_id=message.from_user.id)

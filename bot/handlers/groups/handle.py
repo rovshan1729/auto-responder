@@ -14,10 +14,10 @@ async def listen_message_handler(message: types.Message, state: FSMContext):
     # tasks.create_json_file.delay(message_data, 'message')
 
     data = await utils.get_data_model()
+    await track_actions_handler(message, message_data)
+
     if message.text and data.is_sleep is False:
         await respond_handler(message)
-
-    await track_actions_handler(message, message_data)
 
 
 async def command_handler(message: types.Message, state: FSMContext):
@@ -43,6 +43,7 @@ async def command_handler(message: types.Message, state: FSMContext):
 
 
 async def respond_handler(message: types.Message):
+
     username = message.from_user.username
     credential = username if username else message.from_user.id
     group_id = message.chat.id
@@ -53,7 +54,7 @@ async def respond_handler(message: types.Message):
     if mask is not None:
         await message.reply(mask.cleaned_content)
         tasks.create_faq.delay(message.text, mask.id)
-        tasks.mark_message(message.message_id)
+        tasks.mark_message(message.message_id, message.chat.id, where="group")
 
     elif "?" in message.text:
         tasks.create_faq.delay(message.text)

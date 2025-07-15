@@ -23,7 +23,7 @@ async def get_mask(text_list: str, credential: str | int, group_id: int = None):
         mask= r_models.Mask.objects.filter(
             text_list=text_list
         ).first()
-        if group_id is not None and mask.groups.exists():
+        if mask and group_id is not None and mask.groups.exists():
             if mask.groups.filter(telegram_id=group_id).exists():
                 return mask
             return None
