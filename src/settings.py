@@ -175,7 +175,7 @@ TINYMCE_DEFAULT_CONFIG = {
     # "width": "960px",
     "menubar": False,
     "plugins": "link code",
-    "toolbar": "undo redo | bold italic underline | link | code",
+    "toolbar": "undo redo | bold italic | link | code",
     "custom_undo_redo_levels": 10,
     "language": "ru_Ru",
 }
