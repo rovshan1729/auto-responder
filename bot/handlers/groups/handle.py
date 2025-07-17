@@ -1,5 +1,3 @@
-import json
-
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
@@ -16,7 +14,7 @@ async def listen_message_handler(message: types.Message, state: FSMContext):
     # tasks.create_json_file.delay(message_data, 'message')
 
     data = await utils.get_data_model()
-    await track_actions_handler(message, json.loads(message_data))
+    await track_actions_handler(message, message_data)
 
     if message.text and data.is_sleep is False:
         await respond_handler(message)

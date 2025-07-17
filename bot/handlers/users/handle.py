@@ -1,5 +1,3 @@
-import json
-
 from aiogram import types
 from bot import utils
 from responder import tasks
@@ -39,7 +37,7 @@ async def respond_handler(message: types.Message):
     message_data = message.model_dump(mode="json")
     await track_actions_handler(
         message,
-        message_data=json.loads(message_data)
+        message_data=message_data
     )
 
     if mask is not None:
