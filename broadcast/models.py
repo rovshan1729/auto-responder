@@ -41,7 +41,7 @@ class BroadcastTemplate(BaseModel):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Broadcast Template: #{self.id}"
+        return self.title if self.title else  f"Broadcast Template: #{self.id}"
 
 
 class Broadcast(BaseModel):

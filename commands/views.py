@@ -15,9 +15,9 @@ def admin_dashboard_view(request):
     end_date = request.GET.get('end_date')
 
     # top_faq = FAQ.objects
-    top_questions =  TelegramMessage.objects
+    top_questions =  TelegramMessage.objects.filter(user__is_blocked=False)
     top_answers = TelegramMessage.objects.filter(answer__isnull=False)
-    top_not_answered = TelegramMessage.objects.filter(answer__isnull=True)
+    top_not_answered = TelegramMessage.objects.filter(answer__isnull=True, user__is_blocked=False)
 
     if start_date:
         # top_faq = top_faq.filter(created_at__date__gte=parse_date(start_date))
