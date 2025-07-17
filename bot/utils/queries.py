@@ -76,9 +76,11 @@ async def get_command(command: str):
 
 
 async def add_or_check_chat(chat_id: int):
+    print(f"Worked add_or_check_chat: {chat_id}")
     data_obj = r_models.Data.get_solo()
     data_obj.channel_id = chat_id
     data_obj.save(update_fields=['channel_id'])
+    print(f"Saved channel_id: {data_obj.channel_id}")
 
 
 async def remove_chat(chat_id: int):
