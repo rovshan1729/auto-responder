@@ -106,6 +106,7 @@ services:
       - redis
       - mq
       - db
+      - django
 
 volumes:
   postgres_data:
