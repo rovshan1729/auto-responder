@@ -279,14 +279,14 @@ JAZZMIN_SETTINGS = {
     "navigation_expanded": True,
 
     # Hide these apps when generating side menu e.g (auth)
-    "hide_apps": ['django_celery_beat'],
+    # "hide_apps": ['django_celery_beat'],
 
     # Hide these models when generating side menu (e.g auth.user)
     "hide_models": [
-        # 'django_celery_beat.SolarSchedule',
-        # 'django_celery_beat.IntervalSchedule',
-        # 'django_celery_beat.TzAwareCrontab',
-        # 'django_celery_beat.ClockedSchedule',
+        'django_celery_beat.SolarSchedule',
+        'django_celery_beat.IntervalSchedule',
+        'django_celery_beat.TzAwareCrontab',
+        'django_celery_beat.ClockedSchedule',
     ],
 
     # List of apps (and/or models) to base side menu ordering off of (does not need to contain all apps/models)
@@ -307,9 +307,12 @@ JAZZMIN_SETTINGS = {
         "broadcast.Broadcast",
         "broadcast.BroadcastTemlpate",
 
-        "commands",
-        "commands.CrontabScheduleProxy",
-        "commands.PeriodicTaskProxy",
+        # "commands",
+        # "commands.CrontabScheduleProxy",
+        # "commands.PeriodicTaskProxy",
+        "django_celery_beat",
+        "django_celery_beat.CrontabSchedule",
+        "django_celery_beat.PeriodicTask",
     ],
 
     "icons": {
@@ -331,8 +334,8 @@ JAZZMIN_SETTINGS = {
         "broadcast.BroadcastTemplate": "fas fa-photo-film",
         "broadcast.Broadcast": "fas fa-newspaper",
 
-        "commands.PeriodicTaskProxy": "fas fa-list-check",
-        "commands.CrontabScheduleProxy": "fas fa-calendar-days",
+        "django_celery_beat.PeriodicTask": "fas fa-list-check",
+        "django_celery_beat.CrontabSchedule": "fas fa-calendar-days",
 
     },
     # Icons that are used when one is not manually specified

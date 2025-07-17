@@ -42,8 +42,15 @@ def get_clean_sorted_text_list(text: str):
     cleaned_text = cleaned_text.strip().translate(PUNCTUATION_TRANSLATOR).lower()
 
     text_list = cleaned_text.split(' ')
-    while '' or 'а' or 'и' in text_list:
-        text_list.remove('')
+    for letter in ('', 'а', 'и'):
+        while letter in text_list:
+            text_list.remove(letter)
+
+    for i in range(len(text_list)):
+        _text = text_list[i]
+        if _text.endswith("ы"):
+            text_list[i] = _text[:-1]
+
     text_list.sort()
     return text_list
 
