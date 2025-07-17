@@ -51,6 +51,7 @@
                 </div>
             </div>
         </div>
+
         <div class="col-lg-6">
             <div class="card shadow-sm">
                 <div class="card-header bg-light">
@@ -70,7 +71,7 @@
                         {% for q in top_not_answers %}
                             <tr>
                                 <td>{{ forloop.counter }}</td>
-                                <td>{{ q.question|safe|truncatechars:100 }}</td>
+                                <td>{{ q.text|truncatechars:100 }}</td>
                                 <td>{{ q.date }}</td>
                                 <td>{{ q.count }}</td>
                             </tr>
@@ -99,8 +100,8 @@
                         <tbody>
                         {% for q in top_questions %}
                             <tr>
-                                <td><a href="{{ q.get_admin_url }}"><strong>{{ forloop.counter }}</strong></a></td>
-                                <td><a href="{{ q.get_admin_url }}">{{ q.question|truncatechars:100 }}</a></td>
+                                <td><a href="#"><strong>{{ forloop.counter }}</strong></a></td>
+                                <td><a href="#">{{ q.text|truncatechars:100 }}</a></td>
                                 <td>{{ q.date }}</td>
                                 <td>{{ q.count }}</td>
                             </tr>
@@ -129,7 +130,7 @@
                         {% for ans in top_answers %}
                             <tr>
                                 <td>{{ forloop.counter }}</td>
-                                <td>{{ ans.answer|safe|truncatechars:100 }}</td>
+                                <td>{{ ans.text|truncatechars:100 }}</td>
                                 <td>{{ ans.date }}</td>
                                 <td>{{ ans.count }}</td>
                             </tr>

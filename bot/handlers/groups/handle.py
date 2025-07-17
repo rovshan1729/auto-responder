@@ -54,7 +54,7 @@ async def respond_handler(message: types.Message):
     if mask is not None:
         await message.reply(mask.cleaned_content)
         tasks.create_faq.delay(message.text, mask.id)
-        tasks.mark_message(
+        tasks.mark_message.delay(
             message.message_id,
             message.chat.id,
             mask=mask.cleaned_content,

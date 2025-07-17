@@ -23,10 +23,6 @@ def send_reply_message(sender, instance: ReplyMessage, created, **kwargs):
     else:
         chat_id = instance.message.user.telegram_id
 
-    print(chat_id)
-    print(instance.cleaned_text)
-    print(instance.message.message_id)
-
     reply(
         chat_id=chat_id,
         text=instance.cleaned_text,
@@ -36,6 +32,7 @@ def send_reply_message(sender, instance: ReplyMessage, created, **kwargs):
     instance.save(update_fields=['is_retry'])
 
     instance.message.is_marked = True
-    instance.message.save(update_fields=['is_marked'])
+    instance.message.answer = instance.cleaned_text
+    instance.message.save(update_fields=['is_marked', 'answer',  'answer_list'])
 
 

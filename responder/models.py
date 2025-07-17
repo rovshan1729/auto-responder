@@ -140,11 +140,23 @@ class TelegramMessage(BaseModel):
         null=True,
         verbose_name="Текст"
     )
+    text_list = ArrayField(
+        models.CharField(max_length=255),
+        blank=True,
+        null=True,
+        editable=False
+    )
     answer = models.CharField(
         max_length=4095,
         blank=True,
         null=True,
         verbose_name="Ответ"
+    )
+    answer_list = ArrayField(
+        models.CharField(max_length=255),
+        blank=True,
+        null=True,
+        editable=False
     )
     message_id = models.BigIntegerField(
         verbose_name="ID сообщении"
@@ -170,6 +182,13 @@ class TelegramMessage(BaseModel):
             f"admin:{self._meta.app_label}_{self._meta.model_name}_change",
             args=[self.pk]
         )
+
+    def save(self, *args, **kwargs):
+        if self.text:
+            self.text_list = utils.get_clean_sorted_text_list(self.text)
+        if self.answer:
+            self.answer_list = utils.get_clean_sorted_text_list(self.answer)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return str(self.message_id)
@@ -274,7 +293,7 @@ class Mask(BaseModel):
         verbose_name="Текст"
     )
     text_list = ArrayField(
-        models.CharField(max_length=31),
+        models.CharField(max_length=255),
         blank=True,
         editable=False
     )

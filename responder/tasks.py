@@ -195,6 +195,7 @@ def mark_message(message_id: int, sender_id: int | str, mask:str, where="private
         return
 
     message.is_marked = True
+    message.mask = mask
     message.save(update_fields=["is_marked"])
 
 
