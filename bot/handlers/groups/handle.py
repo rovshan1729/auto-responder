@@ -1,3 +1,5 @@
+import json
+
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
@@ -10,11 +12,11 @@ async def track_actions_handler(message: types.Message, message_data: dict):
 
 
 async def listen_message_handler(message: types.Message, state: FSMContext):
-    message_data = message.model_dump()
+    message_data = message.model_dump(mode="json")
     # tasks.create_json_file.delay(message_data, 'message')
 
     data = await utils.get_data_model()
-    await track_actions_handler(message, message_data)
+    await track_actions_handler(message, json.loads(message_data))
 
     if message.text and data.is_sleep is False:
         await respond_handler(message)
@@ -54,7 +56,12 @@ async def respond_handler(message: types.Message):
     if mask is not None:
         await message.reply(mask.cleaned_content)
         tasks.create_faq.delay(message.text, mask.id)
-        tasks.mark_message(message.message_id, message.chat.id, where="group")
+        tasks.mark_message(
+            message.message_id,
+            message.chat.id,
+            mask=mask.cleaned_content,
+            where="group"
+        )
 
     elif "?" in message.text:
         tasks.create_faq.delay(message.text)

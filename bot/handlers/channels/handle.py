@@ -6,13 +6,7 @@ from bot import utils
 
 async def bot_added_to_channel_as_admin(event: types.ChatMemberUpdated):
     print(f"The function bot_added_to_channel_as_admin is called")
-    print("\n")
-    print(f"{event = }")
-    print("\n")
-    print(f"{event.chat = }")
-    print("\n")
-    print(f"{event.from_user = }")
-    print("\n")
+
     if event.new_chat_member.status == ChatMemberStatus.ADMINISTRATOR:
         if str(event.from_user.id) == str(ADMIN):
             print("ADMINISTRATOR")

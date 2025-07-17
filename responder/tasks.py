@@ -55,6 +55,7 @@ def create_user_with_message(message_data: dict):
         data=message_data
     )
 
+
 @shared_task
 def create_user_with_message_on_group(message_data: dict):
     print(f"{message_data['text'] = }")
@@ -178,7 +179,7 @@ def create_faq(message_text: str, mask_id: int = None, telegram_id: int | str = 
 
 
 @shared_task
-def mark_message(message_id: int, sender_id: int | str, where="private"):
+def mark_message(message_id: int, sender_id: int | str, mask:str, where="private"):
     time.sleep(5)
     if where == "private":
         message = r_models.TelegramMessage.objects.filter(
