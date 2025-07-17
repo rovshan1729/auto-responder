@@ -50,9 +50,7 @@ async def respond_handler(message: types.Message):
 
     text_list = utils.get_clean_sorted_text_list(message.text)
     mask = await utils.get_mask(text_list, credential, group_id)
-    print("\n")
-    print(f"{mask = }")
-    print("\n")
+
     if mask is not None:
         await message.reply(mask.cleaned_content)
         tasks.create_faq.delay(message.text, mask.id)
