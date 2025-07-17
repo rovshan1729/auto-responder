@@ -186,7 +186,9 @@ INTERNAL_IPS = [
     # ...
 ]
 
-CSRF_TRUSTED_ORIGINS = []
+CSRF_TRUSTED_ORIGINS = [
+    env.str("DOMAIN_URL", "http://localhost:8891"),
+]
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 if env.str("DOMAIN_URL"):
