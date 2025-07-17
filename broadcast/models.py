@@ -71,7 +71,7 @@ class Broadcast(BaseModel):
         verbose_name="Телеграм группы",
     )
     task_id = models.IntegerField(blank=True, null=True, editable=False)
-    scheduled_at = models.DateTimeField(default=now(), verbose_name="Расписание")
+    scheduled_at = models.DateTimeField(default=now, verbose_name="Расписание")
     percent = models.CharField(max_length=15, editable=False, verbose_name="Процент")
     check_groups = models.BooleanField(
         default=False,
