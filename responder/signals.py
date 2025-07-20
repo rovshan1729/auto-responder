@@ -31,11 +31,11 @@ def send_reply_message(sender, instance: ReplyMessage, created, **kwargs):
         text=instance.cleaned_text,
         reply_to_message_id=instance.message.message_id
     )
-    try:
-        json_data = response.json()
-        print(f"{json_data = }")
-    except Exception as e:
-        print(f"{e = }")
+    # try:
+    #     json_data = response.json()
+    #     print(f"{json_data = }")
+    # except Exception as e:
+    #     print(f"{e = }")
 
     if response.status_code != 200:
         return
