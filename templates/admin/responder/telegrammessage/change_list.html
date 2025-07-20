@@ -8,27 +8,29 @@
     <div class="modal custom-modal" id="modalUni">
         <div class="modal-dialog">
             <div class="modal-content custom-modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Ответить сообщение</h5>
-                    <button type="button"
-                            class="btn-close"
-                            aria-label="Close">&times;
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form id="custom-modal-form" action="" method="post">
+                <form id="custom-modal-form" action="" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Ответить сообщение</h5>
+                        <button type="button"
+                                class="btn-close"
+                                aria-label="Close">&times;
+                        </button>
+                    </div>
+                    <div class="modal-body">
+
                         {% csrf_token %}
                         <input type="hidden" name="message_id" id="modal-hidden-id">
                         {{ custom_form.as_p }}
                         {{ custom_form.media }}
+
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary btn-close">
+                            Close
+                        </button>
                         <input id="modal-form-input" type="submit" class="btn btn-dark" value="Отправить">
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary btn-close">
-                        Close
-                    </button>
-                </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
