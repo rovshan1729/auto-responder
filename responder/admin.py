@@ -1,13 +1,17 @@
 from django.contrib import admin
 from django.contrib import messages
+from django.shortcuts import redirect
 from django.db.models import Count
 from django.template.loader import render_to_string
+from django.urls import reverse, path
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
+
 from solo.admin import SingletonModelAdmin
 
-from responder import models
+from bot import utils
 from bot.utils import methods
+from responder import models
+from responder.forms import ReplyMessageForm
 
 
 @admin.action(description="Установить командную меню бота")
@@ -82,9 +86,10 @@ class TelegramGroupAdmin(admin.ModelAdmin):
         ).order_by('-count').prefetch_related("users")
 
 
+
 @admin.register(models.TelegramMessage)
 class TelegramMessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'group', 'user', 'text', 'message_id', 'is_marked', 'created_at',)
+    list_display = ('id', 'group', 'user', 'text', 'message_id', 'is_marked', 'created_at', "custom_btn")
     list_display_links = ('id', 'group', 'user', 'message_id')
     list_filter = (
         'is_marked',
@@ -96,54 +101,47 @@ class TelegramMessageAdmin(admin.ModelAdmin):
     )
     inlines = [ReplyMessageInline, ]
 
-    # def custom_button(self, obj):
-    #     return format_html(
-    #         '<button type="button" class="btn btn-primary btn-sm" data-toggle="modal" '
-    #         'data-target="#modal-{}">Открыть форму</button>',
-    #         obj.id
-    #     )
-    #
-    # def get_urls(self):
-    #     from django.urls import path
-    #     urls = super().get_urls()
-    #     custom_urls = [
-    #         path(
-    #             '<path:object_id>/custom_form/',
-    #             self.admin_site.admin_view(self.custom_form_view),
-    #             name='yourmodel-custom-form'
-    #         ),
-    #     ]
-    #     return custom_urls + urls
-    #
-    # def custom_form_view(self, request, object_id):
-    #     # Логика для обработки формы в модальном окне
-    #     from django.http import JsonResponse
-    #     from django.shortcuts import render
-    #     from .forms import ReplyMessageForm
-    #     reply_message = models.ReplyMessage.objects.filter(message_id=object_id).first()
-    #     if request.method == 'POST':
-    #         form = ReplyMessageForm(request.POST)
-    #         if reply_message:
-    #             form = ReplyMessageForm(request.POST, instance=reply_message)
-    #         if form.is_valid():
-    #             form.save()
-    #             return JsonResponse({'success': True})
-    #         return JsonResponse({'success': False, 'errors': form.errors})
-    #     form = ReplyMessageForm()
-    #     if reply_message:
-    #         form = ReplyMessageForm(instance=reply_message)
-    #
-    #     context = {
-    #         'form': form,
-    #         'object_id': object_id,
-    #         'opts': self.model._meta,
-    #     }
-    #     return render(request, 'admin/_responder/telegrammessage/custom_form_modal.html', context)
+    def custom_btn(self, obj):
+        html = render_to_string(
+            'admin/responder/telegrammessage/custom_button.html',
+            {
+                'obj': obj,
+                'disabled': obj.answer is not None,
+            }
+        )
+        return format_html(html)
+
+    def changelist_view(self, request, extra_context=None):
+
+        message_id = request.POST.get("message_id")
+        if message_id:
+            reply_message = models.ReplyMessage.objects.filter(message_id=message_id).first()
+
+            obj_form = ReplyMessageForm(request.POST)
+            if reply_message:
+                obj_form = ReplyMessageForm(request.POST, instance=reply_message)
+
+            if obj_form.is_valid():
+                obj = obj_form.save(commit=False)
+                obj.message_id = message_id
+                obj.save()
+                messages.success(request, "Сообщение успешно отправлено")
+            else:
+                messages.error(request, "Ошибка  при отправки сообщении")
+
+        if extra_context is None:
+            extra_context = {}
+
+        form = ReplyMessageForm()
+        extra_context['custom_form'] = form
+
+        return super().changelist_view(request, extra_context)
+
 
     def has_add_permission(self, request):
         return False
 
-    # custom_button.short_description = "Действие"
+    custom_btn.short_description = "Действие"
 
     # class Media:
     #     js = (

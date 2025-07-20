@@ -32,23 +32,5 @@
     </div>
 {% endblock %}
 
-{% block extra_js %}
-    {{ block.super }}
-    <script>
-        $(document).on('click', '.open-mymodal', function () {
-            var name = $(this).data('name');
-            var id = $(this).data('id');
-            console.log(id);
-            $('#universalModalLabel').text('Редактировать: ' + id);
-            $('#universalInput').val(name);
 
-            $('#universalModal').modal('show');
-        });
-
-        $('#universalModal').on('hidden.bs.modal', function () {
-            $('.modal-backdrop').remove();
-            $('body').removeClass('modal-myopen');
-        });
-    </script>
-{% endblock %}
 
