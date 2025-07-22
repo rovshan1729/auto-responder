@@ -89,6 +89,7 @@ class TelegramGroupAdmin(admin.ModelAdmin):
 class TelegramMessageAdmin(admin.ModelAdmin):
     list_display = ('id', 'group', 'user', 'text', 'message_id', 'is_marked', 'created_at', "custom_btn")
     list_display_links = ('id', 'group', 'user', 'message_id')
+    readonly_fields = ('text_list', )
     list_filter = (
         'is_marked',
         'group__title',

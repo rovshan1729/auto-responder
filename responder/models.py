@@ -144,7 +144,6 @@ class TelegramMessage(BaseModel):
         models.CharField(max_length=255),
         blank=True,
         null=True,
-        editable=False,
         verbose_name="Фильтрованный текст"
     )
     answer = models.CharField(
