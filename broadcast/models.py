@@ -1,9 +1,11 @@
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils.timezone import now
 from tinymce.models import HTMLField
 
 from bot import utils
 from responder.base import BaseModel
+from responder.choices import GroupChoice
 from responder.models import TelegramGroup
 
 
@@ -24,6 +26,7 @@ class Media(BaseModel):
 
 
 class BroadcastTemplate(BaseModel):
+    title = models.CharField(max_length=255, blank=True, null=True, verbose_name="Название")
     content = HTMLField(blank=True, null=True, verbose_name="Контент")
     cleaned_content = models.TextField(blank=True, null=True, editable=False)
     medias = models.ManyToManyField(Media, blank=True, related_name='broadcast_templates',
@@ -40,7 +43,7 @@ class BroadcastTemplate(BaseModel):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Broadcast Template: #{self.id}"
+        return self.title if self.title else  f"Broadcast Template: #{self.id}"
 
 
 class Broadcast(BaseModel):
@@ -63,14 +66,14 @@ class Broadcast(BaseModel):
         verbose_name="Прикрепляемые файлы",
         help_text="Не нужно, если выбран шаблон"
     )
-    groups = models.ManyToManyField(
-        TelegramGroup,
+    groups = ArrayField(
+        models.CharField(max_length=31, choices=GroupChoice.choices),
         blank=True,
-        related_name='broadcast_templates',
-        verbose_name="Телеграм группы",
+        null=True,
+        default=list
     )
     task_id = models.IntegerField(blank=True, null=True, editable=False)
-    scheduled_at = models.DateTimeField(default=now(), verbose_name="Расписание")
+    scheduled_at = models.DateTimeField(default=now, verbose_name="Расписание")
     percent = models.CharField(max_length=15, editable=False, verbose_name="Процент")
     is_sent = models.BooleanField(default=False, editable=False, verbose_name="Отправлено")
 

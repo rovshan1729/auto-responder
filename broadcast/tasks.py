@@ -1,4 +1,4 @@
-
+from django.db.models import Q
 from celery import shared_task
 from broadcast import models as broadcast_models
 from responder.models import TelegramGroup
@@ -14,15 +14,25 @@ def send_broadcast(broadcast_id: int):
     ).select_related(
         "template"
     ).prefetch_related(
-        "medias", "groups", "template__medias"
+        "medias", "template__medias"
     ).first()
 
     if broadcast is None:
         return
 
-    groups = broadcast.groups.all().values_list("telegram_id", flat=True)
-    if not groups:
-        groups = TelegramGroup.objects.all().values_list("telegram_id", flat=True)
+    if 'ВСЕ ГРУППЫ' in broadcast.groups or not broadcast.groups:
+        groups = TelegramGroup.objects.all().exclude(
+            title__icontains="Archive"
+        ).values_list('telegram_id', flat=True)
+    else:
+        query = Q()
+        for name in broadcast.groups:
+            query |= Q(title__icontains=name)
+
+        groups = TelegramGroup.objects.filter(query).exclude(
+            title__icontains="Archive"
+        ).values_list('telegram_id', flat=True)
+
 
     if broadcast.template_id:
         content = broadcast.template.cleaned_content
@@ -45,36 +55,38 @@ def send_broadcast(broadcast_id: int):
                 }]
             )
 
-    for group in groups:
-        if file_ids:
-            file_type = file_ids[0]['file_type']
-            if len(file_ids) > 1:
-                response = methods.send_multi_file_by_file_id(
-                    chat_id=group,
-                    file_type=file_type,
-                    file_ids=[file['file_id'] for file in file_ids],
-                    caption=content
-                )
+    if groups:
+        for group in groups:
+            if file_ids:
+                file_type = file_ids[0]['file_type']
+                if len(file_ids) > 1:
+                    response = methods.send_multi_file_by_file_id(
+                        chat_id=group,
+                        file_type=file_type,
+                        file_ids=[file['file_id'] for file in file_ids],
+                        caption=content
+                    )
+                else:
+                    response = methods.send_file(
+                        chat_id=group,
+                        file_type=file_type,
+                        file_id=file_ids[0]['file_id'],
+                        caption=content,
+                        reply_markup=reply_markup
+                    )
             else:
-                response = methods.send_file(
+                response = methods.send_text(
                     chat_id=group,
-                    file_type=file_type,
-                    file_id=file_ids[0]['file_id'],
-                    caption=content,
-                    reply_markup=reply_markup
+                    text=content,
+                    reply_markup=reply_markup,
                 )
-        else:
-            response = methods.send_text(
-                chat_id=group,
-                text=content,
-                reply_markup=reply_markup,
-            )
 
-        if response.status_code == 200:
-            counter += 1
+            if response.status_code == 200:
+                counter += 1
 
+    total_groups = len(groups) if len(groups) > 0 else 1
     broadcast.is_sent = True
-    broadcast.percent = f"{round(counter / len(groups), 2) * 100} %"
+    broadcast.percent = f"{round(counter / total_groups, 2) * 100} %"
     broadcast.save(update_fields=['is_sent', 'percent'])
 
 

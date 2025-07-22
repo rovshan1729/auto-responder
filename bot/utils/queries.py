@@ -10,7 +10,7 @@ class RegexpReplace(models.Func):
     arity = 4
 
 
-async def get_mask(text_list: str, credential: str | int):
+async def get_mask(text_list: str, credential: str | int, title: str = None):
     q_object = models.Q(telegram_id=credential)
     if isinstance(credential, str):
         q_object = models.Q(username=credential)
@@ -20,24 +20,16 @@ async def get_mask(text_list: str, credential: str | int):
     ).exists()
 
     if not is_blocked:
-        return r_models.Mask.objects.filter(
+        mask= r_models.Mask.objects.filter(
             text_list=text_list
         ).first()
 
-        # return r_models.Mask.objects.annotate(
-        #     normalized=RegexpReplace(
-        #         functions.Lower(models.F('text')),
-        #         models.Value(r'[^a-zа-яё0-9]+'),
-        #         models.Value(''),
-        #         models.Value('g'),
-        #         output_field=models.CharField()
-        #     )
-        # ).filter(normalized=text).first()
+        if title and mask.groups and not 'ВСЕ ГРУППЫ' in mask.groups:
+            groups = [name.lower() for name in mask.groups]
 
-
-        # return r_models.Mask.objects.filter(
-        #     text__icontains=text
-        # ).first()
+            if not any(group in title.lower() for group in groups):
+                return None
+        return mask
     return None
 
 
@@ -71,9 +63,11 @@ async def get_command(command: str):
 
 
 async def add_or_check_chat(chat_id: int):
+    print(f"Worked add_or_check_chat: {chat_id}")
     data_obj = r_models.Data.get_solo()
     data_obj.channel_id = chat_id
     data_obj.save(update_fields=['channel_id'])
+    print(f"Saved channel_id: {data_obj.channel_id}")
 
 
 async def remove_chat(chat_id: int):

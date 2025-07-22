@@ -135,6 +135,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'static'
+STATICFILES_DIRS = []
 
 if not DEBUG:
     STORAGES = {
@@ -175,7 +176,7 @@ TINYMCE_DEFAULT_CONFIG = {
     # "width": "960px",
     "menubar": False,
     "plugins": "link code",
-    "toolbar": "undo redo | bold italic underline | link | code",
+    "toolbar": "undo redo | bold italic | link | code",
     "custom_undo_redo_levels": 10,
     "language": "ru_Ru",
 }
@@ -187,9 +188,12 @@ INTERNAL_IPS = [
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://95.216.19.125:8011",
-    "https://ai.excorp.tech"
+    env.str("DOMAIN_URL", "http://localhost:8891"),
 ]
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
+if env.str("DOMAIN_URL"):
+    CSRF_TRUSTED_ORIGINS.append(env.str("DOMAIN_URL"))
 
 JAZZMIN_SETTINGS = {
     # title of the window (Will default to current_admin_site.site_title if absent or None)
@@ -276,14 +280,14 @@ JAZZMIN_SETTINGS = {
     "navigation_expanded": True,
 
     # Hide these apps when generating side menu e.g (auth)
-    "hide_apps": ['django_celery_beat'],
+    # "hide_apps": ['django_celery_beat'],
 
     # Hide these models when generating side menu (e.g auth.user)
     "hide_models": [
-        # 'django_celery_beat.SolarSchedule',
-        # 'django_celery_beat.IntervalSchedule',
-        # 'django_celery_beat.TzAwareCrontab',
-        # 'django_celery_beat.ClockedSchedule',
+        'django_celery_beat.SolarSchedule',
+        'django_celery_beat.IntervalSchedule',
+        'django_celery_beat.TzAwareCrontab',
+        'django_celery_beat.ClockedSchedule',
     ],
 
     # List of apps (and/or models) to base side menu ordering off of (does not need to contain all apps/models)
@@ -304,9 +308,12 @@ JAZZMIN_SETTINGS = {
         "broadcast.Broadcast",
         "broadcast.BroadcastTemlpate",
 
-        "commands",
-        "commands.CrontabScheduleProxy",
-        "commands.PeriodicTaskProxy",
+        # "commands",
+        # "commands.CrontabScheduleProxy",
+        # "commands.PeriodicTaskProxy",
+        "django_celery_beat",
+        "django_celery_beat.CrontabSchedule",
+        "django_celery_beat.PeriodicTask",
     ],
 
     "icons": {
@@ -328,8 +335,8 @@ JAZZMIN_SETTINGS = {
         "broadcast.BroadcastTemplate": "fas fa-photo-film",
         "broadcast.Broadcast": "fas fa-newspaper",
 
-        "commands.PeriodicTaskProxy": "fas fa-list-check",
-        "commands.CrontabScheduleProxy": "fas fa-calendar-days",
+        "django_celery_beat.PeriodicTask": "fas fa-list-check",
+        "django_celery_beat.CrontabSchedule": "fas fa-calendar-days",
 
     },
     # Icons that are used when one is not manually specified

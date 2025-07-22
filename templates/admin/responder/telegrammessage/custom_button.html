@@ -1,0 +1,9 @@
+
+
+<button type="button" {% if obj.answer %}disabled{% endif %}
+        class="btn btn-dark btn-sm open-custom-modal"
+        data-id="{{ obj.id }}"
+        data-url="{% url 'send-reply-view' obj.id %}">
+    💬
+</button>
+

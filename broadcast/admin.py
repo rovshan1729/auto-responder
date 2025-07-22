@@ -1,9 +1,8 @@
-from django.shortcuts import redirect
-from django.urls import path
 from django.contrib import admin
 from django.contrib import messages
 
 from . import models
+from .forms import BroadcastModelForm
 
 
 class TButtonInline(admin.TabularInline):
@@ -28,7 +27,9 @@ class BroadcastTemplateAdmin(admin.ModelAdmin):
 
 @admin.register(models.Broadcast)
 class BroadcastAdmin(admin.ModelAdmin):
+    form = BroadcastModelForm
     list_display = ('id', 'title', 'percent', 'is_sent', 'created_at')
+    fields = ('title', 'template', 'groups', 'medias', 'content', 'scheduled_at')
     inlines = (BButtonInline,)
 
     def response_add(self, request, obj, post_url_continue=None):

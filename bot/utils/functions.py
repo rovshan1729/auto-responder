@@ -4,7 +4,28 @@ import string
 import unicodedata
 from bs4 import BeautifulSoup
 
-PUNCTUATION_TRANSLATOR = str.maketrans('', '', string.punctuation)
+PUNCTUATION_TRANSLATOR = str.maketrans('', '', string.punctuation + string.digits)
+EMOJI_PATTERN = re.compile(
+    "["
+    "\U0001F600-\U0001F64F"  # смайлики
+    "\U0001F300-\U0001F5FF"  # символы и пиктограммы
+    "\U0001F680-\U0001F6FF"  # транспорт и символы карт
+    "\U0001F1E0-\U0001F1FF"  # флаги
+    "\U00002500-\U00002BEF"  # китайские иероглифы
+    "\U00002702-\U000027B0"
+    "\U000024C2-\U0001F251"
+    "\U0001f926-\U0001f937"
+    "\U00010000-\U0010ffff"
+    "\u200d"
+    "\u2640-\u2642"
+    "\u2600-\u2B55"
+    "\u23cf"
+    "\u23e9"
+    "\u231a"
+    "\u3030"
+    "\ufe0f"
+    "]+", flags=re.UNICODE
+)
 
 def create_json_file(path_file: str, data: dict):
     with open(path_file, mode="wb") as f:
@@ -17,10 +38,20 @@ def clean_text(text: str) -> str:
 
 
 def get_clean_sorted_text_list(text: str):
-    cleaned_text = text.strip().translate(PUNCTUATION_TRANSLATOR).lower()
+    cleaned_text = EMOJI_PATTERN.sub('', text)
+    cleaned_text = cleaned_text.strip().translate(PUNCTUATION_TRANSLATOR).lower()
+
     text_list = cleaned_text.split(' ')
-    while '' in text_list:
-        text_list.remove('')
+    for letter in ('', 'а', 'и'):
+        while letter in text_list:
+            text_list.remove(letter)
+
+    for __ in ("а", "и", "ы"):
+        for i in range(len(text_list)):
+            _text = text_list[i]
+            if _text.endswith(__):
+                text_list[i] = _text[:-1]
+
     text_list.sort()
     return text_list
 

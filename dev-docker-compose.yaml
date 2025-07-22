@@ -1,0 +1,115 @@
+services:
+  db:
+    image: postgres:15
+    container_name: text_autoresponder_db
+    env_file:
+      - ./.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_HOST=${DB_HOST}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_PORT=${DB_PORT}
+    restart: always
+
+  redis:
+    image: redis:7
+    container_name: text_autoresponder_redis
+    restart: always
+
+  mq:
+    image: rabbitmq:3-management
+    container_name: text_autoresponder_mq
+    restart: always
+    env_file:
+      - ./.env
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+
+  django:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: text_autoresponder_web
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ./:/app
+      - ./static:/app/static
+      - ./media:/app/media
+    env_file:
+      - ./.env
+    environment:
+      - TZ=Asia/Tashkent
+    ports:
+      - 8022:8022
+    depends_on:
+      - db
+      - redis
+      - mq
+
+  bot:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: text_autoresponder_bot
+    command: python manage.py runbot
+    entrypoint: []
+    volumes:
+      - ./:/app
+      - ./static:/app/static
+      - ./media:/app/media
+    restart: always
+    depends_on:
+      - db
+      - redis
+      - django
+
+  celery:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    container_name: text_autoresponder_celery
+    restart: always
+    command: celery -A src worker --concurrency=10 --loglevel=INFO
+    entrypoint: []
+    volumes:
+      - ./:/app
+      - ./static:/app/static
+      - ./media:/app/media
+      - ./logs:/app/logs
+    env_file:
+      - ./.env
+    depends_on:
+      - redis
+      - mq
+      - db
+
+  celery_beat:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: text_autoresponder_beat
+    restart: always
+    command: celery -A src beat -l INFO
+    entrypoint: []
+    volumes:
+      - ./:/app
+      - ./static:/app/static
+      - ./media:/app/media
+    env_file:
+      - ./.env
+    depends_on:
+      - redis
+      - mq
+      - db
+      - django
+
+volumes:
+  postgres_data:
+  media:
+  static:
+  logs:

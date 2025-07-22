@@ -1,0 +1,78 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static jazzmin %}
+
+{% block result_list %}
+    {{ block.super }}
+    <!-- Модальные окна -->
+
+    <div class="modal custom-modal" id="modalUni">
+        <div class="modal-dialog">
+            <div class="modal-content custom-modal-content">
+                <form id="custom-modal-form" action="" method="post">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Ответить сообщение</h5>
+                        <button type="button"
+                                class="btn-close"
+                                aria-label="Close">&times;
+                        </button>
+                    </div>
+                    <div class="modal-body">
+
+                        {% csrf_token %}
+                        <input type="hidden" name="message_id" id="modal-hidden-id">
+                        {{ custom_form.as_p }}
+                        {{ custom_form.media }}
+
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary btn-close">
+                            Close
+                        </button>
+                        <input id="modal-form-input" type="submit" class="btn btn-dark" value="Отправить">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.open-custom-modal').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const id = this.dataset.id;
+                    const url = this.dataset.url;
+                    const modal = document.getElementById('modalUni');
+                    const form1 = document.getElementById('custom-modal-form');
+                    const hiddenInput = document.getElementById('modal-hidden-id');
+                    // Записываем id в скрытое поле
+                    hiddenInput.value = id;
+
+                    if (modal) {
+
+                        console.log("There is a modal");
+                        modal.style.display = 'block';
+                        console.log("modal.style.display = block");
+                    }
+                });
+            });
+
+            document.querySelectorAll('.btn-close').forEach(function (closeBtn) {
+                closeBtn.addEventListener('click', function () {
+                    const id = this.dataset.id;
+                    const modal = document.getElementById('modalUni');
+                    if (modal) modal.style.display = 'none';
+                });
+            });
+
+            // Закрытие при клике вне окна
+            window.addEventListener('click', function (event) {
+                document.querySelectorAll('.modal').forEach(function (modal) {
+                    if (event.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            });
+
+        });
+    </script>
+{% endblock %}
