@@ -53,20 +53,23 @@ def admin_dashboard_view(request):
     top_questions =  TelegramMessage.objects.filter(user__is_blocked=False)
     top_answers = TelegramMessage.objects.filter(answer__isnull=False)
     top_not_answered = TelegramMessage.objects.filter(answer__isnull=True, user__is_blocked=False)
+    top_users = TelegramUser.objects
 
     if start_date:
         # top_faq = top_faq.filter(created_at__date__gte=parse_date(start_date))
         top_questions = top_questions.filter(created_at__date__gte=parse_date(start_date))
         top_answers = top_answers.filter(created_at__date__gte=parse_date(start_date))
         top_not_answered = top_not_answered.filter(created_at__date__gte=parse_date(start_date))
+        top_users = top_users.filter(messages__created_at__date__gte=parse_date(start_date))
     if end_date:
         # top_faq = top_faq.filter(created_at__date__lte=parse_date(end_date))
         top_questions = top_questions.filter(created_at__date__lte=parse_date(end_date))
         top_answers = top_answers.filter(created_at__date__lte=parse_date(end_date))
         top_not_answered = top_not_answered.filter(created_at__date__lte=parse_date(end_date))
+        top_users = top_users.filter(messages__created_at__date__lte=parse_date(end_date))
 
     top_users = (
-        TelegramUser.objects
+        top_users
         .exclude(username="GroupAnonymousBot")
         .exclude(is_blocked=True)
         .annotate(message_count=models.Count("messages", distinct=True))
