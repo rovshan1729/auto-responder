@@ -46,10 +46,11 @@ def get_clean_sorted_text_list(text: str):
         while letter in text_list:
             text_list.remove(letter)
 
-    for i in range(len(text_list)):
-        _text = text_list[i]
-        if _text.endswith("ы"):
-            text_list[i] = _text[:-1]
+    for __ in ("а", "и", "ы"):
+        for i in range(len(text_list)):
+            _text = text_list[i]
+            if _text.endswith(__):
+                text_list[i] = _text[:-1]
 
     text_list.sort()
     return text_list

@@ -6,7 +6,7 @@ from tinymce.models import HTMLField
 from solo.models import SingletonModel
 
 from .base import BaseModel
-from .choices import ChatMemberStatus
+from .choices import ChatMemberStatus, GroupChoice
 from bot import utils
 
 
@@ -283,11 +283,17 @@ class TelegramCommand(BaseModel):
 
 
 class Mask(BaseModel):
-    groups = models.ManyToManyField(
-        TelegramGroup,
+    groups = ArrayField(
+        models.CharField(max_length=31, choices=GroupChoice.choices),
         blank=True,
-        related_name='masks',
+        null=True,
+        default=list
     )
+    # groups = models.ManyToManyField(
+    #     TelegramGroup,
+    #     blank=True,
+    #     related_name='masks',
+    # )
     text = models.CharField(
         max_length=4095,
         verbose_name="Текст"

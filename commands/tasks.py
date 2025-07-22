@@ -19,12 +19,16 @@ def update_chats():
             continue
 
         title = data.get("result", {}).get("title", None)
+        username = data.get("result", {}).get("username", None)
 
-        if not title:
-            continue
-        if chat.title != title:
+        if chat.title != title and title is not None:
             chat.title = title
 
-    TelegramGroup.objects.bulk_update(chats, ["title"])
+        if chat.username != username and username is not None:
+            chat.username = username
+
+
+
+    TelegramGroup.objects.bulk_update(chats, ["title", "username"])
 
 

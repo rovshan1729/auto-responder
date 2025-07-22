@@ -46,10 +46,10 @@ async def respond_handler(message: types.Message):
 
     username = message.from_user.username
     credential = username if username else message.from_user.id
-    group_id = message.chat.id
+    title = message.chat.title
 
     text_list = utils.get_clean_sorted_text_list(message.text)
-    mask = await utils.get_mask(text_list, credential, group_id)
+    mask = await utils.get_mask(text_list, credential, title)
 
     if mask is not None:
         await message.reply(mask.cleaned_content)

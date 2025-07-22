@@ -1,9 +1,7 @@
 from django.contrib import admin
 from django.contrib import messages
-from django.shortcuts import redirect
 from django.db.models import Count
 from django.template.loader import render_to_string
-from django.urls import reverse, path
 from django.utils.html import format_html
 
 from solo.admin import SingletonModelAdmin
@@ -11,7 +9,7 @@ from solo.admin import SingletonModelAdmin
 from bot import utils
 from bot.utils import methods
 from responder import models
-from responder.forms import ReplyMessageForm
+from responder.forms import ReplyMessageForm, MaskModelForm
 
 
 @admin.action(description="Установить командную меню бота")
@@ -164,6 +162,7 @@ class TelegramCommandAdmin(admin.ModelAdmin):
 
 @admin.register(models.Mask)
 class MaskAdmin(admin.ModelAdmin):
+    form = MaskModelForm
     list_display = ('id', 'text', 'created_at')
     list_display_links = ('id', 'text')
     search_fields = ("text",)
