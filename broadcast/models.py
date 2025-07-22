@@ -1,9 +1,11 @@
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils.timezone import now
 from tinymce.models import HTMLField
 
 from bot import utils
 from responder.base import BaseModel
+from responder.choices import GroupChoice
 from responder.models import TelegramGroup
 
 
@@ -64,20 +66,15 @@ class Broadcast(BaseModel):
         verbose_name="Прикрепляемые файлы",
         help_text="Не нужно, если выбран шаблон"
     )
-    groups = models.ManyToManyField(
-        TelegramGroup,
+    groups = ArrayField(
+        models.CharField(max_length=31, choices=GroupChoice.choices),
         blank=True,
-        related_name='broadcast_templates',
-        verbose_name="Телеграм группы",
+        null=True,
+        default=list
     )
     task_id = models.IntegerField(blank=True, null=True, editable=False)
     scheduled_at = models.DateTimeField(default=now, verbose_name="Расписание")
     percent = models.CharField(max_length=15, editable=False, verbose_name="Процент")
-    check_groups = models.BooleanField(
-        default=False,
-        verbose_name="Выбрать все группы",
-        help_text='Выбрать все группы, исключая “Archive”'
-    )
     is_sent = models.BooleanField(default=False, editable=False, verbose_name="Отправлено")
 
 
