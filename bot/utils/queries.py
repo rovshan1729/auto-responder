@@ -24,7 +24,7 @@ async def get_mask(text_list: str, credential: str | int, title: str = None):
             text_list=text_list
         ).first()
 
-        if title and mask.groups and not 'ВСЕ ГРУППЫ' in mask.groups:
+        if title and mask and mask.groups and not 'ВСЕ ГРУППЫ' in mask.groups:
             groups = [name.lower() for name in mask.groups]
 
             if not any(group in title.lower() for group in groups):
