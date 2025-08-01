@@ -58,7 +58,7 @@ def create_user_with_message(message_data: dict):
 
 @shared_task
 def create_user_with_message_on_group(message_data: dict):
-    print(f"{message_data['text'] = }")
+
     group = r_models.TelegramGroup.objects.filter(
         telegram_id=message_data['chat']['id']
     ).values_list('id', flat=True).first()
