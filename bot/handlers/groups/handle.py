@@ -10,8 +10,24 @@ async def track_actions_handler(message: types.Message, message_data: dict):
 
 
 async def listen_message_handler(message: types.Message, state: FSMContext):
-    message_data = message.model_dump(mode="json")
     # tasks.create_json_file.delay(message_data, 'message')
+
+    message_data = {
+        'chat': {
+            'id': message.chat.id,
+            'username': message.chat.username,
+            'title': message.chat.title,
+        },
+        'from_user': {
+            'id': message.from_user.id,
+            'username': message.from_user.username,
+            'first_name': message.from_user.first_name,
+            'last_name': message.from_user.last_name,
+        },
+        'text': message.text,
+        'message_id': message.message_id,
+
+    }
 
     data = await utils.get_data_model()
     await track_actions_handler(message, message_data)

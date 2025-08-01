@@ -34,7 +34,17 @@ async def respond_handler(message: types.Message):
     text_list = utils.get_clean_sorted_text_list(message.text)
     mask = await utils.get_mask(text_list, credential)
 
-    message_data = message.model_dump(mode="json")
+    message_data = {
+        'from_user': {
+            'id': message.from_user.id,
+            'username': message.from_user.username,
+            'first_name': message.from_user.first_name,
+            'last_name': message.from_user.last_name,
+        },
+        'text': message.text,
+        'message_id': message.message_id,
+    }
+
     await track_actions_handler(
         message,
         message_data=message_data
