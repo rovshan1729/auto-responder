@@ -15,4 +15,4 @@ echo "🧼 Сборка статики..."
 python manage.py collectstatic --noinput
 
 echo "🚀 Запуск Gunicorn..."
-exec gunicorn src.wsgi:application --bind 0.0.0.0:8022 --workers=4 --threads=2 --worker-class=gthread
+exec gunicorn src.wsgi:application --bind 0.0.0.0:8011 --workers=4 --threads=2 --worker-class=gthread

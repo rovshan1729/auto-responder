@@ -34,6 +34,7 @@ services:
       context: .
       dockerfile: ./Dockerfile
     container_name: autoresponder_web
+    restart: always
     security_opt:
       - seccomp:unconfined
     volumes:
