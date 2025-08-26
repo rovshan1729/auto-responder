@@ -17,6 +17,7 @@ class GroupChoice(TextChoices):
     CNY = 'CNY', 'CNY'
     GEL = 'GEL', 'GEL'
     AMD = 'AMD', 'AMD'
+    TRANSGRAN = 'TRANSGRAN', 'TRANSGRAN'
     ALL = 'ВСЕ ГРУППЫ',  'ВСЕ ГРУППЫ'
 
 
