@@ -27,8 +27,6 @@ def update_chats():
         if chat.username != username and username is not None:
             chat.username = username
 
-
-
     TelegramGroup.objects.bulk_update(chats, ["title", "username"])
 
 

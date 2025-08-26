@@ -24,6 +24,15 @@ def send_broadcast(broadcast_id: int):
         groups = TelegramGroup.objects.all().exclude(
             title__icontains="Archive"
         ).values_list('telegram_id', flat=True)
+
+
+    elif 'TRANSGRAN' in broadcast.groups:
+        groups = TelegramGroup.objects.filter(
+            title__icontains='rub_'
+        ).exclude(
+            title__icontains='Archive'
+        ).values_list('telegram_id', flat=True)
+
     else:
         query = Q()
         for name in broadcast.groups:
