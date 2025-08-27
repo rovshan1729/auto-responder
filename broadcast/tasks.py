@@ -39,7 +39,8 @@ def send_broadcast(broadcast_id: int):
             query |= Q(title__icontains=name)
 
         groups = TelegramGroup.objects.filter(query).exclude(
-            title__icontains="Archive"
+            Q(title__icontains="Archive")
+            | Q(title__icontains="rub_")
         ).values_list('telegram_id', flat=True)
 
 
