@@ -1,7 +1,8 @@
 import re
-import orjson
 import string
 import unicodedata
+
+import orjson
 from bs4 import BeautifulSoup
 
 PUNCTUATION_TRANSLATOR = str.maketrans('', '', string.punctuation + string.digits)
@@ -142,3 +143,7 @@ def clean_from_html_v3(text: str) -> str:
     return cleaned_text
 
 
+def is_valid_phone(phone: str) -> bool:
+    phone = phone.replace(" ", "").replace("-", "")
+    pattern = r"^\+?[1-9]\d{7,14}$"  # +XXXXXXXXX...
+    return bool(re.match(pattern, phone))
