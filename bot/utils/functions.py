@@ -145,5 +145,10 @@ def clean_from_html_v3(text: str) -> str:
 
 def is_valid_phone(phone: str) -> bool:
     phone = phone.replace(" ", "").replace("-", "")
-    pattern = r"^\+?[1-9]\d{7,14}$"  # +XXXXXXXXX...
+    pattern = r"^\+?[1-9]\d{7,14}$"
     return bool(re.match(pattern, phone))
+
+
+def is_valid_email(email: str) -> bool:
+    pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+    return bool(re.match(pattern, email))

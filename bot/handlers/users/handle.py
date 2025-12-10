@@ -95,22 +95,46 @@ async def get_phone_number_addition_handler(message: types.Message, state: FSMCo
 
     if text == "Пропускать":
         await state.update_data(add_phone=None)
+        await state.set_state(RegistrationState.email)
         await message.answer(
-            "Пропустили еще один номер!",
+            "Дополнительный номер пропущен!\n Введите адрес электронной почты",
             reply_markup=ReplyKeyboardRemove()
         )
-        await state.clear()
         return
 
-    if message.contact:
-        phone = message.contact.phone_number
-    else:
-        phone = text
+    phone = message.contact.phone_number if message.contact else "Нет"
 
-    phone_number = await state.get_data()
-    if not utils.is_valid_phone(phone) or phone_number["phone_number"] == phone:
-        return await message.answer("Неверный номер! Пожалуйста, отправьте повторно.",
-                                    reply_markup=ReplyKeyboardRemove())
+    user_data = await state.get_data()
+    main_phone = user_data.get("phone_number")
+
+    if (not utils.is_valid_phone(phone)) or (main_phone == phone):
+        return await message.answer(
+            "Неверный номер! Введите другой.",
+            reply_markup=ReplyKeyboardRemove()
+        )
 
     await state.update_data(add_phone=phone)
-    await message.answer("Дополнительный номер получен!", reply_markup=ReplyKeyboardRemove())
+    await state.set_state(RegistrationState.email)
+    await message.answer(
+        "Дополнительный номер получен! Теперь отправьте ваш адрес электронной почты:",
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+
+async def get_email_handler(message: types.Message, state: FSMContext):
+    email = message.text.strip()
+
+    if not utils.is_valid_email(email):
+        return await message.answer("❌ Email неверный! Повторите ввод.")
+
+    await state.update_data(email=email)
+    user_data = await state.get_data()
+
+    await message.answer(
+        f"Все данные получены!\n"
+        f"Основной номер: {user_data.get('phone_number')}\n"
+        f"Доп. номер: {user_data.get('add_phone')}\n"
+        f"Email: {email}"
+    )
+
+    await state.clear()

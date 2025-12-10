@@ -15,6 +15,7 @@ def prepare_router():
     router.message.register(kyc_command_handler, Command("kyc"))
     router.message.register(get_phone_number_keyboard_handler, RegistrationState.phone_number)
     router.message.register(get_phone_number_addition_handler, RegistrationState.addition_number)
+    router.message.register(get_email_handler, RegistrationState.email)
     router.message.register(command_handler, users.IsCommandFilter())
     router.message.register(respond_handler)
 
