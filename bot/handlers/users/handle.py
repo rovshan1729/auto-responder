@@ -6,7 +6,8 @@ from bot import utils
 # from bot.app import
 from bot.keyboards import reply
 from bot.states.states import RegistrationState
-from responder import tasks
+from responder import tasks, models
+from django.db.models import Q
 
 
 async def track_actions_handler(message: types.Message, message_data: dict):
@@ -125,16 +126,44 @@ async def get_email_handler(message: types.Message, state: FSMContext):
     email = message.text.strip()
 
     if not utils.is_valid_email(email):
-        return await message.answer("❌ Email неверный! Повторите ввод.")
+        return await message.answer("Email неверный! Повторите ввод.")
 
     await state.update_data(email=email)
-    user_data = await state.get_data()
-
+    await state.set_state(RegistrationState.token)
     await message.answer(
-        f"Все данные получены!\n"
-        f"Основной номер: {user_data.get('phone_number')}\n"
-        f"Доп. номер: {user_data.get('add_phone')}\n"
-        f"Email: {email}"
+        "Token nomini kiriting!"
     )
 
-    await state.clear()
+
+async def get_token_handler(message: types.Message, state: FSMContext):
+    token = message.text
+
+    group_token = models.TelegramGroup.objects.filter(username__contains=token)
+    if group_token.exists():
+        await state.update_data(token=group_token.first().username)
+        await message.answer("Отправьте никнейм тим-лида", reply_markup=reply.skip_button())
+        await state.set_state(RegistrationState.team_lead)
+    else:
+        return await message.answer("Проверьте правильность группы и повторите попытку!")
+
+
+async def get_team_lead_handler(message: types.Message, state: FSMContext):
+    text = message.text
+
+    if text == "Пропускать":
+        await state.update_data(team_lead=None)
+        await state.set_state(RegistrationState.email)
+        await message.answer(
+            "Введите никнеймы пользователей, которые могут дать о вас рекомендации"
+        )
+        return
+
+    team_lead = models.TelegramUser.objects.filter(Q(username=text) and Q(is_team_lead=True))
+    if team_lead.exists():
+        await state.update_data(team_lead=team_lead.first().username)
+        await message.answer(
+            "Введите никнеймы пользователей, которые могут дать о вас рекомендации"
+        )
+        await state.set_state(RegistrationState.referral_user)
+    else:
+        return await message.answer("Проверьте правильность группы и повторите попытку!")

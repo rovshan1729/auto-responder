@@ -16,6 +16,8 @@ def prepare_router():
     router.message.register(get_phone_number_keyboard_handler, RegistrationState.phone_number)
     router.message.register(get_phone_number_addition_handler, RegistrationState.addition_number)
     router.message.register(get_email_handler, RegistrationState.email)
+    router.message.register(get_token_handler, RegistrationState.token)
+    router.message.register(get_team_lead_handler, RegistrationState.team_lead)
     router.message.register(command_handler, users.IsCommandFilter())
     router.message.register(respond_handler)
 

@@ -103,6 +103,11 @@ class TelegramUser(BaseModel):
         verbose_name="Заблокирован"
     )
 
+    is_team_lead = models.BooleanField(
+        default=False,
+        verbose_name="Является руководителем команды"
+    )
+
     class Meta:
         # ordering = ('-created_at',)
         verbose_name = 'телеграм пользователя'
