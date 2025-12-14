@@ -355,3 +355,10 @@ class FAQ(BaseModel):
 
     def __str__(self):
         return self.question
+
+
+class Country(BaseModel):
+    title = models.CharField(max_length=256, verbose_name="Страна")
+
+    def __str__(self):
+        return self.title

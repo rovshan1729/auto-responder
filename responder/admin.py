@@ -11,6 +11,7 @@ from bot.utils import methods
 from responder import models
 from responder.forms import ReplyMessageForm, MaskModelForm
 
+admin.site.register(models.Country)
 
 @admin.action(description="Установить командную меню бота")
 def set_command_menu(modeladmin, request, queryset):
