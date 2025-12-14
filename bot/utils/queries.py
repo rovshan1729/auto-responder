@@ -79,3 +79,10 @@ async def remove_chat(chat_id: int):
 
 async def get_data_model():
     return r_models.Data.get_solo()
+
+def get_text(code):
+    obj, created = r_models.StaticText.objects.get_or_create(
+        code=code,
+        defaults={"text": code}
+    )
+    return obj.text.replace("\\n", "\n")

@@ -362,3 +362,11 @@ class Country(BaseModel):
 
     def __str__(self):
         return self.title
+
+
+class StaticText(BaseModel):
+    code = models.CharField(max_length=256, unique=True)
+    text = models.TextField()
+
+    def __str__(self):
+        return f"{self.code} - {self.text}"
