@@ -6,7 +6,7 @@ from tinymce.models import HTMLField
 from solo.models import SingletonModel
 
 from .base import BaseModel
-from .choices import ChatMemberStatus, GroupChoice
+from .choices import ChatMemberStatus, GroupChoice, VerificationStatusChoice
 from bot import utils
 
 
@@ -370,3 +370,48 @@ class StaticText(BaseModel):
 
     def __str__(self):
         return f"{self.code} - {self.text}"
+
+
+class Verification(BaseModel):
+    chat_id = models.CharField(max_length=128, unique=True)
+
+    fullname = models.CharField(max_length=255, null=True, blank=True)
+
+    live_address = models.TextField(null=True, blank=True)
+
+    phone_number = models.CharField(max_length=20, null=True, blank=True)
+    add_phone = models.CharField(max_length=20, null=True, blank=True)
+
+    email = models.EmailField()
+    experience = models.CharField(max_length=50, null=True, blank=True)
+
+    token = models.CharField(max_length=255, unique=True, null=True, blank=True)
+
+    team_lead = models.CharField(max_length=100, null=True, blank=True)
+    recommend_user = models.CharField(max_length=100, null=True, blank=True)
+
+    status = models.CharField(
+        max_length=50,
+        choices=VerificationStatusChoice.choices
+    )
+
+    geo = models.TextField(null=True, blank=True)
+    worked_platform = models.TextField(null=True, blank=True)
+    recommendation_user_contact = models.TextField(null=True, blank=True)
+    additionally = models.TextField(null=True, blank=True)
+    commentary = models.TextField(null=True, blank=True)
+
+    main_page_passport = models.ImageField(upload_to="verification/", null=True, blank=True)
+    registration_page_passport = models.ImageField(upload_to="verification/", null=True, blank=True)
+    additional_information_passport = models.ImageField(upload_to="verification/", null=True, blank=True)
+    round_video = models.FileField(upload_to="verification/", null=True, blank=True)
+
+    country = models.ForeignKey(
+        Country,
+        on_delete=models.CASCADE, null=True, blank=True
+    )
+
+
+
+    def __str__(self):
+        return f"{self.fullname} | {self.phone_number}"

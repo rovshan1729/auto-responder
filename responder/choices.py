@@ -18,6 +18,12 @@ class GroupChoice(TextChoices):
     GEL = 'GEL', 'GEL'
     AMD = 'AMD', 'AMD'
     TRANSGRAN = 'TRANSGRAN', 'TRANSGRAN'
-    ALL = 'ВСЕ ГРУППЫ',  'ВСЕ ГРУППЫ'
+    ALL = 'ВСЕ ГРУППЫ', 'ВСЕ ГРУППЫ'
 
 
+class VerificationStatusChoice(TextChoices):
+    NO_PASSED = "Не пройдено", "Не пройдено"
+    WAITING = "В ожидании", "В ожидании"
+    VERIFIED = "Верифицирован", "Верифицирован"
+    NoVERIFIED = "Не верифицирован", "Не верифицирован"
+    ARCHIVE = "Архив", "Архив"

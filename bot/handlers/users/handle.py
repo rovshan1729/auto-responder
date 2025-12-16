@@ -2,6 +2,8 @@ from aiogram import types, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import ReplyKeyboardRemove
 from django.db.models import Q
+from responder.choices import VerificationStatusChoice
+from asgiref.sync import sync_to_async
 
 from bot import utils
 from bot.keyboards import reply
@@ -94,7 +96,21 @@ async def get_phone_number_keyboard_handler(message: types.Message, state: FSMCo
             reply_markup=reply.phone_number_button()
         )
 
-    await state.update_data(phone_number=message.contact.phone_number)
+    phone_number = message.contact.phone_number
+
+    await state.update_data(phone_number=phone_number)
+
+    verification, created = await sync_to_async(
+        models.Verification.objects.get_or_create
+    )(
+        chat_id=str(message.from_user.id),
+        defaults={
+            "phone_number": phone_number,
+            "status": VerificationStatusChoice.NO_PASSED
+        }
+    )
+    await state.update_data(verification_id=verification.id)
+
     await state.set_state(RegistrationState.addition_number)
 
     await message.answer(
@@ -186,7 +202,7 @@ async def get_country_handler(message: types.Message, state: FSMContext):
     if not country:
         return await message.answer(utils.get_text("get_country_error"))
 
-    await state.update_data(country=country.title)
+    await state.update_data(country=country.pk)
     await state.set_state(RegistrationState.fullname)
 
     await message.answer(utils.get_text("get_country"), reply_markup=ReplyKeyboardRemove())
@@ -212,19 +228,20 @@ async def get_user_current_live_address_handler(message: types.Message, state: F
     if len(parts) < 7:
         return await message.answer(utils.get_text("get_current_live_address_error"))
 
-    await state.update_data(user_fullname=message.text)
+    await state.update_data(live_address=message.text)
     await state.set_state(RegistrationState.main_page_passport)
 
     await message.answer(utils.get_text("get_current_live_address"))
 
 
 async def _save_photo(message, state, field_name, bot: Bot):
-    if not message.photo:
-        return None
-
-    file = await bot.get_file(message.photo[-1].file_id)
-    await state.update_data({field_name: file})
-    return True
+    try:
+        file = await bot.get_file(message.photo[-1].file_id)
+        file_bytes = await message.bot.download_file(file.file_path)
+        await state.update_data({field_name: file_bytes})
+        return True
+    except Exception as e:
+        print(e)
 
 
 async def get_user_main_page_passport_handler(message, state, bot):
@@ -266,7 +283,7 @@ async def get_user_round_video_handler(message, state, bot):
         return await message.answer(utils.get_text("get_user_round_video_error"))
 
     file = await bot.get_file(message.video_note.file_id)
-    await state.update_data(round_video=file)
+    await state.update_data(round_video=file.file_path)
 
     await state.set_state(RegistrationState.geo)
     await message.answer(
@@ -308,36 +325,6 @@ async def get_user_worked_platform_handler(message, state):
 
 async def get_user_recommendation_user_contact_handler(message, state):
     await state.update_data(recommendation_user_contact=message.text)
-    data = await state.get_data()
-
-    text = f"""
-    📄 *Анкета пользователя*
-    
-    👤 *ФИО:* {data.get('fullname')}
-    📍 *Адрес:* {data.get('user_fullname')}
-    🌍 *Страна:* {data.get('country')}
-    
-    📱 *Основной номер:* {data.get('phone_number')}
-    📱 *Доп. номер:* {data.get('add_phone') or "нет"}
-    
-    📧 *Email:* {data.get('email')}
-    🔑 *Токен группы:* {data.get('token')}
-    👨‍💼 *Тимлид:* {data.get('team_lead')}
-    🤝 *Рекомендатель:* {data.get('recommend_user')}
-    
-    🛂 *Главная страница:* {data.get('main_page_passport')}
-    🛂 *Прописка:* {data.get('registration_page_passport')}
-    🛂 *Доп. инфо:* {data.get('additional_information_passport')}
-    
-    🎥 *Видео:* {data.get('round_video')}
-    
-    📌 *ГЕО:* {data.get('geo')}
-    💼 *Опыт:* {data.get('experience')}
-    🛠 *Платформы:* {data.get('worked_platform')}
-    📞 *Контакт рекомендателя:* {data.get('recommendation_user_contact')}
-    """
-
-    await message.answer(text)
     await message.answer(
         utils.get_text("get_recommendation_user_contact"),
         reply_markup=reply.verify_button()
@@ -346,9 +333,62 @@ async def get_user_recommendation_user_contact_handler(message, state):
     await state.set_state(RegistrationState.verify)
 
 
+from pprint import pprint as pp
+from django.core.files.base import ContentFile
+
+
 async def user_verification_handler(message, state):
     if message.text == "Перепройти верификацию":
-        await message.answer(utils.get_text("verification"), reply_markup=ReplyKeyboardRemove())
+        await message.answer(
+            utils.get_text("verification"),
+            reply_markup=ReplyKeyboardRemove()
+        )
+        try:
+            data = await state.get_data()
+            verification = await sync_to_async(models.Verification.objects.get)(
+                pk=data["verification_id"]
+            )
+            verification.phone_number = data.get("phone_number")
+            verification.add_phone = data.get("add_phone")
+            verification.email = data.get("email")
+            verification.token = data.get("token")
+            verification.team_lead = data.get("team_lead")
+            verification.recommend_user = data.get("recommend_user")
+            verification.country_id = data.get("country")
+            verification.fullname = data.get("fullname")
+            verification.live_address = data.get("live_address")
+            verification.geo = data.get("geo")
+            verification.experience = data.get("experience")
+            verification.worked_platform = data.get("worked_platform")
+            verification.recommendation_user_contact = data.get("recommendation_user_contact")
+            verification.status = VerificationStatusChoice.WAITING
+            verification.main_page_passport = ContentFile(
+                data["main_page_passport"].read(),
+                name=f"{verification.pk}_main_passport.jpg"
+            )
+            verification.registration_page_passport = ContentFile(
+                data["registration_page_passport"].read(),
+                name=f"{verification.pk}_registration_page_passport.jpg"
+            )
+            verification.additional_information_passport = ContentFile(
+                data["additional_information_passport"].read(),
+                name=f"{verification.pk}_additional_information_passport.jpg"
+            )
+            verification.round_video = ContentFile(
+                data["round_video"].read(),
+                name=f"{verification.pk}_round_video.mp4"
+            )
+            await sync_to_async(verification.save)()
+
+            pp(data)
+
+        except Exception as e:
+            print(e)
         return await state.clear()
 
-    return await message.answer(utils.get_text("verification_error"))
+    await state.clear()
+
+    await message.answer(
+        utils.get_text("verification_success"),
+        reply_markup=ReplyKeyboardRemove()
+    )

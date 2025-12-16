@@ -13,6 +13,8 @@ from responder.forms import ReplyMessageForm, MaskModelForm
 
 admin.site.register(models.Country)
 admin.site.register(models.StaticText)
+admin.site.register(models.Verification)
+
 
 @admin.action(description="Установить командную меню бота")
 def set_command_menu(modeladmin, request, queryset):
@@ -86,13 +88,12 @@ class TelegramGroupAdmin(admin.ModelAdmin):
         ).order_by('-count').prefetch_related("users")
 
 
-
 @admin.register(models.TelegramMessage)
 class TelegramMessageAdmin(admin.ModelAdmin):
     list_display = ('id', 'group', 'user', 'text', 'message_id', 'is_marked', 'created_at', "custom_btn")
     list_display_links = ('id', 'group', 'user', 'message_id')
-    readonly_fields = ('text_list', )
-    fields = ('group', 'user', 'text','text_list', 'message_id', 'is_marked', 'data')
+    readonly_fields = ('text_list',)
+    fields = ('group', 'user', 'text', 'text_list', 'message_id', 'is_marked', 'data')
     list_filter = (
         'is_marked',
         'group__title',
@@ -138,7 +139,6 @@ class TelegramMessageAdmin(admin.ModelAdmin):
         extra_context['custom_form'] = form
 
         return super().changelist_view(request, extra_context)
-
 
     def has_add_permission(self, request):
         return False
