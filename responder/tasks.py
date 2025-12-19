@@ -9,6 +9,10 @@ from responder import models as r_models
 from broadcast import models as b_models
 from bot import utils
 
+from django.utils import timezone
+from datetime import timedelta
+from responder.choices import VerificationStatusChoice
+
 BASE_DIR = settings.BASE_DIR
 
 logger = logging.getLogger(__name__)
@@ -58,7 +62,6 @@ def create_user_with_message(message_data: dict):
 
 @shared_task
 def create_user_with_message_on_group(message_data: dict):
-
     group = r_models.TelegramGroup.objects.filter(
         telegram_id=message_data['chat']['id']
     ).values_list('id', flat=True).first()
@@ -179,7 +182,7 @@ def create_faq(message_text: str, mask_id: int = None, telegram_id: int | str = 
 
 
 @shared_task
-def mark_message(message_id: int, sender_id: int | str, mask:str, where="private"):
+def mark_message(message_id: int, sender_id: int | str, mask: str, where="private"):
     time.sleep(5)
     if where == "private":
         message = r_models.TelegramMessage.objects.filter(
@@ -203,3 +206,18 @@ def mark_message(message_id: int, sender_id: int | str, mask:str, where="private
 def send_reply_message():
     pass
 
+
+@shared_task
+def send_expired_verification():
+    limit_date = timezone.now() - timedelta(seconds=1)
+
+    verification = r_models.Verification.objects.filter(updated_at__lt=limit_date).exclude(
+        status=VerificationStatusChoice.ARCHIVE
+    )
+    for verification in verification:
+        verification.status = VerificationStatusChoice.ARCHIVE
+        verification.save(update_fields=["status"])
+
+        if verification.chat_id:
+            utils.send_text(chat_id=verification.chat_id, text="⏳ Срок вашей верификации истёк. \n"
+                                                               "Пожалуйста, пройдите повторную верификацию, чтобы продолжить использование сервиса. \kyc")
