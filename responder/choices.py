@@ -27,3 +27,10 @@ class VerificationStatusChoice(TextChoices):
     VERIFIED = "Верифицирован", "Верифицирован"
     NoVERIFIED = "Не верифицирован", "Не верифицирован"
     ARCHIVE = "Архив", "Архив"
+
+
+class AdminFieldType(TextChoices):
+    TEXT = "text", "Текст"
+    NICKNAME = "nickname", "Никнейм"
+    FULLNAME = "fullname", "ФИО"
+    PHONE = "phone", "Номер телефона"

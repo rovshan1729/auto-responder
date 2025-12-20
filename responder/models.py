@@ -6,7 +6,8 @@ from tinymce.models import HTMLField
 from solo.models import SingletonModel
 
 from .base import BaseModel
-from .choices import ChatMemberStatus, GroupChoice, VerificationStatusChoice
+from .choices import ChatMemberStatus, GroupChoice, VerificationStatusChoice, AdminFieldType
+from responder.managers import CurrentVerificationManager, ArchivedVerificationManager
 from bot import utils
 
 
@@ -411,7 +412,63 @@ class Verification(BaseModel):
         on_delete=models.CASCADE, null=True, blank=True
     )
 
-
-
     def __str__(self):
         return f"{self.fullname} | {self.phone_number}"
+
+
+class AllVerification(Verification):
+    class Meta:
+        proxy = True
+        verbose_name = "Все верификации"
+        verbose_name_plural = "Все верификации"
+
+
+class CurrentVerification(Verification):
+    objects = CurrentVerificationManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "Текущие верификации"
+        verbose_name_plural = "Текущие верификации"
+
+
+class ArchivedVerification(Verification):
+    objects = ArchivedVerificationManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "Архив"
+        verbose_name_plural = "Архив"
+
+class VerificationAdminField(models.Model):
+    verification = models.ForeignKey(
+        Verification,
+        on_delete=models.CASCADE,
+        related_name="admin_fields"
+    )
+
+    label = models.CharField(
+        max_length=255,
+        verbose_name="Название поля"
+    )
+
+    field_type = models.CharField(
+        max_length=50,
+        choices=AdminFieldType.choices,
+        default=AdminFieldType.TEXT
+    )
+
+    value = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Значение"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Дополнительное поле"
+        verbose_name_plural = "Дополнительные поля"
+
+    def __str__(self):
+        return f"{self.label} ({self.get_field_type_display()})"

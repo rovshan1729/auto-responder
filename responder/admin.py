@@ -13,7 +13,36 @@ from responder.forms import ReplyMessageForm, MaskModelForm
 
 admin.site.register(models.Country)
 admin.site.register(models.StaticText)
-admin.site.register(models.Verification)
+
+
+class VerificationAdminFieldInline(admin.TabularInline):
+    model = models.VerificationAdminField
+    extra = 1
+    fields = ("label", "field_type", "value")
+
+
+@admin.register(models.AllVerification)
+class AllVerificationAdmin(admin.ModelAdmin):
+    list_display = ("fullname", "phone_number", "status", "country")
+    list_filter = ("status", "country")
+    search_fields = ("fullname", "phone_number", "email")
+    inlines = [VerificationAdminFieldInline]
+
+
+@admin.register(models.CurrentVerification)
+class CurrentVerificationAdmin(admin.ModelAdmin):
+    list_display = ("fullname", "phone_number", "status")
+    search_fields = ("fullname", "phone_number")
+    inlines = [VerificationAdminFieldInline]
+
+
+
+@admin.register(models.ArchivedVerification)
+class ArchivedVerificationAdmin(admin.ModelAdmin):
+    list_display = ("fullname", "phone_number", "status")
+    search_fields = ("fullname", "phone_number")
+    inlines = [VerificationAdminFieldInline]
+
 
 
 @admin.action(description="Установить командную меню бота")
