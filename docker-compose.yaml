@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:15
-    container_name: autoresponder_db
+    container_name: test_autoresponder_db
     env_file:
       - ./.env
     volumes:
@@ -16,12 +16,12 @@ services:
 
   redis:
     image: redis:7
-    container_name: autoresponder_redis
+    container_name: test_autoresponder_redis
     restart: always
 
   mq:
     image: rabbitmq:3-management
-    container_name: autoresponder_mq
+    container_name: test_autoresponder_mq
     restart: always
     env_file:
       - ./.env
@@ -33,8 +33,8 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-    container_name: autoresponder_web
     restart: always
+    container_name: test_autoresponder_web
     security_opt:
       - seccomp:unconfined
     volumes:
@@ -46,7 +46,7 @@ services:
     environment:
       - TZ=Asia/Tashkent
     ports:
-      - 8011:8011
+      - 8022:8022
     depends_on:
       - db
       - redis
@@ -56,7 +56,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-    container_name: autoresponder_bot
+    container_name: test_autoresponder_bot
     command: python manage.py runbot
     entrypoint: []
     volumes:
@@ -73,7 +73,7 @@ services:
     build:
       context: ./
       dockerfile: ./Dockerfile
-    container_name: autoresponder_celery
+    container_name: test_autoresponder_celery
     restart: always
     command: celery -A src worker --concurrency=10 --loglevel=INFO
     entrypoint: []
@@ -93,7 +93,7 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    container_name: autoresponder_beat
+    container_name: test_autoresponder_beat
     restart: always
     command: celery -A src beat -l INFO
     entrypoint: []
