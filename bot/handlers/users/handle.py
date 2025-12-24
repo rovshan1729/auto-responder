@@ -95,7 +95,7 @@ async def get_user_start_verification_handler(message: types.Message, state: FSM
 async def get_phone_number_keyboard_handler(message: types.Message, state: FSMContext):
     if not message.contact:
         return await message.answer(
-            utils.get_text("phone_number_request"),
+            utils.get_text("kyc_start_verification_prompt"),
             reply_markup=reply.phone_number_button()
         )
 
@@ -397,14 +397,19 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
             f"📌 <b>Статус:</b> {status}"
         )
         ADMIN_CHAT_ID = int(os.getenv("ADMIN"))
+        multi_files = []
         main_page_passport_id = data["main_page_passport_id"]
+        multi_files.append(main_page_passport_id)
         registration_page_passport_id = data["registration_page_passport_id"]
+        multi_files.append(registration_page_passport_id)
         additional_information_passport_id = data.get("additional_information_passport_id")
+        if additional_information_passport_id:
+            multi_files.append(additional_information_passport_id)
         round_video_id = data["round_video_id"]
         utils.send_file(ADMIN_CHAT_ID, file_type="video", file_id=round_video_id)
+
         utils.send_multi_file_by_file_id(ADMIN_CHAT_ID, file_type="photo",
-                                         file_ids=[main_page_passport_id, registration_page_passport_id,
-                                                   additional_information_passport_id])
+                                         file_ids=multi_files)
         utils.send_text(ADMIN_CHAT_ID, text=text, reply_markup=inliene.check_manager(message.from_user.id))
 
         verification.phone_number = phone_number
@@ -440,7 +445,7 @@ async def accept_handler(callback: types.CallbackQuery, state: FSMContext):
     if user:
         user.status = VerificationStatusChoice.VERIFIED
         user.save()
-    utils.send_text(chat_id, "Ваша верификация успешно обработана")
+    utils.send_text(chat_id, utils.get_text("accept_verification"))
 
 
 async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
@@ -461,7 +466,7 @@ async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
     }
     utils.send_text(
         chat_id,
-        "Проверка не подтверждена. Можете начать заново.",
+        utils.get_text("closed_verification"),
         reply_markup=keyboard
     )
 
