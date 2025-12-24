@@ -1,12 +1,15 @@
+from pyexpat.errors import messages
+
 from aiogram import types, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import ReplyKeyboardRemove
 from django.db.models import Q
 from responder.choices import VerificationStatusChoice
 from asgiref.sync import sync_to_async
+from django.core.files.base import ContentFile
 
 from bot import utils
-from bot.keyboards import reply
+from bot.keyboards import reply, inliene
 from bot.states.states import RegistrationState
 from responder import tasks, models
 
@@ -92,7 +95,7 @@ async def get_user_start_verification_handler(message: types.Message, state: FSM
 async def get_phone_number_keyboard_handler(message: types.Message, state: FSMContext):
     if not message.contact:
         return await message.answer(
-            utils.get_text("phone_number_request"),
+            utils.get_text("kyc_start_verification_prompt"),
             reply_markup=reply.phone_number_button()
         )
 
@@ -161,7 +164,7 @@ async def get_email_handler(message: types.Message, state: FSMContext):
 async def get_token_handler(message: types.Message, state: FSMContext):
     token = message.text.strip()
 
-    group = models.TelegramGroup.objects.filter(username__contains=token).first()
+    group = models.TelegramGroup.objects.filter(title__contains=token).first()
 
     if not group:
         return await message.answer(utils.get_text("token_invalid"))
@@ -178,14 +181,7 @@ async def get_team_lead_handler(message: types.Message, state: FSMContext):
         await state.set_state(RegistrationState.recommend_user)
         return await message.answer(utils.get_text("team_lead_skip"))
 
-    lead = models.TelegramUser.objects.filter(
-        Q(username=message.text) & Q(is_team_lead=True)
-    ).first()
-
-    if not lead:
-        return await message.answer(utils.get_text("team_lead_not_found"))
-
-    await state.update_data(team_lead=lead.username)
+    await state.update_data(team_lead=message.text)
     await state.set_state(RegistrationState.recommend_user)
     await message.answer(utils.get_text("team_lead_skip"))
 
@@ -211,7 +207,7 @@ async def get_country_handler(message: types.Message, state: FSMContext):
 async def get_user_fullname_handler(message: types.Message, state: FSMContext):
     parts = message.text.split()
 
-    if len(parts) < 3:
+    if len(parts) < 2:
         return await message.answer(utils.get_text("fullname_invalid"))
 
     await state.update_data(fullname=message.text)
@@ -223,9 +219,9 @@ async def get_user_fullname_handler(message: types.Message, state: FSMContext):
 
 
 async def get_user_current_live_address_handler(message: types.Message, state: FSMContext):
-    parts = message.text.split("-")
+    parts = message.text.split(" ")
 
-    if len(parts) < 7:
+    if len(parts) < 2:
         return await message.answer(utils.get_text("address_invalid"))
 
     await state.update_data(live_address=message.text)
@@ -238,7 +234,7 @@ async def _save_photo(message, state, field_name, bot: Bot):
     try:
         file = await bot.get_file(message.photo[-1].file_id)
         file_bytes = await message.bot.download_file(file.file_path)
-        await state.update_data({field_name: file_bytes})
+        await state.update_data({field_name: file_bytes, f"{field_name}_id": message.photo[-1].file_id})
         return True
     except Exception as e:
         print(e)
@@ -286,7 +282,7 @@ async def get_user_round_video_handler(message, state, bot):
         file = await bot.get_file(message.video_note.file_id)
         file_bytes = await bot.download_file(file.file_path)
 
-        await state.update_data(round_video=file_bytes)
+        await state.update_data(round_video=file_bytes, round_video_id=message.video_note.file_id)
         await state.set_state(RegistrationState.geo)
 
         await message.answer(utils.get_text("round_video_request"))
@@ -327,72 +323,151 @@ async def get_user_worked_platform_handler(message, state):
     await message.answer(utils.get_text("worked_platform_request"))
 
 
-async def get_user_recommendation_user_contact_handler(message, state):
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+async def get_user_recommendation_user_contact_handler(message: types.Message, state: FSMContext):
     await state.update_data(recommendation_user_contact=message.text)
     await message.answer(
-        utils.get_text("recommendation_contact_request"),
-        reply_markup=reply.verify_button()
+        utils.get_text("verification_success"),
     )
+    try:
+        data = await state.get_data()
 
-    await state.set_state(RegistrationState.verify)
-
-
-from pprint import pprint as pp
-from django.core.files.base import ContentFile
-
-
-async def user_verification_handler(message, state):
-    if message.text == "Перепройти верификацию":
-        await message.answer(
-            utils.get_text("verification_restart"),
-            reply_markup=ReplyKeyboardRemove()
+        verification = await sync_to_async(models.Verification.objects.get)(
+            pk=data["verification_id"]
         )
-        try:
-            data = await state.get_data()
-            verification = await sync_to_async(models.Verification.objects.get)(
-                pk=data["verification_id"]
-            )
-            verification.phone_number = data.get("phone_number")
-            verification.add_phone = data.get("add_phone")
-            verification.email = data.get("email")
-            verification.token = data.get("token")
-            verification.team_lead = data.get("team_lead")
-            verification.recommend_user = data.get("recommend_user")
-            verification.country_id = data.get("country")
-            verification.fullname = data.get("fullname")
-            verification.live_address = data.get("live_address")
-            verification.geo = data.get("geo")
-            verification.experience = data.get("experience")
-            verification.worked_platform = data.get("worked_platform")
-            verification.recommendation_user_contact = data.get("recommendation_user_contact")
-            verification.status = VerificationStatusChoice.WAITING
-            verification.main_page_passport = ContentFile(
+        phone_number = data.get("phone_number")
+        add_phone = data.get("add_phone")
+        email = data.get("email")
+        token = data.get("token")
+        team_lead = data.get("team_lead")
+        recommend_user = data.get("recommend_user")
+        country_id = data.get("country")
+        fullname = data.get("fullname")
+        live_address = data.get("live_address")
+        geo = data.get("geo")
+        experience = data.get("experience")
+        worked_platform = data.get("worked_platform")
+        recommendation_user_contact = data.get("recommendation_user_contact")
+        status = VerificationStatusChoice.WAITING
+        files = {}
+
+        if data.get("main_page_passport"):
+            files["main_page_passport"] = ContentFile(
                 data["main_page_passport"].read(),
                 name=f"{verification.pk}_main_passport.jpg"
             )
-            verification.registration_page_passport = ContentFile(
+
+        if data.get("registration_page_passport"):
+            files["registration_page_passport"] = ContentFile(
                 data["registration_page_passport"].read(),
                 name=f"{verification.pk}_registration_page_passport.jpg"
             )
-            verification.additional_information_passport = ContentFile(
+
+        if data.get("additional_information_passport"):
+            files["additional_information_passport"] = ContentFile(
                 data["additional_information_passport"].read(),
                 name=f"{verification.pk}_additional_information_passport.jpg"
             )
-            verification.round_video = ContentFile(
+
+        if data.get("round_video"):
+            files["round_video"] = ContentFile(
                 data["round_video"].read(),
                 name=f"{verification.pk}_round_video.mp4"
             )
-            await sync_to_async(verification.save)()
 
-            pp(data)
+        text = (
+            "🛂 <b>Новая заявка на верификацию</b>\n\n"
+            f"👤 <b>ФИО:</b> {fullname}\n"
+            f"📞 <b>Основной телефон:</b> {phone_number}\n"
+            f"📱 <b>Доп. телефон:</b> {add_phone}\n"
+            f"📧 <b>Email:</b> {email}\n"
+            f"🌍 <b>Страна ID:</b> {country_id}\n"
+            f"🏠 <b>Адрес проживания:</b> {live_address}\n"
+            f"📍 <b>Геолокация:</b> {geo}\n\n"
+            f"💼 <b>Опыт работы:</b> {experience}\n"
+            f"🧑‍💻 <b>Платформы:</b> {worked_platform}\n\n"
+            f"👨‍💼 <b>Team Lead:</b> {team_lead}\n"
+            f"⭐ <b>Рекомендовал:</b> {recommend_user}\n"
+            f"📞 <b>Контакт рекомендателя:</b> {recommendation_user_contact}\n\n"
+            f"📌 <b>Статус:</b> {status}"
+        )
+        ADMIN_CHAT_ID = int(os.getenv("ADMIN"))
+        multi_files = []
+        main_page_passport_id = data["main_page_passport_id"]
+        multi_files.append(main_page_passport_id)
+        registration_page_passport_id = data["registration_page_passport_id"]
+        multi_files.append(registration_page_passport_id)
+        additional_information_passport_id = data.get("additional_information_passport_id")
+        if additional_information_passport_id:
+            multi_files.append(additional_information_passport_id)
+        round_video_id = data["round_video_id"]
+        utils.send_file(ADMIN_CHAT_ID, file_type="video", file_id=round_video_id)
 
-        except Exception as e:
-            print(e)
-        return await state.clear()
+        utils.send_multi_file_by_file_id(ADMIN_CHAT_ID, file_type="photo",
+                                         file_ids=multi_files)
+        utils.send_text(ADMIN_CHAT_ID, text=text, reply_markup=inliene.check_manager(message.from_user.id))
+
+        verification.phone_number = phone_number
+        verification.add_phone = add_phone
+        verification.email = email
+        verification.token = token
+        verification.team_lead = team_lead
+        verification.recommend_user = recommend_user
+        verification.recommendation_user_contact = recommendation_user_contact
+        verification.status = status
+        verification.main_page_passport = files.get("main_page_passport")
+        verification.registration_page_passport = files.get("registration_page_passport")
+        verification.additional_information_passport = files.get("additional_information_passport")
+        verification.round_video = files.get("round_video")
+        verification.country_id = country_id
+        verification.fullname = fullname
+        verification.live_address = live_address
+        verification.geo = geo
+        verification.experience = experience
+        verification.worked_platform = worked_platform
+
+        await sync_to_async(verification.save)()
+
+    except Exception as e:
+        print("error:", e)
+
+    return await state.clear()
+
+
+async def accept_handler(callback: types.CallbackQuery, state: FSMContext):
+    chat_id = callback.data.split("|")[1]
+    user = models.Verification.objects.filter(chat_id=chat_id).first()
+    if user:
+        user.status = VerificationStatusChoice.VERIFIED
+        user.save()
+    utils.send_text(chat_id, utils.get_text("accept_verification"))
+
+
+async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
+    chat_id = int(callback.data.split("|")[1])
+
+    user = models.Verification.objects.filter(chat_id=chat_id).first()
+    if user:
+        user.status = VerificationStatusChoice.NoVERIFIED
+        user.save()
 
     await state.clear()
-
-    await message.answer(
-        utils.get_text("verification_success"),
-        reply_markup=ReplyKeyboardRemove()
+    await state.set_state(RegistrationState.start)
+    keyboard = {
+        "keyboard": [
+            [{"text": "Приступить к верификации"}]
+        ],
+        "resize_keyboard": True
+    }
+    utils.send_text(
+        chat_id,
+        utils.get_text("closed_verification"),
+        reply_markup=keyboard
     )
+
+    await callback.answer()

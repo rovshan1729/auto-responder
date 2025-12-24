@@ -22,4 +22,3 @@ class RegistrationState(StatesGroup):
     experience = State()
     worked_platform = State()
     recommendation_user_contact = State()
-    verify = State()

@@ -32,11 +32,12 @@ def prepare_router():
     router.message.register(get_user_experience_handler, RegistrationState.experience)
     router.message.register(get_user_worked_platform_handler, RegistrationState.worked_platform)
     router.message.register(get_user_recommendation_user_contact_handler, RegistrationState.recommendation_user_contact)
-    router.message.register(user_verification_handler, RegistrationState.verify)
 
 
 
     router.message.register(command_handler, users.IsCommandFilter())
+    router.callback_query.register(accept_handler, F.data.split("|")[0] == "accepted")
+    router.callback_query.register(closed_handler, F.data.split("|")[0] == "closed")
     router.message.register(respond_handler)
 
     return router
