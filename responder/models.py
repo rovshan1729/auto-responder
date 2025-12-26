@@ -372,6 +372,7 @@ class Verification(BaseModel):
     chat_id = models.CharField(max_length=128, unique=True)
 
     fullname = models.CharField(max_length=255, null=True, blank=True)
+    username = models.CharField(max_length=255, unique=True, null=True, blank=True)
 
     live_address = models.TextField(null=True, blank=True)
 
@@ -406,6 +407,7 @@ class Verification(BaseModel):
         Country,
         on_delete=models.CASCADE, null=True, blank=True
     )
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.fullname} | {self.phone_number}"

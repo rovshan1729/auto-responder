@@ -7,6 +7,8 @@ from django.db.models import Q
 from responder.choices import VerificationStatusChoice
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
+from datetime import timedelta
+from django.utils import timezone
 
 from bot import utils
 from bot.keyboards import reply, inliene
@@ -169,7 +171,7 @@ async def get_token_handler(message: types.Message, state: FSMContext):
     if not group:
         return await message.answer(utils.get_text("token_invalid"))
 
-    await state.update_data(token=group.username)
+    await state.update_data(token=group.title)
     await state.set_state(RegistrationState.team_lead)
 
     await message.answer(utils.get_text("token_request"), reply_markup=reply.skip_button())
@@ -406,12 +408,18 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
         if additional_information_passport_id:
             multi_files.append(additional_information_passport_id)
         round_video_id = data["round_video_id"]
+        group = models.TelegramGroup.objects.filter(title__contains=token).first()
         utils.send_file(ADMIN_CHAT_ID, file_type="video", file_id=round_video_id)
 
         utils.send_multi_file_by_file_id(ADMIN_CHAT_ID, file_type="photo",
                                          file_ids=multi_files)
         utils.send_text(ADMIN_CHAT_ID, text=text, reply_markup=inliene.check_manager(message.from_user.id))
+        # utils.send_multi_file_by_file_id(group.telegram_id, file_type="photo",
+        #                                  file_ids=multi_files)
+        # utils.send_file(group.telegram_id, file_type="video", file_id=round_video_id)
+        # utils.send_text(group.telegram_id, text=text, reply_markup=inliene.check_manager(message.from_user.id))
 
+        verification.username = message.chat.username
         verification.phone_number = phone_number
         verification.add_phone = add_phone
         verification.email = email
@@ -441,33 +449,82 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
 
 async def accept_handler(callback: types.CallbackQuery, state: FSMContext):
     chat_id = callback.data.split("|")[1]
+
     user = models.Verification.objects.filter(chat_id=chat_id).first()
-    if user:
-        user.status = VerificationStatusChoice.VERIFIED
-        user.save()
-    utils.send_text(chat_id, utils.get_text("accept_verification"))
+    if not user:
+        return
+
+    # 🔹 Expiration time (updated_at + 90 дней)
+    base_time = user.updated_at or timezone.now()
+    user.expires_at = base_time + timedelta(days=90)
+    user.status = VerificationStatusChoice.VERIFIED
+    user.save(update_fields=["expires_at", "status"])
+
+    username = user.fullname or f"@{callback.from_user.username}"
+    expired_at = user.expires_at.strftime("%d.%m.%Y %H:%M")
+    token = user.token
+    group = models.TelegramGroup.objects.filter(title__contains=token).first()
+    user_text = (
+        "✅ <b>Верификация подтверждена</b>\n\n"
+        f"👤 Пользователь: {username}\n"
+        f"⏳ Срок действия: <b>{expired_at}</b>\n\n"
+        "Теперь вы можете пользоваться сервисом без ограничений."
+    )
+    utils.send_text(user.chat_id, user_text)
+    group_text = (
+        "🟢 <b>Верификация подтверждена</b>\n\n"
+        f"👤 Пользователь: {username}\n"
+        f"📞 Телефон: {user.phone_number}\n"
+        f"🌍 Страна: {user.country}\n"
+        f"⏳ Действует до: <b>{expired_at}</b>"
+    )
+    utils.send_text(group.telegram_id, group_text)
 
 
 async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
     chat_id = int(callback.data.split("|")[1])
 
     user = models.Verification.objects.filter(chat_id=chat_id).first()
-    if user:
-        user.status = VerificationStatusChoice.NoVERIFIED
-        user.save()
+    if not user:
+        return
 
-    await state.clear()
-    await state.set_state(RegistrationState.start)
+    user.status = VerificationStatusChoice.NoVERIFIED
+    user.save(update_fields=["expires_at", "status"])
+    token = user.token
+
     keyboard = {
         "keyboard": [
             [{"text": "Приступить к верификации"}]
         ],
         "resize_keyboard": True
     }
+
+    username = user.fullname or f"@{callback.from_user.username}"
+    user_text = (
+        "❌ <b>Верификация не подтверждена</b>\n\n"
+        "К сожалению, ваша верификация была отклонена.\n"
+        "Вы можете начать процесс заново."
+    )
+
     utils.send_text(
         chat_id,
-        utils.get_text("closed_verification"),
+        user_text,
         reply_markup=keyboard
     )
+
+    group_text = (
+        "🔴 <b>Верификация отклонена</b>\n\n"
+        f"👤 Пользователь: {username}\n"
+        f"📞 Телефон: {user.phone_number}\n"
+        f"🌍 Страна: {user.country}\n"
+        f"📌 Статус: <b>Отклонена</b>"
+    )
+
+    group = models.TelegramGroup.objects.filter(title__contains=token).first()
+
+    utils.send_text(group.telegram_id, group_text)
+
+    await state.clear()
+    await state.set_state(RegistrationState.start)
 
     await callback.answer()

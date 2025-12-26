@@ -39,7 +39,9 @@ class AllVerificationAdmin(admin.ModelAdmin, mixins.VerificationAdminMixin):
 
     fieldsets = (
         ("User info", {
-            "fields": ("fullname", "phone_number", "email", "status")
+            "fields": ("chat_id", "fullname", "username", "live_address", "phone_number", "add_phone", "email",
+                       "experience", "token", "team_lead", "recommend_user", "status", "geo", "worked_platform",
+                       "recommendation_user_contact", "additionally", "commentary", "country", "expires_at")
         }),
         ("Documents", {
             "fields": (
@@ -76,7 +78,9 @@ class CurrentVerificationAdmin(admin.ModelAdmin, mixins.VerificationAdminMixin):
 
     fieldsets = (
         ("User info", {
-            "fields": ("fullname", "phone_number", "email", "status")
+            "fields": ("chat_id", "fullname", "username", "live_address", "phone_number", "add_phone", "email",
+                       "experience", "token", "team_lead", "recommend_user", "status", "geo", "worked_platform",
+                       "recommendation_user_contact", "additionally", "commentary", "country", "expires_at")
         }),
         ("Documents", {
             "fields": (
@@ -113,7 +117,9 @@ class ArchivedVerificationAdmin(admin.ModelAdmin, mixins.VerificationAdminMixin)
 
     fieldsets = (
         ("User info", {
-            "fields": ("fullname", "phone_number", "email", "status")
+            "fields": ("chat_id", "fullname", "username", "live_address", "phone_number", "add_phone", "email",
+                       "experience", "token", "team_lead", "recommend_user", "status", "geo", "worked_platform",
+                       "recommendation_user_contact", "additionally", "commentary", "country", "expires_at")
         }),
         ("Documents", {
             "fields": (
