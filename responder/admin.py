@@ -8,7 +8,7 @@ from solo.admin import SingletonModelAdmin
 
 from bot import utils
 from bot.utils import methods
-from responder import models
+from responder import models, mixins
 from responder.forms import ReplyMessageForm, MaskModelForm
 
 admin.site.register(models.Country)
@@ -22,27 +22,120 @@ class VerificationAdminFieldInline(admin.TabularInline):
 
 
 @admin.register(models.AllVerification)
-class AllVerificationAdmin(admin.ModelAdmin):
-    list_display = ("fullname", "phone_number", "status", "country")
-    list_filter = ("status", "country")
-    search_fields = ("fullname", "phone_number", "email")
+class AllVerificationAdmin(admin.ModelAdmin, mixins.VerificationAdminMixin):
+    list_display = (
+        "fullname",
+        "phone_number",
+        "status",
+        "country",
+    )
+
+    readonly_fields = (
+        "main_passport_preview",
+        "registration_passport_preview",
+        "additional_passport_preview",
+        "round_video_preview",
+    )
+
+    fieldsets = (
+        ("User info", {
+            "fields": ("chat_id", "fullname", "username", "live_address", "phone_number", "add_phone", "email",
+                       "experience", "token", "team_lead", "recommend_user", "status", "geo", "worked_platform",
+                       "recommendation_user_contact", "additionally", "commentary", "country", "expires_at")
+        }),
+        ("Documents", {
+            "fields": (
+                "main_page_passport",
+                "main_passport_preview",
+                "registration_page_passport",
+                "registration_passport_preview",
+                "additional_information_passport",
+                "additional_passport_preview",
+                "round_video",
+                "round_video_preview",
+            )
+        }),
+    )
+
     inlines = [VerificationAdminFieldInline]
 
 
 @admin.register(models.CurrentVerification)
-class CurrentVerificationAdmin(admin.ModelAdmin):
-    list_display = ("fullname", "phone_number", "status")
-    search_fields = ("fullname", "phone_number")
-    inlines = [VerificationAdminFieldInline]
+class CurrentVerificationAdmin(admin.ModelAdmin, mixins.VerificationAdminMixin):
+    list_display = (
+        "fullname",
+        "phone_number",
+        "status",
+        "country",
+    )
 
+    readonly_fields = (
+        "main_passport_preview",
+        "registration_passport_preview",
+        "additional_passport_preview",
+        "round_video_preview",
+    )
+
+    fieldsets = (
+        ("User info", {
+            "fields": ("chat_id", "fullname", "username", "live_address", "phone_number", "add_phone", "email",
+                       "experience", "token", "team_lead", "recommend_user", "status", "geo", "worked_platform",
+                       "recommendation_user_contact", "additionally", "commentary", "country", "expires_at")
+        }),
+        ("Documents", {
+            "fields": (
+                "main_page_passport",
+                "main_passport_preview",
+                "registration_page_passport",
+                "registration_passport_preview",
+                "additional_information_passport",
+                "additional_passport_preview",
+                "round_video",
+                "round_video_preview",
+            )
+        }),
+    )
+
+    inlines = [VerificationAdminFieldInline]
 
 
 @admin.register(models.ArchivedVerification)
-class ArchivedVerificationAdmin(admin.ModelAdmin):
-    list_display = ("fullname", "phone_number", "status")
-    search_fields = ("fullname", "phone_number")
-    inlines = [VerificationAdminFieldInline]
+class ArchivedVerificationAdmin(admin.ModelAdmin, mixins.VerificationAdminMixin):
+    list_display = (
+        "fullname",
+        "phone_number",
+        "status",
+        "country",
+    )
 
+    readonly_fields = (
+        "main_passport_preview",
+        "registration_passport_preview",
+        "additional_passport_preview",
+        "round_video_preview",
+    )
+
+    fieldsets = (
+        ("User info", {
+            "fields": ("chat_id", "fullname", "username", "live_address", "phone_number", "add_phone", "email",
+                       "experience", "token", "team_lead", "recommend_user", "status", "geo", "worked_platform",
+                       "recommendation_user_contact", "additionally", "commentary", "country", "expires_at")
+        }),
+        ("Documents", {
+            "fields": (
+                "main_page_passport",
+                "main_passport_preview",
+                "registration_page_passport",
+                "registration_passport_preview",
+                "additional_information_passport",
+                "additional_passport_preview",
+                "round_video",
+                "round_video_preview",
+            )
+        }),
+    )
+
+    inlines = [VerificationAdminFieldInline]
 
 
 @admin.action(description="Установить командную меню бота")
