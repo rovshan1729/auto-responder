@@ -432,7 +432,6 @@ LOGGING = {
     },
 }
 
-
 sentry_sdk.init(
     dsn="https://09bbc66c6a6a0865740aea0db3187fce@o4509489682710528.ingest.de.sentry.io/4509489684349008",
     integrations=[DjangoIntegration()],
@@ -440,4 +439,8 @@ sentry_sdk.init(
     send_default_pii=True
 )
 
-
+TG_API_ID = 38342282
+TG_API_HASH="e643bad3f7f696e73d7d923480f1896d"
+TG_PHONE_NUMBER="+998978605558"
+TG_BOT_TOKEN="5838680373:AAEUH64dgTwI6659ZZKeRhkVq1Y43951EA8"
+TG_GROUP_ID=-1003425468842

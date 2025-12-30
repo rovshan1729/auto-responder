@@ -356,58 +356,75 @@ class FAQ(BaseModel):
 class Country(BaseModel):
     title = models.CharField(max_length=256, verbose_name="Страна")
 
+    class Meta:
+        verbose_name = "Страна"
+        verbose_name_plural = "Страны"
+
     def __str__(self):
         return self.title
 
 
 class StaticText(BaseModel):
-    code = models.CharField(max_length=256, unique=True)
-    text = models.TextField()
+    code = models.CharField(max_length=256, unique=True, verbose_name="Код")
+    text = models.TextField(verbose_name="Текст")
+
+    class Meta:
+        verbose_name = "Статический текст"
+        verbose_name_plural = "Статические тексты"
 
     def __str__(self):
         return f"{self.code} - {self.text}"
 
 
 class Verification(BaseModel):
-    chat_id = models.CharField(max_length=128, unique=True)
+    chat_id = models.CharField(max_length=128, verbose_name="Chat ID")
 
-    fullname = models.CharField(max_length=255, null=True, blank=True)
-    username = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    fullname = models.CharField(max_length=255, null=True, blank=True, verbose_name="ФИО")
+    username = models.CharField(max_length=255, null=True, blank=True, verbose_name="Имя пользователя")
 
-    live_address = models.TextField(null=True, blank=True)
+    live_address = models.TextField(null=True, blank=True, verbose_name="Адрес проживания")
 
-    phone_number = models.CharField(max_length=20, null=True, blank=True)
-    add_phone = models.CharField(max_length=20, null=True, blank=True)
+    phone_number = models.CharField(max_length=20, null=True, blank=True, verbose_name="Номер телефона")
+    add_phone = models.CharField(max_length=20, null=True, blank=True, verbose_name="Дополнительный телефон")
 
-    email = models.EmailField()
-    experience = models.CharField(max_length=50, null=True, blank=True)
+    email = models.EmailField(verbose_name="Email")
+    experience = models.CharField(max_length=50, null=True, blank=True, verbose_name="Опыт работы")
 
-    token = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    token = models.CharField(max_length=255, null=True, blank=True, verbose_name="Токен")
 
-    team_lead = models.CharField(max_length=100, null=True, blank=True)
-    recommend_user = models.CharField(max_length=100, null=True, blank=True)
+    team_lead = models.CharField(max_length=100, null=True, blank=True, verbose_name="Тимлид")
+    recommend_user = models.CharField(max_length=100, null=True, blank=True, verbose_name="Рекомендовал")
 
     status = models.CharField(
         max_length=50,
-        choices=VerificationStatusChoice.choices
+        choices=VerificationStatusChoice.choices,
+        verbose_name="Статус верификации"
     )
 
-    geo = models.TextField(null=True, blank=True)
-    worked_platform = models.TextField(null=True, blank=True)
-    recommendation_user_contact = models.TextField(null=True, blank=True)
-    additionally = models.TextField(null=True, blank=True)
-    commentary = models.TextField(null=True, blank=True)
+    geo = models.TextField(null=True, blank=True, verbose_name="Геолокация")
+    worked_platform = models.TextField(null=True, blank=True, verbose_name="Рабочие платформы")
+    recommendation_user_contact = models.TextField(null=True, blank=True, verbose_name="Контакт рекомендателя")
+    additionally = models.TextField(null=True, blank=True, verbose_name="Дополнительная информация")
+    commentary = models.TextField(null=True, blank=True, verbose_name="Комментарий администратора")
 
-    main_page_passport = models.ImageField(upload_to="verification/", null=True, blank=True)
-    registration_page_passport = models.ImageField(upload_to="verification/", null=True, blank=True)
-    additional_information_passport = models.ImageField(upload_to="verification/", null=True, blank=True)
-    round_video = models.FileField(upload_to="verification/", null=True, blank=True)
+    main_page_passport = models.ImageField(upload_to="verification/", null=True, blank=True,
+                                           verbose_name="Паспорт (главная страница)")
+    registration_page_passport = models.ImageField(upload_to="verification/", null=True, blank=True,
+                                                   verbose_name="Паспорт (страница регистрации)")
+    additional_information_passport = models.ImageField(upload_to="verification/", null=True, blank=True,
+                                                        verbose_name="Паспорт (дополнительная информация)")
+    round_video = models.FileField(upload_to="verification/", null=True, blank=True, verbose_name="Видео-круг")
 
     country = models.ForeignKey(
         Country,
-        on_delete=models.CASCADE, null=True, blank=True
+        on_delete=models.CASCADE, null=True, blank=True, verbose_name="Страна"
     )
-    expires_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True, verbose_name="Срок действия")
+    is_blacklisted = models.BooleanField(default=False, verbose_name="В черном списке")
+
+    class Meta:
+        verbose_name = "Верификация"
+        verbose_name_plural = "Верификации"
 
     def __str__(self):
         return f"{self.fullname} | {self.phone_number}"

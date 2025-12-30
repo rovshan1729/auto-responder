@@ -4,6 +4,7 @@ import logging
 
 from celery import shared_task
 from django.conf import settings
+from pyrogram import Client
 
 from responder import models as r_models
 from broadcast import models as b_models
@@ -221,3 +222,27 @@ def send_expired_verification():
         if verification.chat_id:
             utils.send_text(chat_id=verification.chat_id, text="⏳ Срок вашей верификации истёк. \n"
                                                                "Пожалуйста, пройдите повторную верификацию, чтобы продолжить использование сервиса. \kyc")
+
+
+from .services import sync_group_users
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    retry_kwargs={"max_retries": 3, "countdown": 30},
+)
+def sync_telegram_group_blacklist_task(self):
+    groups = r_models.TelegramGroup.objects.filter(is_active=True)
+
+    group_telegram_ids = sync_group_users(groups)
+
+    r_models.Verification.objects.exclude(
+        chat_id__in=group_telegram_ids
+    ).update(is_blacklisted=False)
+
+    return {
+        "groups": groups.count(),
+        "group_users": len(group_telegram_ids),
+        "blacklisted": r_models.Verification.objects.filter(is_blacklisted=True).count(),
+    }
