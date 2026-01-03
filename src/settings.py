@@ -169,7 +169,15 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_EXTENDED = True
 CELERY_TIMEZONE = TIME_ZONE
-
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://localhost:6379/2",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
 # Tiny settings
 TINYMCE_DEFAULT_CONFIG = {
     "height": "320px",
@@ -408,7 +416,6 @@ JAZZMIN_UI_TWEAKS = {
     }
 }
 
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -438,9 +445,3 @@ sentry_sdk.init(
     traces_sample_rate=1.0,
     send_default_pii=True
 )
-
-TG_API_ID = 38342282
-TG_API_HASH="e643bad3f7f696e73d7d923480f1896d"
-TG_PHONE_NUMBER="+998978605558"
-TG_BOT_TOKEN="5838680373:AAEUH64dgTwI6659ZZKeRhkVq1Y43951EA8"
-TG_GROUP_ID=-1003425468842

@@ -1,12 +1,15 @@
-# telegram_app/client.py
 from pyrogram import Client
-from django.conf import settings
+from environs import Env
 
-bot_app = Client(
-    name="telegram_session",
-    api_id=settings.TG_API_ID,
-    api_hash=settings.TG_API_HASH,
-    bot_token=getattr(settings, "TG_BOT_TOKEN", None),
-    workdir="sessions",
-    in_memory=False
-)
+env = Env()
+env.read_env()
+
+
+def build_client() -> Client:
+    return Client(
+        name="user_session",
+        api_id=env.int("TG_API_ID"),
+        api_hash=env.str("TG_API_HASH"),
+        session_string=env.str("TG_SESSION_STRING"),
+        in_memory=True,
+    )

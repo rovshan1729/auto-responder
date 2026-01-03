@@ -1,38 +1,55 @@
-from .client import bot_app
+from pyrogram import Client
+from pyrogram.enums import ChatType
+
 from responder import models as r_models
+from responder.choices import VerificationStatusChoice
 
 
-def sync_group_users(groups):
+async def sync_group_users(client: Client, groups):
+    print("=== SYNC STARTED ===")
+
     group_telegram_ids = set()
 
-    if not bot_app.is_connected:
-        bot_app.start()
+    me = await client.get_me()
+    print("SESSION USER:", me.id, me.username)
 
-    for group in groups:
-        try:
-            chat = bot_app.get_chat(group.telegram_id)
-            for member in bot_app.get_chat_members(chat.id):
-                user = member.user
-                if not user or user.is_bot:
-                    continue
+    group_ids = {int(g.telegram_id) for g in groups}
 
-                telegram_id = str(user.id)
-                group_telegram_ids.add(telegram_id)
+    async for dialog in client.get_dialogs():
+        chat = dialog.chat
 
-                verification, created = r_models.Verification.objects.get_or_create(
-                    chat_id=telegram_id,
-                    defaults={
-                        "username": user.username,
-                        "is_blacklisted": False,
-                    }
-                )
+        if chat.id not in group_ids:
+            continue
 
-                if not created:
-                    verification.username = user.username or verification.username
-                    verification.is_blacklisted = bool(verification.username)
-                    verification.save(update_fields=["username", "is_blacklisted"])
+        if chat.type not in (ChatType.GROUP, ChatType.SUPERGROUP):
+            continue
 
-        except Exception as e:
-            print(f"[Group {group.telegram_id}] error:", e)
+        async for member in client.get_chat_members(chat.id):
+            user = member.user
+            if not user or user.is_bot:
+                continue
+
+            telegram_id = str(user.id)
+            group_telegram_ids.add(telegram_id)
+
+            verification, created = r_models.Verification.objects.get_or_create(
+                chat_id=user.id,
+                defaults={
+                    "is_blacklisted": True,
+                    "status": VerificationStatusChoice.NoVERIFIED,
+                }
+            )
+
+            if created:
+                continue
+
+            is_verified = (
+                    verification.fullname and
+                    verification.phone_number and
+                    verification.status == VerificationStatusChoice.VERIFIED
+            )
+
+            verification.is_blacklisted = not is_verified
+            verification.save(update_fields=["is_blacklisted"])
 
     return group_telegram_ids
