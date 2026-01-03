@@ -12,6 +12,6 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     "run-every-hour-task": {
         "task": "responder.tasks.trigger_telegram_sync",
-        "schedule": timedelta(minutes=2),
+        "schedule": timedelta(hours=2),
     }
 }
