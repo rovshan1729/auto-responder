@@ -4,6 +4,7 @@ import logging
 
 from celery import shared_task
 from django.conf import settings
+from django.core.cache import cache
 
 from responder import models as r_models
 from broadcast import models as b_models
@@ -221,3 +222,9 @@ def send_expired_verification():
         if verification.chat_id:
             utils.send_text(chat_id=verification.chat_id, text="⏳ Срок вашей верификации истёк. \n"
                                                                "Пожалуйста, пройдите повторную верификацию, чтобы продолжить использование сервиса. \kyc")
+
+
+@shared_task
+def sync_telegram_group_blacklist_task():
+    cache.set("telegram_sync_required", True, timeout=120)
+    return "signal sent"
