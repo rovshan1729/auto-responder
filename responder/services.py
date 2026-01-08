@@ -3,7 +3,11 @@ from pyrogram.enums import ChatType
 
 from responder import models as r_models
 from responder.choices import VerificationStatusChoice
+from django.db.models import Q
+from environs import Env
 
+env = Env()
+env.read_env()
 
 async def sync_group_users(client: Client, groups):
     print("=== SYNC STARTED ===")
@@ -25,31 +29,53 @@ async def sync_group_users(client: Client, groups):
             continue
 
         async for member in client.get_chat_members(chat.id):
+
             user = member.user
             if not user or user.is_bot:
                 continue
-
-            telegram_id = str(user.id)
-            group_telegram_ids.add(telegram_id)
-
-            verification, created = r_models.Verification.objects.get_or_create(
+            verification = r_models.Verification.objects.filter(
                 chat_id=user.id,
-                defaults={
-                    "is_blacklisted": True,
-                    "status": VerificationStatusChoice.NoVERIFIED,
-                }
+                status=VerificationStatusChoice.VERIFIED
+            ).exclude(
+                fullname__isnull=True,
+                phone_number__isnull=True
             )
 
-            if created:
-                continue
+            if verification.exists():
+                print(f"SYNCED USER: {verification}")
+                verification = verification.first()
+                verification.is_blacklisted = False
+                verification.save()
 
-            is_verified = (
-                    verification.fullname and
-                    verification.phone_number and
-                    verification.status == VerificationStatusChoice.VERIFIED
-            )
+            else:
+                if user.username:
+                    username = user.username
 
-            verification.is_blacklisted = not is_verified
-            verification.save(update_fields=["is_blacklisted"])
+                if user.phone_number:
+                    phone_number = user.phone_number
 
+                verification = r_models.Verification.objects.create(
+                    chat_id=user.id,
+                    username=username,
+                    phone_number=phone_number,
+                    status=VerificationStatusChoice.NoVERIFIED,
+                    token=chat.title,
+                    is_blacklisted=True
+                )
+
+                text = (
+                    "🚫 Пользователь занесён в чёрный список\n\n"
+                    f"ID: {user.id}\n"
+                    f"Username: @{user.username if user.username else 'нет'}\n"
+                    f"Телефон: {user.phone_number if user.phone_number else 'нет'}\n"
+                    f"Группа: {chat.title}"
+                )
+
+                await client.send_message(
+                    chat_id=env.str("ADMIN"),
+                    text=text
+                )
+                verification.save()
+                
+            
     return group_telegram_ids

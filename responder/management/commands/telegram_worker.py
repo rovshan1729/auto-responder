@@ -9,7 +9,10 @@ from responder import models as r_models
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        asyncio.run(self.main())
+        try:
+            asyncio.run(self.main())
+        except KeyboardInterrupt:
+            self.stdout.write(self.style.WARNING("User to‘xtatildi (Ctrl+C)"))
 
     async def main(self):
         client = build_client()
@@ -20,14 +23,15 @@ class Command(BaseCommand):
                 if cache.get("telegram_sync_required"):
                     cache.delete("telegram_sync_required")
 
-                    groups = r_models.TelegramGroup.objects.filter(is_active=True)
+                    groups = r_models.TelegramGroup.objects.filter(
+                        is_active=True)
 
-                    group_ids = await sync_group_users(client, groups)
+                    await sync_group_users(client, groups)
 
-                    # blacklist update
-                    r_models.Verification.objects.exclude(
-                        chat_id__in=group_ids
-                    ).update(is_blacklisted=False)
+                    # # blacklist update
+                    # r_models.Verification.objects.exclude(
+                    #     chat_id__in=group_ids
+                    # ).update(is_blacklisted=False)
 
                 await asyncio.sleep(5)
 
