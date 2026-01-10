@@ -9,6 +9,24 @@ from environs import Env
 env = Env()
 env.read_env()
 
+import re
+
+
+def normalize_text(value: str) -> str:
+    if not value:
+        return ""
+    return re.sub(r"[^a-zа-я0-9]", "", value.lower())
+
+
+def normalize_phone(phone: str) -> str:
+    if not phone:
+        return ""
+    return re.sub(r"\D", "", phone)
+
+
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
+
+
 async def sync_group_users(client: Client, groups):
     print("=== SYNC STARTED ===")
 
@@ -33,49 +51,64 @@ async def sync_group_users(client: Client, groups):
             user = member.user
             if not user or user.is_bot:
                 continue
-            verification = r_models.Verification.objects.filter(
-                chat_id=user.id,
-                status=VerificationStatusChoice.VERIFIED
-            ).exclude(
-                fullname__isnull=True,
-                phone_number__isnull=True
+
+            user_fullname = normalize_text(
+                f"{user.first_name or ''} {user.last_name or ''}"
+            )
+            user_username = normalize_text(user.username)
+            user_phone = normalize_phone(user.phone_number)
+
+            verification_qs = r_models.Verification.objects.filter(
+                Q(chat_id=user.id) & ~Q(status=VerificationStatusChoice.ARCHIVE)
             )
 
-            if verification.exists():
-                print(f"SYNCED USER: {verification}")
-                verification = verification.first()
-                verification.is_blacklisted = False
-                verification.save()
+            for verification in verification_qs:
+                v_fullname = normalize_text(verification.fullname)
+                v_username = normalize_text(verification.username)
+                v_phone = normalize_phone(verification.phone_number)
 
-            else:
-                if user.username:
-                    username = user.username
+                matched_fields = []
 
-                if user.phone_number:
-                    phone_number = user.phone_number
+                if v_fullname and user_fullname and v_fullname == user_fullname:
+                    matched_fields.append("FULLNAME")
 
-                verification = r_models.Verification.objects.create(
-                    chat_id=user.id,
-                    username=username,
-                    phone_number=phone_number,
-                    status=VerificationStatusChoice.NoVERIFIED,
-                    token=chat.title,
-                    is_blacklisted=True
-                )
+                if v_username and user_username and v_username == user_username:
+                    matched_fields.append("USERNAME")
 
-                text = (
-                    "🚫 Пользователь занесён в чёрный список\n\n"
-                    f"ID: {user.id}\n"
-                    f"Username: @{user.username if user.username else 'нет'}\n"
-                    f"Телефон: {user.phone_number if user.phone_number else 'нет'}\n"
-                    f"Группа: {chat.title}"
-                )
+                if v_phone and user_phone and v_phone == user_phone:
+                    matched_fields.append("PHONE")
 
-                await client.send_message(
-                    chat_id=env.str("ADMIN"),
-                    text=text
-                )
-                verification.save()
-                
-            
+                if matched_fields:
+                    verification.is_blacklisted = True
+                    verification.save(update_fields=["is_blacklisted"])
+
+                    photos = []
+
+                    if verification.main_page_passport:
+                        photos.append(InputMediaPhoto(verification.main_page_passport.path))
+
+                    if verification.registration_page_passport:
+                        photos.append(InputMediaPhoto(verification.registration_page_passport.path))
+
+                    if photos:
+                        await client.send_media_group(
+                            chat_id=env.str("ADMIN"),
+                            media=photos
+                        )
+
+                    text = (
+                        "❗️ОБНАРУЖЕН В ЧЕРНОМ СПИСКЕ❗️\n\n"
+                        f"Анкета ID: {verification.id}\n\n"
+                        f"ФИО: {verification.fullname}\n"
+                        f"Username: @{verification.username}\n"
+                        f"Телефон: {verification.phone_number}\n\n"
+                        "Сообщение верификации:\n"
+                        "Пользователь найден в черном списке"
+                    )
+
+                    await client.send_message(
+                        chat_id=env.str("ADMIN"),
+                        text=text
+                    )
+
     return group_telegram_ids
