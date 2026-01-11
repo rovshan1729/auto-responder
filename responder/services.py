@@ -1,5 +1,7 @@
 from pyrogram import Client
 from pyrogram.enums import ChatType
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
+from django.utils import timezone
 
 from responder import models as r_models
 from responder.choices import VerificationStatusChoice
@@ -22,10 +24,6 @@ def normalize_phone(phone: str) -> str:
     if not phone:
         return ""
     return re.sub(r"\D", "", phone)
-
-
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
-from django.utils import timezone
 
 
 async def sync_group_users(client: Client, groups):
