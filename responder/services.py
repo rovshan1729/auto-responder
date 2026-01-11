@@ -96,6 +96,21 @@ async def sync_group_users(client: Client, groups):
                             media=photos
                         )
 
+                    last_message = None
+
+                    async for msg in client.get_chat_history(chat.id, limit=300):
+                        if msg.from_user and msg.from_user.id == user.id:
+                            last_message = msg
+                            break
+
+                    message_url = " "
+                    if last_message:
+                        if chat.username:
+                            message_url = f"https://t.me/{chat.username}/{last_message.id}"
+                        else:
+                            chat_id = str(chat.id).replace("-100", "")
+                            message_url = f"https://t.me/c/{chat_id}/{last_message.id}"
+
                     text = (
                         "❗️ОБНАРУЖЕН В ЧЕРНОМ СПИСКЕ❗️\n\n"
                         f"Анкета ID: {verification.id}\n\n"
@@ -104,11 +119,13 @@ async def sync_group_users(client: Client, groups):
                         f"Телефон: {verification.phone_number}\n\n"
                         "Сообщение верификации:\n"
                         "Пользователь найден в черном списке"
+                        f"🔗 Ссылка на сообщение:\n{message_url}"
                     )
 
                     await client.send_message(
                         chat_id=env.str("ADMIN"),
-                        text=text
+                        text=text,
+                        disable_web_page_preview=False
                     )
 
     return group_telegram_ids
