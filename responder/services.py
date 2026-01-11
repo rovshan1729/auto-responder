@@ -25,6 +25,7 @@ def normalize_phone(phone: str) -> str:
 
 
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
+from django.utils import timezone
 
 
 async def sync_group_users(client: Client, groups):
@@ -82,20 +83,6 @@ async def sync_group_users(client: Client, groups):
                     verification.is_blacklisted = True
                     verification.save(update_fields=["is_blacklisted"])
 
-                    photos = []
-
-                    if verification.main_page_passport:
-                        photos.append(InputMediaPhoto(verification.main_page_passport.path))
-
-                    if verification.registration_page_passport:
-                        photos.append(InputMediaPhoto(verification.registration_page_passport.path))
-
-                    if photos:
-                        await client.send_media_group(
-                            chat_id=env.str("ADMIN"),
-                            media=photos
-                        )
-
                     last_message = None
 
                     async for msg in client.get_chat_history(chat.id, limit=300):
@@ -111,21 +98,54 @@ async def sync_group_users(client: Client, groups):
                             chat_id = str(chat.id).replace("-100", "")
                             message_url = f"https://t.me/c/{chat_id}/{last_message.id}"
 
+                    checked_at_str = timezone.now().strftime("%d-%m-%Y %H:%M:%S")
+
                     text = (
                         "❗️ОБНАРУЖЕН В ЧЕРНОМ СПИСКЕ❗️\n\n"
-                        f"Анкета ID: {verification.id}\n\n"
-                        f"ФИО: {verification.fullname}\n"
-                        f"Username: @{verification.username}\n"
-                        f"Телефон: {verification.phone_number}\n\n"
-                        "Сообщение верификации:\n"
-                        "Пользователь найден в черном списке"
-                        f"🔗 Ссылка на сообщение:\n{message_url}"
+                        f"🆔 Анкета ID: {verification.id}\n"
+                        f"📌 Статус: {verification.get_status_display()}\n\n"
+
+                        f"👤 ФИО: {verification.fullname or '—'}\n"
+                        f"👤 Username: @{verification.username or '—'}\n"
+                        f"📞 Телефон: {verification.phone_number or '—'}\n"
+                        f"📞 Доп. телефон: {verification.add_phone or '—'}\n"
+                        f"✉️ Email: {verification.email or '—'}\n\n"
+
+                        f"🏠 Адрес проживания: {verification.live_address or '—'}\n"
+                        f"🌍 Геолокация: {verification.geo or '—'}\n"
+                        f"🌐 Рабочие платформы: {verification.worked_platform or '—'}\n\n"
+
+                        f"💼 Опыт работы: {verification.experience or '—'}\n"
+                        f"👨‍💼 Тимлид: {verification.team_lead or '—'}\n"
+                        f"🤝 Рекомендовал: {verification.recommend_user or '—'}\n"
+                        f"📇 Контакт рекомендателя: {verification.recommendation_user_contact or '—'}\n\n"
+
+                        f"📝 Дополнительно: {verification.additionally or '—'}\n"
+                        f"🗒 Комментарий администратора: {verification.commentary or '—'}\n\n"
+
+                        f"🚫 В черном списке: {'ДА' if verification.is_blacklisted else 'НЕТ'}\n"
+                        f"🕒 Дата последней проверки: {checked_at_str}\n\n"
+                        f"\n🔗 Ссылка на источник:\n{message_url}"
                     )
 
                     await client.send_message(
                         chat_id=env.str("ADMIN"),
                         text=text,
-                        disable_web_page_preview=False
+                        disable_web_page_preview=True
                     )
+
+                    photos = []
+
+                    if verification.main_page_passport:
+                        photos.append(InputMediaPhoto(verification.main_page_passport.path))
+
+                    if verification.registration_page_passport:
+                        photos.append(InputMediaPhoto(verification.registration_page_passport.path))
+
+                    if photos:
+                        await client.send_media_group(
+                            chat_id=env.str("ADMIN"),
+                            media=photos
+                        )
 
     return group_telegram_ids
