@@ -4,7 +4,7 @@ from aiogram import types, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import ReplyKeyboardRemove
 from django.db.models import Q
-from responder.choices import VerificationStatusChoice
+from responder.choices import VerificationStatusChoice, UserRole
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
 from datetime import timedelta
@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from bot import utils
 from bot.keyboards import reply, inliene
-from bot.states.states import RegistrationState
+from bot.states.states import RegistrationState, WorkerState
 from responder import tasks, models
 
 
@@ -528,3 +528,70 @@ async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(RegistrationState.start)
 
     await callback.answer()
+
+
+async def support_worker_handler(message: types.Message, state: FSMContext):
+    await state.clear()
+    profile = models.Profile.objects.filter(Q(user__telegram_id=message.chat.id) & Q(role=UserRole.SUPPORT))
+    if profile.exists():
+        await message.answer(
+            utils.get_text("worker_start_message"),
+            reply_markup=inliene.worker_choosing_action()
+        )
+
+
+from django.utils import timezone
+
+
+async def worker_start_work_handler(callback: types.CallbackQuery, state: FSMContext):
+    chat_id = callback.from_user.id
+    profile = models.Profile.objects.filter(user__telegram_id=chat_id)
+    await callback.message.delete()
+
+    if profile.exists():
+        profile = profile.first()
+        worker_data = models.WorkerData.objects.filter(profile=profile)
+        if worker_data.exists() and worker_data.first().finish_work_time is not None:
+            models.WorkerData.objects.create(profile=profile, start_work_time=timezone.now().isoformat())
+            await callback.message.answer(utils.get_text("worker_start_work_message"))
+            head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
+            text = (f"USER: {callback.from_user.username}\n"
+                    f"Start time: {timezone.now().isoformat()}")
+            utils.send_text(head_profile.user.telegram_id, text)
+
+        elif not worker_data.exists():
+            models.WorkerData.objects.create(profile=profile, start_work_time=timezone.now().isoformat())
+            await callback.message.answer(utils.get_text("worker_start_work_message"))
+            head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
+            text = (f"USER: {callback.from_user.username}\n"
+                    f"Start time: {timezone.now().isoformat()}")
+            utils.send_text(head_profile.user.telegram_id, text)
+
+        else:
+            await callback.message.answer(utils.get_text("worker_doesnt_finish_work"))
+    else:
+        await callback.message.answer(utils.get_text("default_user"))
+
+
+async def worker_finish_work_handler(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    await state.set_state(WorkerState.finish_work)
+    chat_id = callback.from_user.id
+    work_data = models.WorkerData.objects.filter(profile__user__telegram_id=chat_id, finish_work_time__isnull=True)
+
+    if work_data.exists():
+        await callback.message.answer(utils.get_text("choice_finish_work"),
+                                      reply_markup=inliene.finish_work_data_inline_button())
+    else:
+        await callback.message.answer(utils.get_text("worker_doesnt_finish_work"))
+
+
+async def cancel_finish_work_handler(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    await callback.message.answer(utils.get_text("cancel_finish_work"))
+    await state.clear()
+
+
+async def dispute_add_handler(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    await callback.message.answer(utils.get_text("choice_merchant"), reply_markup=inline.cho)

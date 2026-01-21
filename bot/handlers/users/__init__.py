@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.enums import ChatType
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 
 from bot.filters import users, common
 from bot.handlers.users.handle import *
@@ -12,6 +12,7 @@ def prepare_router():
     router.message.filter(F.chat.type == ChatType.PRIVATE)
     router.message.filter(common.IsSleepFilter())
 
+    router.message.register(support_worker_handler, Command("work")),
     router.message.register(kyc_command_handler, Command("kyc"))
     router.message.register(get_user_start_verification_handler, RegistrationState.start)
     router.message.register(get_phone_number_keyboard_handler, RegistrationState.phone_number)
@@ -33,7 +34,9 @@ def prepare_router():
     router.message.register(get_user_worked_platform_handler, RegistrationState.worked_platform)
     router.message.register(get_user_recommendation_user_contact_handler, RegistrationState.recommendation_user_contact)
 
-
+    router.callback_query.register(worker_start_work_handler, F.data == "stated_work")
+    router.callback_query.register(worker_finish_work_handler, F.data == "finished_work")
+    router.callback_query.register(cancel_finish_work_handler, F.data == "cancel")
 
     router.message.register(command_handler, users.IsCommandFilter())
     router.callback_query.register(accept_handler, F.data.split("|")[0] == "accepted")

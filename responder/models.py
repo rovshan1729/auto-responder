@@ -6,7 +6,7 @@ from tinymce.models import HTMLField
 from solo.models import SingletonModel
 
 from .base import BaseModel
-from .choices import ChatMemberStatus, GroupChoice, VerificationStatusChoice, AdminFieldType
+from .choices import ChatMemberStatus, GroupChoice, VerificationStatusChoice, AdminFieldType, UserRole
 from responder.managers import CurrentVerificationManager, ArchivedVerificationManager
 from bot import utils
 
@@ -487,3 +487,22 @@ class VerificationAdminField(models.Model):
 
     def __str__(self):
         return f"{self.label} ({self.get_field_type_display()})"
+
+
+class Profile(BaseModel):
+    user = models.ForeignKey(TelegramUser, on_delete=models.CASCADE, related_name="profile",
+                             verbose_name="Пользователь")
+    role = models.CharField(max_length=64, choices=UserRole.choices, default=UserRole.USER, verbose_name="Роль")
+
+    class Meta:
+        verbose_name = "Профиль"
+        verbose_name_plural = "Профили"
+
+
+class WorkerData(BaseModel):
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="profile")
+    start_work_time = models.DateTimeField()
+    finish_work_time = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.profile.user} | {self.start_work_time}"

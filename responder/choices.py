@@ -34,3 +34,12 @@ class AdminFieldType(TextChoices):
     NICKNAME = "nickname", "Никнейм"
     FULLNAME = "fullname", "ФИО"
     PHONE = "phone", "Номер телефона"
+
+
+class UserRole(TextChoices):
+    USER = "USER", "Пользователь"
+    SUPPORT = "SUPPORT", "Саппорт"
+    HEAD_SUPPORT = "HEAD_SUPPORT", "Хэд-Саппорт"
+    VERIFICATOR = "VERIFICATOR", "Верификатор"
+    ADMIN = "ADMIN", "Администратор",
+    PAYMENT_MANAGER = "PAYMENT_MANAGER", "Платёжный менеджер"
