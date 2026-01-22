@@ -37,6 +37,9 @@ def prepare_router():
     router.callback_query.register(worker_start_work_handler, F.data == "stated_work")
     router.callback_query.register(worker_finish_work_handler, F.data == "finished_work")
     router.callback_query.register(cancel_finish_work_handler, F.data == "cancel")
+    router.callback_query.register(dispute_add_handler, StateFilter(WorkerState.finish_work), F.data == "add_dispute")
+    router.callback_query.register(get_merchant_handler, StateFilter(WorkerState.merchant), F.data.split("|")[0] == "merchant")
+    router.message.register(get_dispute_count_handler, WorkerState.dispute_count)
 
     router.message.register(command_handler, users.IsCommandFilter())
     router.callback_query.register(accept_handler, F.data.split("|")[0] == "accepted")

@@ -26,4 +26,6 @@ class RegistrationState(StatesGroup):
 
 class WorkerState(StatesGroup):
     finish_work = State()
-
+    merchant = State()
+    dispute_count = State()
+    cycle = State()

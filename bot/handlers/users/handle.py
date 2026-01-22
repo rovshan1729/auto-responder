@@ -530,6 +530,9 @@ async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
+from django.utils import timezone
+
+
 async def support_worker_handler(message: types.Message, state: FSMContext):
     await state.clear()
     profile = models.Profile.objects.filter(Q(user__telegram_id=message.chat.id) & Q(role=UserRole.SUPPORT))
@@ -540,10 +543,8 @@ async def support_worker_handler(message: types.Message, state: FSMContext):
         )
 
 
-from django.utils import timezone
-
-
 async def worker_start_work_handler(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
     chat_id = callback.from_user.id
     profile = models.Profile.objects.filter(user__telegram_id=chat_id)
     await callback.message.delete()
@@ -574,14 +575,13 @@ async def worker_start_work_handler(callback: types.CallbackQuery, state: FSMCon
 
 
 async def worker_finish_work_handler(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.delete()
-    await state.set_state(WorkerState.finish_work)
     chat_id = callback.from_user.id
     work_data = models.WorkerData.objects.filter(profile__user__telegram_id=chat_id, finish_work_time__isnull=True)
 
     if work_data.exists():
         await callback.message.answer(utils.get_text("choice_finish_work"),
                                       reply_markup=inliene.finish_work_data_inline_button())
+        await state.set_state(WorkerState.finish_work)
     else:
         await callback.message.answer(utils.get_text("worker_doesnt_finish_work"))
 
@@ -594,4 +594,25 @@ async def cancel_finish_work_handler(callback: types.CallbackQuery, state: FSMCo
 
 async def dispute_add_handler(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete()
-    await callback.message.answer(utils.get_text("choice_merchant"), reply_markup=inline.cho)
+    await callback.message.answer(utils.get_text("choice_merchant"),
+                                  reply_markup=inliene.merchant_choosing_inline_button())
+    await state.set_state(WorkerState.merchant)
+
+
+async def get_merchant_handler(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    merchant_id = callback.data.split("|")[1]
+    await callback.message.answer(utils.get_text("get_merchant"))
+    await state.update_data({
+        "merchant_id": merchant_id
+    })
+    await state.set_state(WorkerState.dispute_count)
+
+
+async def get_dispute_count_handler(message: types.Message, state: FSMContext):
+    count = message.text
+    await state.update_data({
+        "dispute_count": count
+    })
+    await message.answer(utils.get_text("get_dispute_count"), reply_markup=inliene.get_dispute_count_inline_button())
+    await state.set_state(WorkerState.cycle)

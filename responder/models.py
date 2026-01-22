@@ -506,3 +506,10 @@ class WorkerData(BaseModel):
 
     def __str__(self):
         return f"{self.profile.user} | {self.start_work_time}"
+
+
+class Merchant(BaseModel):
+    title = models.CharField(max_length=512)
+
+    def __str__(self):
+        return f"{self.title}"

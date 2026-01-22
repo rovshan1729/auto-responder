@@ -1,4 +1,5 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from responder import models
 
 
 def check_manager(chat_id):
@@ -32,9 +33,23 @@ def finish_work_data_inline_button():
     )
     return keyboard
 
+
 def merchant_choosing_inline_button():
+    merchants = models.Merchant.objects.all()
+
+    keyboard = []
+    for merchant in merchants:
+        keyboard.append([InlineKeyboardButton(text=merchant.title, callback_data=f"merchant|{merchant.id}")])
+
+    markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
+    return markup
+
+
+def get_dispute_count_inline_button():
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="")]
+            [InlineKeyboardButton(text="Добавить еще", callback_data="add_more")],
+            [InlineKeyboardButton(text="Далее", callback_data="next")]
         ]
     )
+    return keyboard
