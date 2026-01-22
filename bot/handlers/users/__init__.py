@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.enums import ChatType
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 
 from bot.filters import users, common
 from bot.handlers.users.handle import *
@@ -12,6 +12,7 @@ def prepare_router():
     router.message.filter(F.chat.type == ChatType.PRIVATE)
     router.message.filter(common.IsSleepFilter())
 
+    router.message.register(support_worker_handler, Command("work")),
     router.message.register(kyc_command_handler, Command("kyc"))
     router.message.register(get_user_start_verification_handler, RegistrationState.start)
     router.message.register(get_phone_number_keyboard_handler, RegistrationState.phone_number)
@@ -32,11 +33,17 @@ def prepare_router():
     router.message.register(get_user_experience_handler, RegistrationState.experience)
     router.message.register(get_user_worked_platform_handler, RegistrationState.worked_platform)
     router.message.register(get_user_recommendation_user_contact_handler, RegistrationState.recommendation_user_contact)
-    router.message.register(user_verification_handler, RegistrationState.verify)
 
-
+    router.callback_query.register(worker_start_work_handler, F.data == "stated_work")
+    router.callback_query.register(worker_finish_work_handler, F.data == "finished_work")
+    router.callback_query.register(cancel_finish_work_handler, F.data == "cancel")
+    router.callback_query.register(dispute_add_handler, StateFilter(WorkerState.finish_work), F.data == "add_dispute")
+    router.callback_query.register(get_merchant_handler, StateFilter(WorkerState.merchant), F.data.split("|")[0] == "merchant")
+    router.message.register(get_dispute_count_handler, WorkerState.dispute_count)
 
     router.message.register(command_handler, users.IsCommandFilter())
+    router.callback_query.register(accept_handler, F.data.split("|")[0] == "accepted")
+    router.callback_query.register(closed_handler, F.data.split("|")[0] == "closed")
     router.message.register(respond_handler)
 
     return router

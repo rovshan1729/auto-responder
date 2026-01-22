@@ -3,9 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+sessions
 # C extensions
 *.so
-
+*.sessions
 # Distribution / packaging
 .Python
 build/
