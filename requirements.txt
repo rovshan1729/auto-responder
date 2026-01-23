@@ -32,7 +32,6 @@ django-solo==2.4.0
 django-timezone-field==7.1
 django-tinymce==4.1.0
 pyrogram
-=======
 django-unfold==0.76.0
 environs==14.2.0
 executing==2.2.0
