@@ -1,0 +1,41 @@
+{% extends "unfold/change_list.html" %}
+{% load i18n admin_urls static unfold %}
+
+{% block result_list %}
+    {{ block.super }}
+
+    {% for object in cl.result_list %}
+        <!-- Кнопка для открытия модального окна -->
+        <button type="button"
+                class="px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors"
+                data-toggle="modal"
+                data-target="#modal-{{ object.id }}">
+            Открыть форму для {{ object }}
+        </button>
+
+        <!-- Само модальное окно -->
+        <div class="modal fade" id="modal-{{ object.id }}" tabindex="-1" role="dialog" aria-labelledby="modalLabel-{{ object.id }}" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-xl">
+                    <div class="modal-header border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+                        <h5 class="modal-title text-lg font-semibold text-gray-900 dark:text-gray-100" id="modalLabel-{{ object.id }}">Форма для {{ object }}</h5>
+                        <button type="button" class="close text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" data-dismiss="modal" aria-label="Закрыть">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body px-6 py-4">
+                        <form action="{% url 'admin:yourmodel-custom-form' object.id %}" method="post">
+                            {% csrf_token %}
+                            <div class="space-y-4">
+                                {{ form.as_p }}  {# Убедитесь, что передаете правильную форму #}
+                            </div>
+                            <button type="submit" class="mt-4 px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors">
+                                Сохранить
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}
