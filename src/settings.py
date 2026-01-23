@@ -301,37 +301,37 @@ UNFOLD = {
                 "items": [
                     {
                         "title": "Маски",
-                        "icon": "person",
+                        "icon": "book_6",
                         "link": lambda request: reverse_lazy("admin:responder_mask_changelist"),
                     },
                     {
                         "title": "Телеграм команды",
-                        "icon": "person",
+                        "icon": "code_blocks",
                         "link": lambda request: reverse_lazy("admin:responder_telegramcommand_changelist"),
                     },
                     {
                         "title": "Телеграм Пользователи",
-                        "icon": "person",
+                        "icon": "person_pin",
                         "link": lambda request: reverse_lazy("admin:responder_telegramuser_changelist"),
                     },
                     {
                         "title": "Телеграм Сообщения",
-                        "icon": "person",
+                        "icon": "chat",
                         "link": lambda request: reverse_lazy("admin:responder_telegrammessage_changelist"),
                     },
                     {
                         "title": "Телеграм Группы",
-                        "icon": "person",
+                        "icon": "family_group",
                         "link": lambda request: reverse_lazy("admin:responder_telegramgroup_changelist"),
                     },
                     {
                         "title": "Аналитика",
-                        "icon": "person",
+                        "icon": "analytics",
                         "link": lambda request: reverse_lazy("admin:responder_faq_changelist"),
                     },
                     {
                         "title": "Настройки",
-                        "icon": "person",
+                        "icon": "settings",
                         "link": lambda request: reverse_lazy("admin:responder_data_changelist"),
                     },
 
@@ -348,12 +348,12 @@ UNFOLD = {
                     },
                     {
                         "title": "Рассылка",
-                        "icon": "event_upcoming",
+                        "icon": "newsmode",
                         "link": lambda request: reverse_lazy("admin:broadcast_broadcast_changelist"),
                     },
                     {
                         "title": "Шаблоны рассылок",
-                        "icon": "event_upcoming",
+                        "icon": "dynamic_feed",
                         "link": lambda request: reverse_lazy("admin:broadcast_broadcasttemplate_changelist"),
                     },
                 ]
@@ -364,12 +364,12 @@ UNFOLD = {
                 "items": [
                     {
                         "title": "Периодические задачи",
-                        "icon": "format_list_bulleted",
+                        "icon": "task",
                         "link": lambda request: reverse_lazy("admin:django_celery_beat_periodictask_changelist")
                     },
                     {
                         "title": "Запланированное время",
-                        "icon": "schedule",
+                        "icon": "chronic",
                         "link": lambda request: reverse_lazy("admin:django_celery_beat_clockedschedule_changelist")
                     }
                 ]
