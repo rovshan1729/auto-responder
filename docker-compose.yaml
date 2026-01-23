@@ -46,7 +46,7 @@ services:
     environment:
       - TZ=Asia/Tashkent
     ports:
-      - 8022:8022
+      - "8022:8022"
     depends_on:
       - db
       - redis

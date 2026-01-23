@@ -1,32 +1,34 @@
 from django.contrib import admin
 from django.contrib import messages
 
+from unfold.admin import ModelAdmin, TabularInline
+
 from . import models
 from .forms import BroadcastModelForm
 
 
-class TButtonInline(admin.TabularInline):
+class TButtonInline(TabularInline):
     model = models.TemplateButton
     extra = 0
 
 
-class BButtonInline(admin.TabularInline):
+class BButtonInline(TabularInline):
     model = models.BroadcastButton
     extra = 0
 
 
 @admin.register(models.Media)
-class MediaAdmin(admin.ModelAdmin):
+class MediaAdmin(ModelAdmin):
     list_display = ('id', 'file_id', 'order')
 
 
 @admin.register(models.BroadcastTemplate)
-class BroadcastTemplateAdmin(admin.ModelAdmin):
+class BroadcastTemplateAdmin(ModelAdmin):
     inlines = (TButtonInline,)
 
 
 @admin.register(models.Broadcast)
-class BroadcastAdmin(admin.ModelAdmin):
+class BroadcastAdmin(ModelAdmin):
     form = BroadcastModelForm
     list_display = ('id', 'title', 'percent', 'is_sent', 'created_at')
     fields = ('title', 'template', 'groups', 'medias', 'content', 'scheduled_at')

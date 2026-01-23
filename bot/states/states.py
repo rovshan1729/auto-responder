@@ -22,3 +22,10 @@ class RegistrationState(StatesGroup):
     experience = State()
     worked_platform = State()
     recommendation_user_contact = State()
+
+
+class WorkerState(StatesGroup):
+    finish_work = State()
+    merchant = State()
+    dispute_count = State()
+    cycle = State()

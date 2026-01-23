@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.db import models
 from django.contrib.admin.sites import site
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import admin
 from django.db.models import Count, Min, F
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
@@ -132,26 +133,65 @@ def admin_dashboard_view(request):
         } for g in top_not_answered
     ]
 
-    # top_faq = (
-    #     top_faq.annotate(
-    #         date=models.F("created_at__date"),
-    #     ).order_by("-count")
-    # )
-    #
-    # top_questions = top_faq[:20]
-    # top_answers = top_faq.filter(answer__isnull=False)[:20]
-    # top_not_answers = top_faq.filter(answer__isnull=True)[:20]
-
     context = {
         'title': 'Аналитика',
         'available_apps': app_list,
-        # 'user_daily_stats': json.dumps(list(user_daily_stats), cls=DjangoJSONEncoder),
         'top_users': top_users,
-        # 'top_questions': list(top_questions),
         'top_questions': top_questions_result,
-        # 'top_answers': list(top_answers),
         'top_answers': top_answers_result,
-        # 'top_not_answers': list(top_not_answers),
         'top_not_answers': top_not_answered_result,
     }
     return TemplateResponse(request, "admin/custom_dashboard.html", context)
+
+
+@staff_member_required
+def admin_dashboard_view(request):
+
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+
+    top_questions = TelegramMessage.objects.filter(user__is_blocked=False)
+    top_answers = TelegramMessage.objects.filter(answer__isnull=False)
+    top_not_answered = TelegramMessage.objects.filter(
+        answer__isnull=True,
+        user__is_blocked=False
+    )
+    top_users = TelegramUser.objects
+
+    if start_date:
+        d = parse_date(start_date)
+        top_questions = top_questions.filter(created_at__date__gte=d)
+        top_answers = top_answers.filter(created_at__date__gte=d)
+        top_not_answered = top_not_answered.filter(created_at__date__gte=d)
+        top_users = top_users.filter(messages__created_at__date__gte=d)
+
+    if end_date:
+        d = parse_date(end_date)
+        top_questions = top_questions.filter(created_at__date__lte=d)
+        top_answers = top_answers.filter(created_at__date__lte=d)
+        top_not_answered = top_not_answered.filter(created_at__date__lte=d)
+        top_users = top_users.filter(messages__created_at__date__lte=d)
+
+    top_users = (
+        top_users
+        .exclude(username="GroupAnonymousBot")
+        .exclude(is_blocked=True)
+        .annotate(message_count=Count("messages", distinct=True))
+        .order_by("-message_count")[:20]
+    )
+
+    context = dict(
+        admin.site.each_context(request),
+        title="Аналитика",
+        top_users=top_users,
+        top_questions=top_questions,
+        top_answers=top_answers,
+        top_not_answers=top_not_answered,
+    )
+
+    return TemplateResponse(
+        request,
+        "admin/custom_dashboard.html",
+        context,
+    )
+

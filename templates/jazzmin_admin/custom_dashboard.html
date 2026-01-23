@@ -1,0 +1,147 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="mb-4 display-5 fw-semibold">{{ title }}</h1>
+
+
+    <form method="get" class="row g-3 mb-4 align-items-end">
+        <div class="col-md-3">
+            <label for="start_date" class="form-label">📅 Дата начала</label>
+            <input type="date" name="start_date" id="start_date" value="{{ start_date }}" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label for="end_date" class="form-label">📅 Дата конца</label>
+            <input type="date" name="end_date" id="end_date" value="{{ end_date }}" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-secondary w-100">Фильтр</button>
+        </div>
+    </form>
+
+    <div class="row g-4">
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">📈 Топ активных пользователей</h5>
+                </div>
+                <div class="card-body table-responsive p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Пользователь</th>
+                            <th>Имя</th>
+                            <th>Количество сообщении</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for user in top_users %}
+                            <tr>
+                                <td><a href="{{ user.get_admin_url }}"><strong>{{ forloop.counter }}</strong></a></td>
+                                <td><a href="{{ user.get_admin_url }}">{{ user.username|default:user.telegram_id }}</a></td>
+                                <td>{{ user.first_name|default:"—" }}</td>
+                                <td>{{ user.message_count }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">🔹 Вопросы без ответов</h5>
+                </div>
+                <div class="card-body table-responsive p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Вопрос</th>
+                            <th>Дата</th>
+                            <th>Количество</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for q in top_not_answers %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ q.text|truncatechars:100 }}</td>
+                                <td>{{ q.date }}</td>
+                                <td>{{ q.count }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mt-2">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">❓ Самые частые вопросы</h5>
+                </div>
+                <div class="card-body table-responsive p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Вопрос</th>
+                            <th>Дата</th>
+                            <th>Количество</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for q in top_questions %}
+                            <tr>
+                                <td><a href="#"><strong>{{ forloop.counter }}</strong></a></td>
+                                <td><a href="#">{{ q.text|truncatechars:100 }}</a></td>
+                                <td>{{ q.date }}</td>
+                                <td>{{ q.count }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mt-2">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">🔹 Часто используемые ответы</h5>
+                </div>
+                <div class="card-body table-responsive p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Ответ</th>
+                            <th>Дата</th>
+                            <th>Количество</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for ans in top_answers %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ ans.text|truncatechars:100 }}</td>
+                                <td>{{ ans.date }}</td>
+                                <td>{{ ans.count }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+{% endblock %}

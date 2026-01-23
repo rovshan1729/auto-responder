@@ -1,147 +1,308 @@
-{% extends "admin/base.html" %}
+{% extends "unfold/layouts/base.html" %}
 {% load static %}
 
+{% block title %}Аналитика{% endblock %}
+
 {% block content %}
-<div class="container-fluid py-4">
-    <h1 class="mb-4 display-5 fw-semibold">{{ title }}</h1>
+<div class="space-y-6">
 
+    <!-- Заголовок с градиентом -->
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 shadow-xl mx-4 mb-6">
+        <div class="absolute inset-0 bg-grid-white/10"></div>
+        <div class="relative">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl">
+                    📊
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold text-black tracking-tight">
+                        Аналитика
+                    </h1>
+                    <p class="text-blue-100 text-sm mt-1">
+                        Подробная статистика и метрики активности
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <form method="get" class="row g-3 mb-4 align-items-end">
-        <div class="col-md-3">
-            <label for="start_date" class="form-label">📅 Дата начала</label>
-            <input type="date" name="start_date" id="start_date" value="{{ start_date }}" class="form-control">
-        </div>
-        <div class="col-md-3">
-            <label for="end_date" class="form-label">📅 Дата конца</label>
-            <input type="date" name="end_date" id="end_date" value="{{ end_date }}" class="form-control">
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-secondary w-100">Фильтр</button>
+    <!-- Фильтр с улучшенным дизайном -->
+    <form method="get" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200 mx-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    📅 Дата начала
+                </label>
+                <input type="date"
+                       name="start_date"
+                       value="{{ request.GET.start_date }}"
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    📅 Дата конца
+                </label>
+                <input type="date"
+                       name="end_date"
+                       value="{{ request.GET.end_date }}"
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+            </div>
+
+            <div class="flex items-end md:col-span-2">
+                <button type="submit"
+                        class="border-2 border-black-700 w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 font-semibold py-2.5 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                        style="color: black;">
+                    Применить фильтры
+                </button>
+            </div>
         </div>
     </form>
 
-    <div class="row g-4">
+    <!-- Контент с улучшенными карточками -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mx-4 mb-6">
 
-        <div class="col-lg-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0">📈 Топ активных пользователей</h5>
+        <!-- Топ пользователей -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200">
+            <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-200 px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center text-xl shadow-sm">
+                        📈
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-lg">Топ активных пользователей</h3>
+                        <p class="text-sm text-gray-600">Пользователи с наибольшим количеством сообщений</p>
+                    </div>
                 </div>
-                <div class="card-body table-responsive p-0">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th>#</th>
-                            <th>Пользователь</th>
-                            <th>Имя</th>
-                            <th>Количество сообщении</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">#</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Пользователь</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Имя</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Сообщения</th>
                         </tr>
-                        </thead>
-                        <tbody>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
                         {% for user in top_users %}
-                            <tr>
-                                <td><a href="{{ user.get_admin_url }}"><strong>{{ forloop.counter }}</strong></a></td>
-                                <td><a href="{{ user.get_admin_url }}">{{ user.username|default:user.telegram_id }}</a></td>
-                                <td>{{ user.first_name|default:"—" }}</td>
-                                <td>{{ user.message_count }}</td>
-                            </tr>
+                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-800 font-bold text-sm">
+                                    {{ forloop.counter }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <a href="{{ user.get_admin_url }}"
+                                   class="text-blue-600 hover:text-blue-800 font-semibold hover:underline transition-colors">
+                                    {{ user.username|default:user.telegram_id }}
+                                </a>
+                            </td>
+                            <td class="px-6 py-4 text-gray-600">
+                                {{ user.first_name|default:"—" }}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-green-100 text-green-800">
+                                    {{ user.message_count }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-12 text-center">
+                                <div class="text-gray-400 text-4xl mb-2">📭</div>
+                                <p class="text-gray-500 font-medium">Нет данных</p>
+                            </td>
+                        </tr>
                         {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div class="col-lg-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0">🔹 Вопросы без ответов</h5>
+        <!-- Без ответов -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200">
+            <div class="bg-gradient-to-r from-orange-50 to-red-50 border-b border-gray-200 px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center text-xl shadow-sm">
+                        ❓
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-lg">Вопросы без ответов</h3>
+                        <p class="text-sm text-gray-600">Требуют внимания и обработки</p>
+                    </div>
                 </div>
-                <div class="card-body table-responsive p-0">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th>#</th>
-                            <th>Вопрос</th>
-                            <th>Дата</th>
-                            <th>Количество</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">#</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Вопрос</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Дата</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Кол-во</th>
                         </tr>
-                        </thead>
-                        <tbody>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
                         {% for q in top_not_answers %}
-                            <tr>
-                                <td>{{ forloop.counter }}</td>
-                                <td>{{ q.text|truncatechars:100 }}</td>
-                                <td>{{ q.date }}</td>
-                                <td>{{ q.count }}</td>
-                            </tr>
+                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800 font-bold text-sm">
+                                    {{ forloop.counter }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="max-w-md truncate text-gray-800 font-medium">
+                                    {{ q.text }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-gray-500 text-sm">
+                                {{ q.date }}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-orange-100 text-orange-800">
+                                    {{ q.count }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-12 text-center">
+                                <div class="text-gray-400 text-4xl mb-2">✅</div>
+                                <p class="text-gray-500 font-medium">Все вопросы обработаны</p>
+                            </td>
+                        </tr>
                         {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div class="col-lg-6 mt-2">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0">❓ Самые частые вопросы</h5>
+        <!-- Частые вопросы -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200">
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200 px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center text-xl shadow-sm">
+                        💬
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-lg">Самые частые вопросы</h3>
+                        <p class="text-sm text-gray-600">Популярные запросы пользователей</p>
+                    </div>
                 </div>
-                <div class="card-body table-responsive p-0">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th>#</th>
-                            <th>Вопрос</th>
-                            <th>Дата</th>
-                            <th>Количество</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">#</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Вопрос</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Дата</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Кол-во</th>
                         </tr>
-                        </thead>
-                        <tbody>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
                         {% for q in top_questions %}
-                            <tr>
-                                <td><a href="#"><strong>{{ forloop.counter }}</strong></a></td>
-                                <td><a href="#">{{ q.text|truncatechars:100 }}</a></td>
-                                <td>{{ q.date }}</td>
-                                <td>{{ q.count }}</td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6 mt-2">
-            <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <h5 class="card-title mb-0">🔹 Часто используемые ответы</h5>
-                </div>
-                <div class="card-body table-responsive p-0">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>Ответ</th>
-                            <th>Дата</th>
-                            <th>Количество</th>
+                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-800 font-bold text-sm">
+                                    {{ forloop.counter }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="max-w-md truncate text-gray-800 font-medium">
+                                    {{ q.text }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-gray-500 text-sm">
+                                {{ q.date }}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-purple-100 text-purple-800">
+                                    {{ q.count }}
+                                </span>
+                            </td>
                         </tr>
-                        </thead>
-                        <tbody>
-                        {% for ans in top_answers %}
-                            <tr>
-                                <td>{{ forloop.counter }}</td>
-                                <td>{{ ans.text|truncatechars:100 }}</td>
-                                <td>{{ ans.date }}</td>
-                                <td>{{ ans.count }}</td>
-                            </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-12 text-center">
+                                <div class="text-gray-400 text-4xl mb-2">🤔</div>
+                                <p class="text-gray-500 font-medium">Нет данных</p>
+                            </td>
+                        </tr>
                         {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                    </tbody>
+                </table>
             </div>
         </div>
 
+        <!-- Частые ответы -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200">
+            <div class="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-200 px-6 py-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center text-xl shadow-sm">
+                        ✅
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-800 text-lg">Часто используемые ответы</h3>
+                        <p class="text-sm text-gray-600">Самые популярные ответы системы</p>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">#</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Ответ</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Дата</th>
+                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Кол-во</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for ans in top_answers %}
+                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-bold text-sm">
+                                    {{ forloop.counter }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="max-w-md truncate text-gray-800 font-medium">
+                                    {{ ans.text }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-gray-500 text-sm">
+                                {{ ans.date }}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-800">
+                                    {{ ans.count }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-12 text-center">
+                                <div class="text-gray-400 text-4xl mb-2">💭</div>
+                                <p class="text-gray-500 font-medium">Нет данных</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
     </div>
 </div>
+
+<style>
+    .bg-grid-white\/10 {
+        background-image: linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+        background-size: 20px 20px;
+    }
+</style>
 {% endblock %}
