@@ -2,6 +2,8 @@ import os
 import sentry_sdk
 
 from pathlib import Path
+
+from django.urls import reverse_lazy
 from environs import Env
 from sentry_sdk.integrations.django import DjangoIntegration
 
@@ -23,7 +25,18 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    'jazzmin',
+    # 'jazzmin',
+
+    "unfold",  # before django.contrib.admin
+    "unfold.contrib.filters",  # optional, if special filters are needed
+    "unfold.contrib.forms",  # optional, if special form elements are needed
+    "unfold.contrib.inlines",  # optional, if special inlines are needed
+    "unfold.contrib.import_export",  # optional, if django-import-export package is used
+    "unfold.contrib.guardian",  # optional, if django-guardian package is used
+    "unfold.contrib.simple_history",  # optional, if django-simple-history package is used
+    "unfold.contrib.location_field",  # optional, if django-location-field package is used
+    "unfold.contrib.constance",  # optional, if django-constance package is used
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -44,6 +57,8 @@ INSTALLED_APPS = [
 if DEBUG:
     pass
     # INSTALLED_APPS.append('debug_toolbar')
+
+print(f"\n{DEBUG = }\n")
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -134,7 +149,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'static'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = []
 
 if not DEBUG:
@@ -204,6 +219,175 @@ X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 if env.str("DOMAIN_URL"):
     CSRF_TRUSTED_ORIGINS.append(env.str("DOMAIN_URL"))
+
+UNFOLD = {
+    "SITE_TITLE": "EXOTIC",
+    "SITE_HEADER": "EXOTIC",
+    "SITE_URL": "/admin/",
+    "SITE_SYMBOL": "receipt",
+    "SITE_FAVICONS": [
+        # {
+        #     "rel": "icon",
+        #     "sizes": "32x32",
+        #     "type": "image/svg+xml",
+        #     # "href": lambda request: static("logo.svg"),
+        # },
+    ],
+    "SHOW_HISTORY": False,
+    "SHOW_VIEW_ON_SITE": False,
+    "ENVIRONMENT": "PDF-Checker",
+    "LOGIN": {
+        "redirect_after": lambda request: reverse_lazy("admin:index"),
+    },
+    "COLORS": {
+        "primary": {
+            "50": "239 246 255",
+            "100": "219 234 254",
+            "200": "191 219 254",
+            "300": "147 197 253",
+            "400": "96 165 250",
+            "500": "59 130 246",
+            "600": "37 99 235",
+            "700": "29 78 216",
+            "800": "30 64 175",
+            "900": "30 58 138",
+            "950": "23 37 84",
+        },
+    },
+    "EXTENSIONS": {
+        "modeltranslation": {
+            "flags": {
+                "en": "🇺🇸",
+                "fr": "🇫🇷",
+                "nl": "🇳🇱",
+                "pl": "🇵🇱",
+                "ru": "🇷🇺",
+                "uk": "🇺🇦",
+            },
+        },
+    },
+    # "STYLES": [
+    #     "/static/css/admin_global.css",
+    # ],
+    # "SCRIPTS": [
+    #     "/static/js/admin_global.js",
+    # ],
+    # "APPS": {
+    #     "django_celery_beat": "unfold.contrib.celery_beat",
+    # },
+
+    "APPS": {
+        "django_celery_beat": "unfold.contrib.celery_beat",  # ЭТА СТРОКА ВСЁ ЧИНИТ
+    },
+
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+        "navigation": [
+            {
+                "items": [
+                    {
+                        "title": "Аналитика",
+                        "icon": "analytics",
+                        # "link": lambda request: reverse_lazy("admin:common_analytics_changelist"),
+                        # "link": lambda request: reverse_lazy("admin:index"),
+                        "link": lambda request: reverse_lazy("admin-analytics"),
+                    },
+                ],
+            },
+            {
+                "title": "Автоответчик",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Маски",
+                        "icon": "person",
+                        "link": lambda request: reverse_lazy("admin:responder_mask_changelist"),
+                    },
+                    {
+                        "title": "Телеграм команды",
+                        "icon": "person",
+                        "link": lambda request: reverse_lazy("admin:responder_telegramcommand_changelist"),
+                    },
+                    {
+                        "title": "Телеграм Пользователи",
+                        "icon": "person",
+                        "link": lambda request: reverse_lazy("admin:responder_telegramuser_changelist"),
+                    },
+                    {
+                        "title": "Телеграм Сообщения",
+                        "icon": "person",
+                        "link": lambda request: reverse_lazy("admin:responder_telegrammessage_changelist"),
+                    },
+                    {
+                        "title": "Телеграм Группы",
+                        "icon": "person",
+                        "link": lambda request: reverse_lazy("admin:responder_telegramgroup_changelist"),
+                    },
+                    {
+                        "title": "Аналитика",
+                        "icon": "person",
+                        "link": lambda request: reverse_lazy("admin:responder_faq_changelist"),
+                    },
+                    {
+                        "title": "Настройки",
+                        "icon": "person",
+                        "link": lambda request: reverse_lazy("admin:responder_data_changelist"),
+                    },
+
+                ],
+            },
+            {
+                "title": "Реклама",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Медиа",
+                        "icon": "event_upcoming",
+                        "link": lambda request: reverse_lazy("admin:broadcast_media_changelist"),
+                    },
+                    {
+                        "title": "Рассылка",
+                        "icon": "event_upcoming",
+                        "link": lambda request: reverse_lazy("admin:broadcast_broadcast_changelist"),
+                    },
+                    {
+                        "title": "Шаблоны рассылок",
+                        "icon": "event_upcoming",
+                        "link": lambda request: reverse_lazy("admin:broadcast_broadcasttemplate_changelist"),
+                    },
+                ]
+            },
+            {
+                "title": "Фоновые задачи",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Периодические задачи",
+                        "icon": "format_list_bulleted",
+                        "link": lambda request: reverse_lazy("admin:django_celery_beat_periodictask_changelist")
+                    },
+                    {
+                        "title": "Запланированное время",
+                        "icon": "schedule",
+                        "link": lambda request: reverse_lazy("admin:django_celery_beat_clockedschedule_changelist")
+                    }
+                ]
+            },
+            {
+                "title": "Настройки",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Администраторы",
+                        "icon": "admin_panel_settings",
+                        "link": lambda request: reverse_lazy("admin:auth_user_changelist"),
+                    },
+                ],
+            },
+        ],
+    },
+}
 
 JAZZMIN_SETTINGS = {
     # title of the window (Will default to current_admin_site.site_title if absent or None)
@@ -316,7 +500,7 @@ JAZZMIN_SETTINGS = {
         "broadcast",
         "broadcast.Media",
         "broadcast.Broadcast",
-        "broadcast.BroadcastTemlpate",
+        "broadcast.BroadcastTemplate",
 
         # "commands",
         # "commands.CrontabScheduleProxy",
