@@ -52,7 +52,7 @@ class BroadcastTemplateAdmin(ModelAdmin):
 class BroadcastAdmin(ModelAdmin):
     form = BroadcastModelForm
     list_display = ('id', 'title', 'percent', 'is_sent', 'created_at')
-    fields = ('title', 'template', 'groups', 'medias', 'content', 'scheduled_at')
+    # fields = ('title', 'template', 'groups', 'medias', 'content', 'scheduled_at')
     inlines = (BButtonInline,)
 
 
