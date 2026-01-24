@@ -29,3 +29,4 @@ class WorkerState(StatesGroup):
     merchant = State()
     dispute_count = State()
     cycle = State()
+    get_problem = State()

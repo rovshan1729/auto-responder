@@ -604,15 +604,42 @@ async def get_merchant_handler(callback: types.CallbackQuery, state: FSMContext)
     merchant_id = callback.data.split("|")[1]
     await callback.message.answer(utils.get_text("get_merchant"))
     await state.update_data({
-        "merchant_id": merchant_id
+        merchant_id: {}
     })
     await state.set_state(WorkerState.dispute_count)
 
 
 async def get_dispute_count_handler(message: types.Message, state: FSMContext):
     count = message.text
-    await state.update_data({
-        "dispute_count": count
-    })
+    x = await state.get_data()
+    for i in x.items():
+        if len(i[1].keys()) == 0:
+            await state.update_data({
+                i[0]: {
+                    "merchant_count": count,
+                }
+            })
     await message.answer(utils.get_text("get_dispute_count"), reply_markup=inliene.get_dispute_count_inline_button())
     await state.set_state(WorkerState.cycle)
+
+
+async def get_add_more_dispute_handler(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    if callback.data == "add_more_dispute":
+        await callback.message.answer(utils.get_text("choice_merchant"),
+                                      reply_markup=inliene.merchant_choosing_inline_button())
+        await state.set_state(WorkerState.merchant)
+    elif callback.data == "add_more_text":
+        await callback.message.answer(utils.get_text("get_problem_info"))
+        await state.set_state(WorkerState.get_problem)
+
+
+async def get_problem_text_handler(message: types.Message, state: FSMContext):
+    await message.answer(utils.get_text("get_problem_text"))
+    await state.update_data({
+        "dispute_text": message.text
+    })
+    head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
+    text = (f"USER: {message.from_user.username}\n"
+            f"Finish time: {timezone.now().isoformat()}")
+    utils.send_text(head_profile.user.telegram_id, text)
