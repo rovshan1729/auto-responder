@@ -163,6 +163,7 @@ def set_command_menu(modeladmin, request, queryset):
 
 class ReplyMessageInline(unfold_admin.TabularInline):
     model = models.ReplyMessage
+    readonly_fields = ("cleaned_text",)
     extra = 0
 
     fieldsets = (
