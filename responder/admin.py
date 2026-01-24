@@ -194,7 +194,7 @@ class TelegramUserInline(unfold_admin.TabularInline):
 
 class TelegramMessageInline(unfold_admin.StackedInline):
     model = models.TelegramMessage
-    fields = ('text', 'message_id', 'group')
+    # fields = ('text', 'message_id', 'group')
     extra = 0
 
     fieldsets = (
