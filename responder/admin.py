@@ -279,7 +279,7 @@ class TelegramMessageAdmin(unfold_admin.ModelAdmin):
     list_display = ('id', 'group', 'user', 'text', 'message_id', 'is_marked', 'created_at', "custom_btn")
     list_display_links = ('id', 'group', 'user', 'message_id')
     readonly_fields = ('text_list',)
-    fields = ('group', 'user', 'text', 'text_list', 'message_id', 'is_marked', 'data')
+    # fields = ('group', 'user', 'text', 'text_list', 'message_id', 'is_marked', 'data')
     list_filter = (
         'is_marked',
         'group__title',
@@ -353,9 +353,9 @@ class TelegramCommandAdmin(unfold_admin.ModelAdmin):
             "fields": (
                 ("command", "description"),
                 ("content", "cleaned_content"),
-                ("file", "file_id")
+                ("file", "file_id"),
             )
-        })
+        }),
     )
 
 

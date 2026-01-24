@@ -25,9 +25,9 @@ class MediaAdmin(ModelAdmin):
         (None, {
             "fields": (
                 ("title", "file_type", "order"),
-                ("file", "file_id")
+                ("file", "file_id"),
             )
-        })
+        }),
     )
 
 
