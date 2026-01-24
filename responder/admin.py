@@ -195,6 +195,7 @@ class TelegramUserInline(unfold_admin.TabularInline):
 class TelegramMessageInline(unfold_admin.StackedInline):
     model = models.TelegramMessage
     # fields = ('text', 'message_id', 'group')
+    readonly_fields = ("text_list", "answer_list")
     extra = 0
 
     fieldsets = (
