@@ -163,7 +163,7 @@ def set_command_menu(modeladmin, request, queryset):
 
 class ReplyMessageInline(unfold_admin.TabularInline):
     model = models.ReplyMessage
-    readonly_fields = ("cleaned_text",)
+    readonly_fields = ("cleaned_text", "is_sent")
     extra = 0
 
     fieldsets = (
@@ -196,7 +196,7 @@ class TelegramUserInline(unfold_admin.TabularInline):
 class TelegramMessageInline(unfold_admin.StackedInline):
     model = models.TelegramMessage
     # fields = ('text', 'message_id', 'group')
-    readonly_fields = ("text_list", "answer_list")
+    readonly_fields = ("answer_list",)
     extra = 0
 
     fieldsets = (
@@ -280,7 +280,7 @@ class TelegramGroupAdmin(unfold_admin.ModelAdmin):
 class TelegramMessageAdmin(unfold_admin.ModelAdmin):
     list_display = ('id', 'group', 'user', 'text', 'message_id', 'is_marked', 'created_at', "custom_btn")
     list_display_links = ('id', 'group', 'user', 'message_id')
-    readonly_fields = ('text_list', "answer_list")
+    readonly_fields = ("answer_list",)
     # fields = ('group', 'user', 'text', 'text_list', 'message_id', 'is_marked', 'data')
     list_filter = (
         'is_marked',
@@ -348,6 +348,7 @@ class TelegramMessageAdmin(unfold_admin.ModelAdmin):
 class TelegramCommandAdmin(unfold_admin.ModelAdmin):
     list_display = ('id', 'command', 'created_at')
     list_display_links = ('id', 'command')
+    readonly_fields = ("cleaned_content", )
     actions = (set_command_menu,)
 
     fieldsets = (
@@ -366,7 +367,7 @@ class MaskAdmin(unfold_admin.ModelAdmin):
     form = MaskModelForm
     list_display = ('id', 'text', 'created_at')
     list_display_links = ('id', 'text')
-    readonly_fields = ("text_list", "cleaned_content",)
+    readonly_fields = ("text_list", "cleaned_content", "count")
     search_fields = ("text",)
 
     fieldsets = (
@@ -385,6 +386,7 @@ class FAQAdmin(unfold_admin.ModelAdmin):
     list_display = ('id', 'question', 'answer', 'count', 'created_at')
     list_display_links = ()
     list_filter = (('answer', admin.EmptyFieldListFilter),)
+    readonly_fields = ("answer", "count")
 
     fieldsets = (
         (None, {
