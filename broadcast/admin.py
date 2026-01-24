@@ -64,9 +64,9 @@ class BroadcastAdmin(ModelAdmin):
                 ("medias",),
                 ("groups",),
                 ("scheduled_at", "task_id"),
-                ("percent", "is_sent")
+                ("percent", "is_sent"),
             )
-        })
+        }),
     )
 
 
