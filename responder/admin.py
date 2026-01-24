@@ -366,6 +366,7 @@ class MaskAdmin(unfold_admin.ModelAdmin):
     form = MaskModelForm
     list_display = ('id', 'text', 'created_at')
     list_display_links = ('id', 'text')
+    readonly_fields = ("text_list",)
     search_fields = ("text",)
 
     fieldsets = (
