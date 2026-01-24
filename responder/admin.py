@@ -165,16 +165,48 @@ class ReplyMessageInline(unfold_admin.TabularInline):
     model = models.ReplyMessage
     extra = 0
 
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("message", "is_retry",),
+                ("text", "cleaned_text",),
+            )
+        }),
+    )
+
 
 class TelegramUserInline(unfold_admin.TabularInline):
     model = models.TelegramUser
+    filter_horizontal = ("groups",)
     extra = 0
+
+    fieldsets = (
+        (
+            None, {
+            "fields": (
+                ("telegram_id", "username", "is_blocked"),
+                ("first_name", "last_name"),
+                ("groups",),
+            ),
+        }),
+    )
 
 
 class TelegramMessageInline(unfold_admin.StackedInline):
     model = models.TelegramMessage
     fields = ('text', 'message_id', 'group')
     extra = 0
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("group", "user"),
+                ("text", "answer"),
+                ("text_list", "answer_list"),
+                ("message_id", "is_marked"),
+            )
+        }),
+    )
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("group", 'user')
@@ -189,6 +221,17 @@ class TelegramUserAdmin(unfold_admin.ModelAdmin):
     search_fields = ('telegram_id', 'username', 'first_name',)
 
     inlines = [TelegramMessageInline, ]
+
+    fieldsets = (
+        (
+            None, {
+            "fields": (
+                ("telegram_id", "username", "is_blocked"),
+                ("first_name", "last_name"),
+                ("groups",),
+            ),
+        }),
+    )
 
     @unfold_admin.display(description="Количество сообщении")
     def count(self, obj):
@@ -208,6 +251,15 @@ class TelegramGroupAdmin(unfold_admin.ModelAdmin):
     search_fields = ("telegram_id", 'username', 'title')
 
     # inlines = (TelegramUserInline,)
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("telegram_id", "username", "is_active"),
+                ("title", 'status')
+            )
+        }),
+    )
 
     @unfold_admin.display(description="Количество сообщении")
     def count(self, obj):
@@ -237,6 +289,17 @@ class TelegramMessageAdmin(unfold_admin.ModelAdmin):
         ('group', admin.EmptyFieldListFilter),
     )
     inlines = [ReplyMessageInline, ]
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("group", "user"),
+                ("text", "answer"),
+                ("text_list", "answer_list"),
+                ("message_id", "is_marked"),
+            )
+        }),
+    )
 
     @unfold_admin.display(description="Действие")
     def custom_btn(self, obj):
@@ -285,6 +348,16 @@ class TelegramCommandAdmin(unfold_admin.ModelAdmin):
     list_display_links = ('id', 'command')
     actions = (set_command_menu,)
 
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("command", "description"),
+                ("content", "cleaned_content"),
+                ("file", "file_id")
+            )
+        })
+    )
+
 
 @admin.register(models.Mask)
 class MaskAdmin(unfold_admin.ModelAdmin):
@@ -293,13 +366,30 @@ class MaskAdmin(unfold_admin.ModelAdmin):
     list_display_links = ('id', 'text')
     search_fields = ("text",)
 
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("groups", "text_list"),
+                ("text", "content"),
+                ("cleaned_content", "count")
+            )
+        }),
+    )
+
 
 @admin.register(models.FAQ)
 class FAQAdmin(unfold_admin.ModelAdmin):
     list_display = ('id', 'question', 'answer', 'count', 'created_at')
     list_display_links = ()
-    list_filter = (
-        ('answer', admin.EmptyFieldListFilter),
+    list_filter = (('answer', admin.EmptyFieldListFilter),)
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("question", "answer"),
+                ("count",)
+            )
+        }),
     )
 
     def has_add_permission(self, request):

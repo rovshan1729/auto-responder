@@ -21,10 +21,31 @@ class BButtonInline(TabularInline):
 class MediaAdmin(ModelAdmin):
     list_display = ('id', 'file_id', 'order')
 
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("title", "file_type", "order"),
+                ("file", "file_id")
+            )
+        })
+    )
+
 
 @admin.register(models.BroadcastTemplate)
 class BroadcastTemplateAdmin(ModelAdmin):
+
+    filter_horizontal = ("medias",)
     inlines = (TButtonInline,)
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("title",),
+                ("content", "cleaned_content"),
+                ("medias",)
+            )
+        }),
+    )
 
 
 @admin.register(models.Broadcast)
@@ -33,6 +54,21 @@ class BroadcastAdmin(ModelAdmin):
     list_display = ('id', 'title', 'percent', 'is_sent', 'created_at')
     fields = ('title', 'template', 'groups', 'medias', 'content', 'scheduled_at')
     inlines = (BButtonInline,)
+
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("title", "template"),
+                ("content", "cleaned_content"),
+                ("medias",),
+                ("groups",),
+                ("scheduled_at", "task_id"),
+                ("percent", "is_sent")
+            )
+        })
+    )
+
 
     def response_add(self, request, obj, post_url_continue=None):
         if "_save_now" in request.POST:
