@@ -4,7 +4,7 @@ from aiogram import types, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import ReplyKeyboardRemove
 from django.db.models import Q
-from responder.choices import VerificationStatusChoice, UserRole
+from responder.choices import VerificationStatusChoice, UserRole, DisputeStatus
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
 from datetime import timedelta
@@ -600,46 +600,146 @@ async def dispute_add_handler(callback: types.CallbackQuery, state: FSMContext):
 
 
 async def get_merchant_handler(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.delete()
-    merchant_id = callback.data.split("|")[1]
+    try:
+        await callback.message.delete()
+    except:
+        pass
+
+    merchant_id = int(callback.data.split("|")[1])
     await callback.message.answer(utils.get_text("get_merchant"))
-    await state.update_data({
-        merchant_id: {}
-    })
+    await state.update_data({"current_merchant_id": merchant_id})
     await state.set_state(WorkerState.dispute_count)
 
 
 async def get_dispute_count_handler(message: types.Message, state: FSMContext):
-    count = message.text
-    x = await state.get_data()
-    for i in x.items():
-        if len(i[1].keys()) == 0:
-            await state.update_data({
-                i[0]: {
-                    "merchant_count": count,
-                }
-            })
+    text = message.text.strip()
+
+    if not text.isdigit():
+        await message.answer("Просто введите число. Например: 3")
+        return
+
+    count = int(text)
+
+    data = await state.get_data()
+    merchant_id = data.get("current_merchant_id")
+
+    if not merchant_id:
+        await message.answer("Продавец не выбран. Пожалуйста, попробуйте еще раз.")
+        return
+
+    disputes = data.get("disputes", [])
+    disputes.append({
+        "merchant_id": merchant_id,
+        "dispute_count": count,
+        "status": "new"
+    })
+    await state.update_data({"disputes": disputes})
     await message.answer(utils.get_text("get_dispute_count"), reply_markup=inliene.get_dispute_count_inline_button())
     await state.set_state(WorkerState.cycle)
 
 
 async def get_add_more_dispute_handler(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.delete()
+    try:
+        await callback.message.delete()
+    except:
+        pass
+
     if callback.data == "add_more_dispute":
         await callback.message.answer(utils.get_text("choice_merchant"),
                                       reply_markup=inliene.merchant_choosing_inline_button())
         await state.set_state(WorkerState.merchant)
+
     elif callback.data == "add_more_text":
         await callback.message.answer(utils.get_text("get_problem_info"))
         await state.set_state(WorkerState.get_problem)
 
 
 async def get_problem_text_handler(message: types.Message, state: FSMContext):
-    await message.answer(utils.get_text("get_problem_text"))
-    await state.update_data({
-        "dispute_text": message.text
-    })
+    chat_id = message.from_user.id
+
+    problem_text_input = message.text.strip()
+
+    data = await state.get_data()
+    disputes = data.get("disputes", [])
+
+    work_data = models.WorkerData.objects.filter(
+        profile__user__telegram_id=chat_id,
+        finish_work_time__isnull=True
+    ).select_related("profile__user").first()
+
+    if not work_data:
+        await message.answer(utils.get_text("no_work"))
+        return
+
+    report, _ = models.WorkerShiftReport.objects.get_or_create(worker_data=work_data)
+
+    report.comment = problem_text_input
+    report.is_submitted = True
+    report.submitted_at = timezone.now()
+    report.save(update_fields=["comment", "is_submitted", "submitted_at"])
+
+    for d in disputes:
+        merchant_id = d.get("merchant_id")
+        count = d.get("dispute_count")
+
+        if not merchant_id or count is None:
+            continue
+
+        models.WorkerDispute.objects.create(
+            report=report,
+            merchant_id=int(merchant_id),
+            count=int(count),
+            status=DisputeStatus.NEW
+        )
+
+    work_data.finish_work_time = timezone.now()
+    work_data.save(update_fields=["finish_work_time"])
+
     head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
-    text = (f"USER: {message.from_user.username}\n"
-            f"Finish time: {timezone.now().isoformat()}")
-    utils.send_text(head_profile.user.telegram_id, text)
+    if head_profile:
+        username = message.from_user.username or message.from_user.full_name
+
+        now_str = timezone.localtime(timezone.now()).strftime("%d.%m.%Y %H:%M:%S")
+
+        db_disputes = report.disputes.select_related("merchant").all()
+
+        grouped = {}
+        # merchant_title => {resolved:0, new:0, unresolved:0}
+        for item in db_disputes:
+            title = item.merchant.title
+
+            if title not in grouped:
+                grouped[title] = {
+                    "resolved": 0,
+                    "new": 0,
+                    "unresolved": 0
+                }
+
+            if item.status == DisputeStatus.RESOLVED:
+                grouped[title]["resolved"] += item.count
+            elif item.status == DisputeStatus.NEW:
+                grouped[title]["new"] += item.count
+            elif item.status == DisputeStatus.UNRESOLVED:
+                grouped[title]["unresolved"] += item.count
+
+        lines = []
+        for merchant_title in sorted(grouped.keys()):
+            r = grouped[merchant_title]["resolved"]
+            n = grouped[merchant_title]["new"]
+            u = grouped[merchant_title]["unresolved"]
+
+            lines.append(f"{merchant_title}: решённые {r} новые {n} нерешённые {u}")
+
+        merchants_block = "\n".join(lines) if lines else "Нет диспутов"
+
+        head_text = (
+            f"Дата и время: {now_str}\n"
+            f"Саппорт: @{username}\n\n"
+            f"{merchants_block}\n\n"
+            f"Проблема:\n{report.comment or '-'}"
+        )
+
+        utils.send_text(head_profile.user.telegram_id, head_text)
+
+    await message.answer(utils.get_text("the_shift_assigned"))
+    await state.clear()

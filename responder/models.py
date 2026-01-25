@@ -6,7 +6,7 @@ from tinymce.models import HTMLField
 from solo.models import SingletonModel
 
 from .base import BaseModel
-from .choices import ChatMemberStatus, GroupChoice, VerificationStatusChoice, AdminFieldType, UserRole
+from .choices import ChatMemberStatus, GroupChoice, VerificationStatusChoice, AdminFieldType, UserRole, DisputeStatus
 from responder.managers import CurrentVerificationManager, ArchivedVerificationManager
 from bot import utils
 
@@ -513,3 +513,45 @@ class Merchant(BaseModel):
 
     def __str__(self):
         return f"{self.title}"
+
+
+class WorkerShiftReport(BaseModel):
+    worker_data = models.OneToOneField(WorkerData, on_delete=models.CASCADE, related_name="report")
+    is_submitted = models.BooleanField(default=False)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+
+    comment = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Report #{self.id} | {self.worker_data.profile.user}"
+
+
+class WorkerDispute(BaseModel):
+    report = models.ForeignKey(WorkerShiftReport, on_delete=models.CASCADE, related_name="disputes")
+    merchant = models.ForeignKey(Merchant, on_delete=models.PROTECT, related_name="dispute")
+
+    count = models.IntegerField(default=0)
+
+    status = models.CharField(max_length=32, choices=DisputeStatus.choices, default=DisputeStatus.NEW)
+
+    def __str__(self):
+        return f"{self.report.worker_data.profile.user} | {self.merchant.title} | {self.count} | {self.status}"
+
+
+class WorkerIssue(BaseModel):
+    report = models.ForeignKey(
+        WorkerShiftReport,
+        on_delete=models.CASCADE,
+        related_name="issues"
+    )
+
+    merchant = models.ForeignKey(
+        Merchant,
+        on_delete=models.PROTECT,
+        related_name="issues"
+    )
+
+    text = models.TextField()
+
+    def __str__(self):
+        return f"{self.report.worker_data.profile.user} | {self.merchant.title}"
