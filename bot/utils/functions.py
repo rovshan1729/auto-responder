@@ -4,6 +4,8 @@ import unicodedata
 
 import orjson
 from bs4 import BeautifulSoup
+from datetime import datetime
+
 
 PUNCTUATION_TRANSLATOR = str.maketrans('', '', string.punctuation + string.digits)
 EMOJI_PATTERN = re.compile(
@@ -152,3 +154,9 @@ def is_valid_phone(phone: str) -> bool:
 def is_valid_email(email: str) -> bool:
     pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
     return bool(re.match(pattern, email))
+
+def parse_date_ru(date_str: str):
+    try:
+        return datetime.strptime(date_str.strip(), "%d.%m.%Y").date()
+    except:
+        return None

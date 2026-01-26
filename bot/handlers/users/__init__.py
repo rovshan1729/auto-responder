@@ -42,6 +42,11 @@ def prepare_router():
     router.message.register(get_dispute_count_handler, WorkerState.dispute_count)
     router.callback_query.register(get_add_more_dispute_handler, StateFilter(WorkerState.cycle), (F.data == "add_more_dispute") | (F.data == "add_more_text"))
     router.message.register(get_problem_text_handler, WorkerState.get_problem)
+    router.callback_query.register(get_add_problem_support_handler, F.data == "add_problem")
+    router.message.register(get_add_problem_text_support_handler, WorkerState.add_problem)
+    router.message.register(head_report_command, Command("report"))
+    router.message.register(head_report_date_from_handler, HeadReportState.date_from)
+    router.message.register(head_report_date_to_handler, HeadReportState.date_to)
 
     router.message.register(command_handler, users.IsCommandFilter())
     router.callback_query.register(accept_handler, F.data.split("|")[0] == "accepted")

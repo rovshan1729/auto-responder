@@ -16,6 +16,7 @@ admin.site.register(models.WorkerData)
 admin.site.register(models.Merchant)
 admin.site.register(models.WorkerShiftReport)
 admin.site.register(models.WorkerDispute)
+admin.site.register(models.Problem)
 admin.site.register(models.Country)
 admin.site.register(models.StaticText)
 

@@ -20,7 +20,7 @@ async def get_mask(text_list: str, credential: str | int, title: str = None):
     ).exists()
 
     if not is_blocked:
-        mask= r_models.Mask.objects.filter(
+        mask = r_models.Mask.objects.filter(
             text_list=text_list
         ).first()
 
@@ -79,6 +79,7 @@ async def remove_chat(chat_id: int):
 
 async def get_data_model():
     return r_models.Data.get_solo()
+
 
 def get_text(code):
     obj, created = r_models.StaticText.objects.get_or_create(

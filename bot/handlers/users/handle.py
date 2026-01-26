@@ -7,12 +7,12 @@ from django.db.models import Q
 from responder.choices import VerificationStatusChoice, UserRole, DisputeStatus
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.utils import timezone
 
 from bot import utils
 from bot.keyboards import reply, inliene
-from bot.states.states import RegistrationState, WorkerState
+from bot.states.states import RegistrationState, WorkerState, HeadReportState
 from responder import tasks, models
 
 
@@ -742,4 +742,139 @@ async def get_problem_text_handler(message: types.Message, state: FSMContext):
         utils.send_text(head_profile.user.telegram_id, head_text)
 
     await message.answer(utils.get_text("the_shift_assigned"))
+    await state.clear()
+
+
+async def get_add_problem_support_handler(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.answer(utils.get_text("send_text_add_problem"))
+    await state.set_state(WorkerState.add_problem)
+
+
+async def get_add_problem_text_support_handler(message: types.Message, state: FSMContext):
+    problem_text = message.text.strip()
+
+    profile = models.Profile.objects.filter(user__telegram_id=message.from_user.id).first()
+    if not profile:
+        await message.answer(utils.get_text("none_profile"))
+        return
+
+    models.Problem.objects.create(profile=profile, text=problem_text)
+
+    head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
+    if head_profile:
+        username = message.from_user.username or message.from_user.full_name
+
+        text = (
+            "Проблемы:\n"
+            f"@{username} - {problem_text}"
+        )
+
+        utils.send_text(head_profile.user.telegram_id, text)
+
+    await message.answer(utils.get_text("get_problem_text_support"))
+    await state.clear()
+
+
+async def head_report_command(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role=UserRole.HEAD_SUPPORT
+    ).first()
+    if not profile:
+        await message.answer("У вас нет доступа к этой команде.")
+        return
+
+    await state.clear()
+    await message.answer("Введите дату ОТ (формат: ДД.ММ.ГГГГ)\nПример: 25.01.2026")
+    await state.set_state(HeadReportState.date_from)
+
+
+async def head_report_date_from_handler(message: types.Message, state: FSMContext):
+    date_from = utils.parse_date_ru(message.text)
+
+    if not date_from:
+        await message.answer("Неверный формат даты. Пример: 25.01.2026")
+        return
+
+    await state.update_data({"date_from": str(date_from)})
+    await message.answer("Введите дату ДО (формат: ДД.ММ.ГГГГ)\nПример: 26.01.2026")
+    await state.set_state(HeadReportState.date_to)
+
+
+async def head_report_date_to_handler(message: types.Message, state: FSMContext):
+    date_to = utils.parse_date_ru(message.text)
+
+    if not date_to:
+        await message.answer("Неверный формат даты. Пример: 26.01.2026")
+        return
+
+    data = await state.get_data()
+    date_from_str = data.get("date_from")
+
+    if not date_from_str:
+        await message.answer("Дата ОТ не найдена. Введите /report заново.")
+        await state.clear()
+        return
+
+    date_from = datetime.strptime(date_from_str, "%Y-%m-%d").date()
+
+    if date_to < date_from:
+        await message.answer("Дата ДО не может быть меньше даты ОТ.")
+        return
+
+    dt_from = timezone.make_aware(datetime.combine(date_from, datetime.min.time()))
+    dt_to = timezone.make_aware(datetime.combine(date_to, datetime.max.time()))
+
+    report_ids = models.WorkerShiftReport.objects.filter(
+        is_submitted=True,
+        submitted_at__gte=dt_from,
+        submitted_at__lte=dt_to
+    ).values_list("id", flat=True)
+
+    disputes = models.WorkerDispute.objects.filter(
+        report_id__in=report_ids
+    ).select_related("merchant")
+
+    if not disputes.exists():
+        await message.answer("Нет данных по диспутам за выбранный период.")
+        await state.clear()
+        return
+
+    grouped = {}
+    total = {"resolved": 0, "new": 0, "unresolved": 0}
+
+    for d in disputes:
+        title = d.merchant.title
+
+        if title not in grouped:
+            grouped[title] = {"resolved": 0, "new": 0, "unresolved": 0}
+
+        if d.status == DisputeStatus.RESOLVED:
+            grouped[title]["resolved"] += d.count
+            total["resolved"] += d.count
+        elif d.status == DisputeStatus.NEW:
+            grouped[title]["new"] += d.count
+            total["new"] += d.count
+        elif d.status == DisputeStatus.UNRESOLVED:
+            grouped[title]["unresolved"] += d.count
+            total["unresolved"] += d.count
+
+    lines = []
+    lines.append(f"Отчет по диспутам")
+    lines.append(f"Период: {date_from.strftime('%d.%m.%Y')} - {date_to.strftime('%d.%m.%Y')}")
+    lines.append("")
+    lines.append("По мерчантам:")
+
+    for merchant_title in sorted(grouped.keys()):
+        r = grouped[merchant_title]["resolved"]
+        n = grouped[merchant_title]["new"]
+        u = grouped[merchant_title]["unresolved"]
+        lines.append(f"{merchant_title}: решённые {r} новые {n} нерешённые {u}")
+
+    lines.append("")
+    lines.append(
+        f"ИТОГО: решённые {total['resolved']} новые {total['new']} нерешённые {total['unresolved']}"
+    )
+
+    await message.answer("\n".join(lines))
     await state.clear()

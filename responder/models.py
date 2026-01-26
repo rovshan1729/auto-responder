@@ -555,3 +555,11 @@ class WorkerIssue(BaseModel):
 
     def __str__(self):
         return f"{self.report.worker_data.profile.user} | {self.merchant.title}"
+
+
+class Problem(BaseModel):
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="problems")
+    text = models.TextField()
+
+    def __str__(self):
+        return self.profile.user

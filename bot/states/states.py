@@ -30,3 +30,9 @@ class WorkerState(StatesGroup):
     dispute_count = State()
     cycle = State()
     get_problem = State()
+    add_problem = State()
+
+
+class HeadReportState(StatesGroup):
+    date_from = State()
+    date_to = State()
