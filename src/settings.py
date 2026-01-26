@@ -374,7 +374,7 @@ UNFOLD = {
                 "items": [
                     {
                         "title": "Страна",
-                        "icon": "country",
+                        "icon": "assignment_globe",
                         "link": lambda request: reverse_lazy("admin:responder_country_changelist"),
                     },
                     {
@@ -384,7 +384,7 @@ UNFOLD = {
                     },
                     {
                         "title": "Профиль",
-                        "icon": "profile",
+                        "icon": "account_circle",
                         "link": lambda request: reverse_lazy("admin:responder_profile_changelist"),
                     },
                     {
