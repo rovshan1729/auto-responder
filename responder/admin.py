@@ -14,21 +14,15 @@ from bot.utils import methods
 from responder import models, mixins
 from responder.forms import ReplyMessageForm, MaskModelForm
 
-admin.site.register(models.Profile)
-admin.site.register(models.WorkerData)
-admin.site.register(models.Merchant)
-admin.site.register(models.Country)
-admin.site.register(models.StaticText)
 
-
-class VerificationAdminFieldInline(admin.TabularInline):
+class VerificationAdminFieldInline(unfold_admin.TabularInline):
     model = models.VerificationAdminField
     extra = 1
     fields = ("label", "field_type", "value")
 
 
 @admin.register(models.AllVerification)
-class AllVerificationAdmin(admin.ModelAdmin, mixins.VerificationAdminMixin):
+class AllVerificationAdmin(unfold_admin.ModelAdmin, mixins.VerificationAdminMixin):
     list_display = (
         "fullname",
         "phone_number",
@@ -69,7 +63,7 @@ class AllVerificationAdmin(admin.ModelAdmin, mixins.VerificationAdminMixin):
 
 
 @admin.register(models.CurrentVerification)
-class CurrentVerificationAdmin(admin.ModelAdmin, mixins.VerificationAdminMixin):
+class CurrentVerificationAdmin(unfold_admin.ModelAdmin, mixins.VerificationAdminMixin):
     list_display = (
         "fullname",
         "phone_number",
@@ -110,7 +104,7 @@ class CurrentVerificationAdmin(admin.ModelAdmin, mixins.VerificationAdminMixin):
 
 
 @admin.register(models.ArchivedVerification)
-class ArchivedVerificationAdmin(admin.ModelAdmin, mixins.VerificationAdminMixin):
+class ArchivedVerificationAdmin(unfold_admin.ModelAdmin, mixins.VerificationAdminMixin):
     list_display = (
         "fullname",
         "phone_number",
@@ -348,7 +342,7 @@ class TelegramMessageAdmin(unfold_admin.ModelAdmin):
 class TelegramCommandAdmin(unfold_admin.ModelAdmin):
     list_display = ('id', 'command', 'created_at')
     list_display_links = ('id', 'command')
-    readonly_fields = ("cleaned_content", )
+    readonly_fields = ("cleaned_content",)
     actions = (set_command_menu,)
 
     fieldsets = (
@@ -410,3 +404,62 @@ class DataAdmin(unfold_admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+
+# admin.site.register(models.Profile)
+# admin.site.register(models.WorkerData)
+# admin.site.register(models.Merchant)
+# admin.site.register(models.Country)
+# admin.site.register(models.StaticText)
+
+@admin.register(models.Profile)
+class ProfileAdmin(unfold_admin.ModelAdmin):
+    list_display = ('id', 'user', 'role')
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("user", 'role',),
+            )
+        }),
+    )
+
+
+@admin.register(models.WorkerData)
+class WorkerDataAdmin(unfold_admin.ModelAdmin):
+    list_display = ('id', 'profile', 'start_work_time', 'finish_work_time')
+
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("profile",),
+                ("start_work_time", "finish_work_time"),
+            )
+        }),
+    )
+
+
+@admin.register(models.Merchant)
+class MerchantAdmin(unfold_admin.ModelAdmin):
+    list_display = ('id', 'title')
+
+
+@admin.register(models.Country)
+class CountryAdmin(unfold_admin.ModelAdmin):
+    list_display = ("id", "title")
+
+
+@admin.register(models.StaticText)
+class StaticTextAdmin(unfold_admin.ModelAdmin):
+    list_display = ("id", "code",)
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("code", "text"),
+            )
+        }),
+    )
+
+
