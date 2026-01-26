@@ -14,6 +14,30 @@ services:
       - POSTGRES_PORT=${DB_PORT}
     restart: always
 
+  pgbouncer:
+    image: edoburu/pgbouncer
+    container_name: test_autoresponder_pgbouncer
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_HOST=${DB_HOST}
+      - POSTGRES_DB=${DB_NAME}
+      - POOL_MODE=${POOL_MODE}
+      - MAX_CLIENT_CONN=${MAX_CLIENT_CONN}
+      - DEFAULT_POOL_SIZE=${DEFAULT_POOL_SIZE}
+      - PGBOUNCER_HOST=${PGBOUNCER_HOST}
+      - LISTEN_PORT=${PGBOUNCER_PORT}
+      - AUTH_TYPE=trust
+    volumes:
+      - ./pgbouncer_userlist.txt:/etc/pgbouncer/userlist.txt:ro
+    depends_on:
+      - db
+    ports:
+      - "${PGBOUNCER_PORT}:${PGBOUNCER_PORT}"
+
   redis:
     image: redis:7
     container_name: test_autoresponder_redis

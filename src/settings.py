@@ -1,3 +1,4 @@
+import hashlib
 import os
 import sentry_sdk
 
@@ -19,6 +20,10 @@ DEBUG = env.bool("DEBUG", default=False)
 API_TOKEN = env.str("API_TOKEN")
 ADMIN = env.str("ADMIN")
 DOMAIN_URL = env.str("DOMAIN_URL")
+
+encoded_api_token = API_TOKEN.encode()
+WEBHOOK_PATH = 'tgbot/' + hashlib.md5(encoded_api_token).hexdigest()
+WEBHOOK_URL = f"{DOMAIN_URL}/{WEBHOOK_PATH}"
 
 ALLOWED_HOSTS = ['*']
 
@@ -109,6 +114,15 @@ DBS = {
         'PASSWORD': env.str("DB_PASSWORD"),
         'HOST': env.str("DB_HOST"),
         'PORT': env.str("DB_PORT"),
+    },
+    'pgbouncer': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env.str("DB_NAME"),
+        'USER': env.str("DB_USER"),
+        'PASSWORD': env.str("DB_PASSWORD"),
+        'HOST': env.str("PGBOUNCER_HOST"),
+        'PORT': env.str("PGBOUNCER_PORT"),
+        'CONN_MAX_AGE': 0
     }
 }
 
