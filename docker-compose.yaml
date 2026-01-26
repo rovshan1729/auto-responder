@@ -76,22 +76,22 @@ services:
       - redis
       - mq
 
-  bot:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-    container_name: test_autoresponder_bot
-    command: python manage.py runbot
-    entrypoint: []
-    volumes:
-      - ./:/app
-      - ./static:/app/static
-      - ./media:/app/media
-    restart: always
-    depends_on:
-      - db
-      - redis
-      - django
+#  bot:
+#    build:
+#      context: .
+#      dockerfile: ./Dockerfile
+#    container_name: test_autoresponder_bot
+#    command: python manage.py runbot
+#    entrypoint: []
+#    volumes:
+#      - ./:/app
+#      - ./static:/app/static
+#      - ./media:/app/media
+#    restart: always
+#    depends_on:
+#      - db
+#      - redis
+#      - django
 
   celery:
     build:
