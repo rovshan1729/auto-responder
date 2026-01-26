@@ -361,11 +361,11 @@ UNFOLD = {
                         "icon": "fingerprint",
                         "link": lambda request: reverse_lazy("admin:responder_archivedverification_changelist"),
                     },
-                    {
-                        "title": "Дополнительное поле",
-                        "icon": "check_box",
-                        "link": lambda request: reverse_lazy("admin:responder_verificationadminfield_changelist"),
-                    },
+                    # {
+                    #     "title": "Дополнительное поле",
+                    #     "icon": "check_box",
+                    #     "link": lambda request: reverse_lazy("admin:responder_verificationadminfield_changelist"),
+                    # },
                 ]
             },
             {
