@@ -25,4 +25,4 @@ python manage.py setwebhook
 echo "🚀 Запуск Gunicorn..."
 exec gunicorn src.asgi:application \
     --worker-class=uvicorn.workers.UvicornWorker \
-    --bind 0.0.0.0:$WEB_PORT
+    --bind 0.0.0.0:8022
