@@ -338,6 +338,68 @@ UNFOLD = {
                 ],
             },
             {
+                "title": "Верификации",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Все верификации",
+                        "icon": "fingerprint",
+                        "link": lambda request: reverse_lazy("admin:responder_allverification_changelist"),
+                    },
+                    {
+                        "title": "Верификациа",
+                        "icon": "fingerprint",
+                        "link": lambda request: reverse_lazy("admin:responder_verification_changelist"),
+                    },
+                    {
+                        "title": "Текущие верификации",
+                        "icon": "fingerprint",
+                        "link": lambda request: reverse_lazy("admin:responder_currentverification_changelist"),
+                    },
+                    {
+                        "title": "Архив",
+                        "icon": "fingerprint",
+                        "link": lambda request: reverse_lazy("admin:responder_archivedverification_changelist"),
+                    },
+                    {
+                        "title": "Дополнительное поле",
+                        "icon": "check_box",
+                        "link": lambda request: reverse_lazy("admin:responder_verificationadminfield_changelist"),
+                    },
+                ]
+            },
+            {
+                "title": "Отчеты",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Страна",
+                        "icon": "country",
+                        "link": lambda request: reverse_lazy("admin:responder_country_changelist"),
+                    },
+                    {
+                        "title": "Статический текст",
+                        "icon": "text_compare",
+                        "link": lambda request: reverse_lazy("admin:responder_statictext_changelist"),
+                    },
+                    {
+                        "title": "Профиль",
+                        "icon": "profile",
+                        "link": lambda request: reverse_lazy("admin:responder_profile_changelist"),
+                    },
+                    {
+                        "title": "WorkerData",
+                        "icon": "data_array",
+                        "link": lambda request: reverse_lazy("admin:responder_workerdata_changelist"),
+                    },
+                    {
+                        "title": "Торговец",
+                        "icon": "point_of_sale",
+                        "link": lambda request: reverse_lazy("admin:responder_merchant_changelist"),
+                    }
+                ]
+            },
+            {
                 "title": "Реклама",
                 "separator": True,
                 "items": [
