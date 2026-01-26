@@ -7,6 +7,7 @@ from django.utils.html import format_html
 from unfold import admin as unfold_admin
 from unfold.decorators import action as unfold_action
 
+from utils import BaseModelAdmin
 
 from bot.utils import methods
 from responder import models, mixins
@@ -20,7 +21,7 @@ class VerificationAdminFieldInline(unfold_admin.TabularInline):
 
 
 @admin.register(models.AllVerification)
-class AllVerificationAdmin(unfold_admin.ModelAdmin, mixins.VerificationAdminMixin):
+class AllVerificationAdmin(BaseModelAdmin, mixins.VerificationAdminMixin):
     list_display = (
         "fullname",
         "phone_number",
@@ -61,7 +62,7 @@ class AllVerificationAdmin(unfold_admin.ModelAdmin, mixins.VerificationAdminMixi
 
 
 @admin.register(models.CurrentVerification)
-class CurrentVerificationAdmin(unfold_admin.ModelAdmin, mixins.VerificationAdminMixin):
+class CurrentVerificationAdmin(BaseModelAdmin, mixins.VerificationAdminMixin):
     list_display = (
         "fullname",
         "phone_number",
@@ -102,7 +103,7 @@ class CurrentVerificationAdmin(unfold_admin.ModelAdmin, mixins.VerificationAdmin
 
 
 @admin.register(models.ArchivedVerification)
-class ArchivedVerificationAdmin(unfold_admin.ModelAdmin, mixins.VerificationAdminMixin):
+class ArchivedVerificationAdmin(BaseModelAdmin, mixins.VerificationAdminMixin):
     list_display = (
         "fullname",
         "phone_number",
@@ -207,7 +208,7 @@ class TelegramMessageInline(unfold_admin.StackedInline):
 
 
 @admin.register(models.TelegramUser)
-class TelegramUserAdmin(unfold_admin.ModelAdmin):
+class TelegramUserAdmin(BaseModelAdmin):
     list_display = ('id', 'telegram_id', 'username', 'first_name', 'count', 'is_blocked', 'created_at')
     list_display_links = ('id', 'telegram_id')
     list_editable = ('is_blocked',)
@@ -238,7 +239,7 @@ class TelegramUserAdmin(unfold_admin.ModelAdmin):
 
 
 @admin.register(models.TelegramGroup)
-class TelegramGroupAdmin(unfold_admin.ModelAdmin):
+class TelegramGroupAdmin(BaseModelAdmin):
     list_display = ('id', 'telegram_id', 'username', 'title', 'count', 'created_at')
     list_display_links = ('id', 'telegram_id')
     list_filter = ('status',)
@@ -269,7 +270,7 @@ class TelegramGroupAdmin(unfold_admin.ModelAdmin):
 
 
 @admin.register(models.TelegramMessage)
-class TelegramMessageAdmin(unfold_admin.ModelAdmin):
+class TelegramMessageAdmin(BaseModelAdmin):
     list_display = ('id', 'group', 'user', 'text', 'message_id', 'is_marked', 'created_at', "custom_btn")
     list_display_links = ('id', 'group', 'user', 'message_id')
     readonly_fields = ("answer_list",)
@@ -337,7 +338,7 @@ class TelegramMessageAdmin(unfold_admin.ModelAdmin):
 
 
 @admin.register(models.TelegramCommand)
-class TelegramCommandAdmin(unfold_admin.ModelAdmin):
+class TelegramCommandAdmin(BaseModelAdmin):
     list_display = ('id', 'command', 'created_at')
     list_display_links = ('id', 'command')
     readonly_fields = ("cleaned_content",)
@@ -355,7 +356,7 @@ class TelegramCommandAdmin(unfold_admin.ModelAdmin):
 
 
 @admin.register(models.Mask)
-class MaskAdmin(unfold_admin.ModelAdmin):
+class MaskAdmin(BaseModelAdmin):
     form = MaskModelForm
     list_display = ('id', 'text', 'created_at')
     list_display_links = ('id', 'text')
@@ -374,7 +375,7 @@ class MaskAdmin(unfold_admin.ModelAdmin):
 
 
 @admin.register(models.FAQ)
-class FAQAdmin(unfold_admin.ModelAdmin):
+class FAQAdmin(BaseModelAdmin):
     list_display = ('id', 'question', 'answer', 'count', 'created_at')
     list_display_links = ()
     list_filter = (('answer', admin.EmptyFieldListFilter),)
@@ -397,7 +398,7 @@ class FAQAdmin(unfold_admin.ModelAdmin):
 
 
 @admin.register(models.Data)
-class DataAdmin(unfold_admin.ModelAdmin):
+class DataAdmin(BaseModelAdmin):
     readonly_fields = ('channel_id',)
 
     def has_add_permission(self, request):
@@ -405,7 +406,7 @@ class DataAdmin(unfold_admin.ModelAdmin):
 
 
 @admin.register(models.Profile)
-class ProfileAdmin(unfold_admin.ModelAdmin):
+class ProfileAdmin(BaseModelAdmin):
     list_display = ('id', 'user', 'role')
 
     fieldsets = (
@@ -418,7 +419,7 @@ class ProfileAdmin(unfold_admin.ModelAdmin):
 
 
 @admin.register(models.WorkerData)
-class WorkerDataAdmin(unfold_admin.ModelAdmin):
+class WorkerDataAdmin(BaseModelAdmin):
     list_display = ('id', 'profile', 'start_work_time', 'finish_work_time')
 
 
@@ -433,17 +434,17 @@ class WorkerDataAdmin(unfold_admin.ModelAdmin):
 
 
 @admin.register(models.Merchant)
-class MerchantAdmin(unfold_admin.ModelAdmin):
+class MerchantAdmin(BaseModelAdmin):
     list_display = ('id', 'title')
 
 
 @admin.register(models.Country)
-class CountryAdmin(unfold_admin.ModelAdmin):
+class CountryAdmin(BaseModelAdmin):
     list_display = ("id", "title")
 
 
 @admin.register(models.StaticText)
-class StaticTextAdmin(unfold_admin.ModelAdmin):
+class StaticTextAdmin(BaseModelAdmin):
     list_display = ("id", "code",)
 
     fieldsets = (

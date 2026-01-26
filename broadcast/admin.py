@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib import messages
 
 from unfold.admin import ModelAdmin, TabularInline
+from utils import BaseModelAdmin
 
 from . import models
 from .forms import BroadcastModelForm
@@ -18,7 +19,7 @@ class BButtonInline(TabularInline):
 
 
 @admin.register(models.Media)
-class MediaAdmin(ModelAdmin):
+class MediaAdmin(BaseModelAdmin):
     list_display = ('id', 'file_id', 'order')
 
     fieldsets = (
@@ -32,7 +33,7 @@ class MediaAdmin(ModelAdmin):
 
 
 @admin.register(models.BroadcastTemplate)
-class BroadcastTemplateAdmin(ModelAdmin):
+class BroadcastTemplateAdmin(BaseModelAdmin):
 
     filter_horizontal = ("medias",)
     inlines = (TButtonInline,)
@@ -49,7 +50,7 @@ class BroadcastTemplateAdmin(ModelAdmin):
 
 
 @admin.register(models.Broadcast)
-class BroadcastAdmin(ModelAdmin):
+class BroadcastAdmin(BaseModelAdmin):
     form = BroadcastModelForm
     list_display = ('id', 'title', 'percent', 'is_sent', 'created_at')
     # fields = ('title', 'template', 'groups', 'medias', 'content', 'scheduled_at')
