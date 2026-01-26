@@ -7,9 +7,7 @@ from django.utils.html import format_html
 from unfold import admin as unfold_admin
 from unfold.decorators import action as unfold_action
 
-from solo.admin import SingletonModelAdmin
 
-from bot import utils
 from bot.utils import methods
 from responder import models, mixins
 from responder.forms import ReplyMessageForm, MaskModelForm
@@ -405,12 +403,6 @@ class DataAdmin(unfold_admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 
-
-# admin.site.register(models.Profile)
-# admin.site.register(models.WorkerData)
-# admin.site.register(models.Merchant)
-# admin.site.register(models.Country)
-# admin.site.register(models.StaticText)
 
 @admin.register(models.Profile)
 class ProfileAdmin(unfold_admin.ModelAdmin):

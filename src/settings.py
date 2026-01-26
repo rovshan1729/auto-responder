@@ -346,11 +346,11 @@ UNFOLD = {
                         "icon": "fingerprint",
                         "link": lambda request: reverse_lazy("admin:responder_allverification_changelist"),
                     },
-                    {
-                        "title": "Верификациа",
-                        "icon": "fingerprint",
-                        "link": lambda request: reverse_lazy("admin:responder_verification_changelist"),
-                    },
+                    # {
+                    #     "title": "Верификациа",
+                    #     "icon": "fingerprint",
+                    #     "link": lambda request: reverse_lazy("admin:responder_verification_changelist"),
+                    # },
                     {
                         "title": "Текущие верификации",
                         "icon": "fingerprint",
