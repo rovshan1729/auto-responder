@@ -219,7 +219,6 @@ from bot.webhook import webhook
 
 @csrf_exempt
 async def telegram_webhook(request):
-    print("\nOn working Telegram webhook\n")
 
     if request.method != "POST":
         return HttpResponse(status=405)
