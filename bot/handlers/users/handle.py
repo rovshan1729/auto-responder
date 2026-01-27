@@ -1,5 +1,3 @@
-from pyexpat.errors import messages
-
 from aiogram import types, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import ReplyKeyboardRemove
@@ -8,7 +6,6 @@ from responder.choices import VerificationStatusChoice, UserRole
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
 from datetime import timedelta
-from django.utils import timezone
 
 from bot import utils
 from bot.keyboards import reply, inliene
@@ -535,7 +532,9 @@ from django.utils import timezone
 
 async def support_worker_handler(message: types.Message, state: FSMContext):
     await state.clear()
+
     profile = models.Profile.objects.filter(Q(user__telegram_id=message.chat.id) & Q(role=UserRole.SUPPORT))
+
     if profile.exists():
         await message.answer(
             utils.get_text("worker_start_message"),
