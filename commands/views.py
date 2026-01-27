@@ -204,19 +204,33 @@ from django.views.decorators.csrf import csrf_exempt
 from bot.webhook import webhook
 
 
+# @csrf_exempt
+# async def telegram_webhook(request: HttpRequest):
+#     if request.method != 'POST':
+#         return HttpResponse(status=405)
+#     try:
+#         body = request.body.decode("utf-8")
+#         await webhook.process_body(body)  # Await напрямую
+#         return HttpResponse(status=200)
+#     except Exception as e:
+#         logging.error(f"Webhook error: {e}")
+#         return HttpResponse(status=200)
+
+
 @csrf_exempt
 async def telegram_webhook(request: HttpRequest):
     if request.method != 'POST':
         return HttpResponse(status=405)
+
     try:
-        body = request.body.decode("utf-8")
-        await webhook.process_body(body)  # Await напрямую
+        body_bytes = await request.body
+        body = body_bytes.decode("utf-8")
+
+        await webhook.process_body(body)
         return HttpResponse(status=200)
-    except Exception as e:
-        logging.error(f"Webhook error: {e}")
+
+    except Exception:
+        logging.exception("Webhook error")
         return HttpResponse(status=200)
-
-
-
 
 
