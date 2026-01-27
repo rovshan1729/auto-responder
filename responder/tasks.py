@@ -220,8 +220,10 @@ def send_expired_verification():
         verification.save(update_fields=["status"])
 
         if verification.chat_id:
-            utils.send_text(chat_id=verification.chat_id, text="⏳ Срок вашей верификации истёк. \n"
-                                                               "Пожалуйста, пройдите повторную верификацию, чтобы продолжить использование сервиса. \kyc")
+            utils.send_text(
+                chat_id=verification.chat_id,
+                text="⏳ Срок вашей верификации истёк. \n"
+                     "Пожалуйста, пройдите повторную верификацию, чтобы продолжить использование сервиса. \kyc")
 
 
 @shared_task
