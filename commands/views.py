@@ -218,17 +218,18 @@ from bot.webhook import webhook
 
 
 @csrf_exempt
-async def telegram_webhook(request: HttpRequest):
+async def telegram_webhook(request):
     print("\nOn working Telegram webhook\n")
-    if request.method != 'POST':
+
+    if request.method != "POST":
         return HttpResponse(status=405)
 
     try:
-        print(f"\n{request = }\n")
-        body_bytes = await request.body
+        body_bytes = request.body  # ❗ БЕЗ await
         body = body_bytes.decode("utf-8")
 
         await webhook.process_body(body)
+
         return HttpResponse(status=200)
 
     except Exception:
