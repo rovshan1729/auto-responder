@@ -1,12 +1,12 @@
 import hashlib
 import os
-import sentry_sdk
+# import sentry_sdk
 
 from pathlib import Path
 
 from django.urls import reverse_lazy
 from environs import Env
-from sentry_sdk.integrations.django import DjangoIntegration
+# from sentry_sdk.integrations.django import DjangoIntegration
 
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 
@@ -701,9 +701,9 @@ LOGGING = {
     },
 }
 
-sentry_sdk.init(
-    dsn="https://09bbc66c6a6a0865740aea0db3187fce@o4509489682710528.ingest.de.sentry.io/4509489684349008",
-    integrations=[DjangoIntegration()],
-    traces_sample_rate=1.0,
-    send_default_pii=True
-)
+# sentry_sdk.init(
+#     dsn="https://09bbc66c6a6a0865740aea0db3187fce@o4509489682710528.ingest.de.sentry.io/4509489684349008",
+#     integrations=[DjangoIntegration()],
+#     traces_sample_rate=1.0,
+#     send_default_pii=True
+# )
