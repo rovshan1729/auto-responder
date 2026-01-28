@@ -1,8 +1,8 @@
 from aiogram import types, Bot
 from aiogram.fsm.context import FSMContext
-from aiogram.types import ReplyKeyboardRemove
+from aiogram.types import ReplyKeyboardRemove, InputMediaPhoto, FSInputFile
 from django.db.models import Q
-from responder.choices import VerificationStatusChoice, UserRole, DisputeStatus
+from responder.choices import VerificationStatusChoice, UserRole, DisputeStatus, GroupChoice
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
 from datetime import timedelta, datetime
@@ -10,8 +10,13 @@ from django.utils import timezone
 
 from bot import utils
 from bot.keyboards import reply, inliene
-from bot.states.states import RegistrationState, WorkerState, HeadReportState, BroadcastState
+from bot.states.states import RegistrationState, WorkerState, HeadReportState, BroadcastState, MaskState, MaskEditState, \
+    MaskEditGroupsState
 from responder import tasks, models
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 async def track_actions_handler(message: types.Message, message_data: dict):
@@ -20,6 +25,7 @@ async def track_actions_handler(message: types.Message, message_data: dict):
 
 async def command_handler(message: types.Message):
     command = await utils.get_command(message.text.replace("/", ""))
+    print(message.text)
 
     if not command:
         return
@@ -333,12 +339,6 @@ async def get_user_worked_platform_handler(message, state):
     await message.answer(utils.get_text("worked_platform_request"))
 
 
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-
 async def get_user_recommendation_user_contact_handler(message: types.Message, state: FSMContext):
     await state.update_data(recommendation_user_contact=message.text)
     await message.answer(
@@ -536,9 +536,6 @@ async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(RegistrationState.start)
 
     await callback.answer()
-
-
-from django.utils import timezone
 
 
 async def support_worker_handler(message: types.Message, state: FSMContext):
@@ -989,3 +986,361 @@ async def broadcast_text_handler(message: types.Message, state: FSMContext):
 
     await message.answer(f"Рассылка отправлена ({sent} пользователей).")
     await state.clear()
+
+
+async def check_kyc_handler(message: types.Message):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.ADMIN, UserRole.PAYMENT_MANAGER]
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа.")
+        return
+
+    parts = message.text.split(maxsplit=1)
+    if len(parts) != 2:
+        await message.answer("Использование: /check_kyc TOKEN")
+        return
+
+    token = parts[1].strip()
+
+    verification = models.Verification.objects.filter(token=token).first()
+    if not verification:
+        await message.answer("Верификация не найдена.")
+        return
+
+    if verification.status == VerificationStatusChoice.VERIFIED:
+        status_text = "✅ Верифицирован"
+    else:
+        status_text = "❌ Не верифицирован"
+
+    text = (
+        f"{status_text}\n\n"
+        f"ФИО: {verification.fullname or '-'}\n"
+        f"Username: @{verification.username if verification.username else '-'}\n"
+        f"Телефон: {verification.phone_number or '-'}\n"
+        f"Blacklist: {'Да' if verification.is_blacklisted else 'Нет'}\n"
+        f"Срок действия: "
+        f"{verification.expires_at.strftime('%d.%m.%Y') if verification.expires_at else '—'}"
+    )
+
+    await message.answer(text)
+
+    media = []
+
+    if verification.main_page_passport:
+        media.append(
+            InputMediaPhoto(
+                media=FSInputFile(verification.main_page_passport.path),
+                caption="Паспорт — главная страница"
+            )
+        )
+
+    if verification.registration_page_passport:
+        media.append(
+            InputMediaPhoto(
+                media=FSInputFile(verification.registration_page_passport.path),
+                caption="Паспорт — страница регистрации"
+            )
+        )
+
+    if verification.additional_information_passport:
+        media.append(
+            InputMediaPhoto(
+                media=FSInputFile(verification.additional_information_passport.path),
+                caption="Паспорт — дополнительная информация"
+            )
+        )
+
+    if media:
+        await message.answer_media_group(media)
+
+    if verification.round_video:
+        try:
+            await message.answer_video(
+                video=FSInputFile(verification.round_video.path),
+                caption="Видео подтверждение"
+            )
+        except Exception as e:
+            print(e)
+
+
+async def mask_handler(message: types.Message):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id
+    ).first()
+
+    if profile and profile.role in [
+        UserRole.SUPPORT,
+        UserRole.HEAD_SUPPORT,
+        UserRole.VERIFICATOR,
+        UserRole.PAYMENT_MANAGER,
+        UserRole.ADMIN,
+    ]:
+        return
+
+    user_text = message.text.strip().lower()
+    if not user_text:
+        return
+
+    masks = models.Mask.objects.all()
+
+    for mask in masks:
+        if user_text in mask.text_list:
+            mask.count += 1
+            mask.save(update_fields=["count"])
+            await message.answer(mask.cleaned_content or mask.content)
+            return
+
+
+async def mask_handler(message: types.Message):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id
+    ).first()
+
+    if profile and profile.role in [
+        UserRole.SUPPORT,
+        UserRole.HEAD_SUPPORT,
+        UserRole.VERIFICATOR,
+        UserRole.PAYMENT_MANAGER,
+        UserRole.ADMIN,
+    ]:
+        return
+
+    user_text = message.text.strip().lower()
+    if not user_text:
+        return
+
+    tg_user = models.TelegramUser.objects.filter(
+        telegram_id=message.from_user.id
+    ).first()
+
+    user_group = tg_user.group if tg_user else GroupChoice.ALL
+
+    masks = models.Mask.objects.all()
+
+    for mask in masks:
+        if mask.groups:
+            if GroupChoice.ALL not in mask.groups and user_group not in mask.groups:
+                continue
+
+        if user_text in mask.text_list:
+            mask.count += 1
+            mask.save(update_fields=["count"])
+            await message.answer(mask.cleaned_content or mask.content)
+            return
+
+
+async def mask_add_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа.")
+        return
+
+    await state.clear()
+    await message.answer(
+        "Введите группы через запятую.\n"
+        "Доступные: RUB, KZT, UZS, TJS, CNY, GEL, AMD, TRANSGRAN, ALL"
+    )
+    await state.set_state(MaskState.groups)
+
+
+async def mask_add_groups_handler(message: types.Message, state: FSMContext):
+    raw = message.text.upper()
+    groups = [g.strip() for g in raw.split(",")]
+
+    valid_groups = [g for g in groups if g in GroupChoice.values]
+
+    if not valid_groups:
+        await message.answer("Некорректные группы. Попробуйте снова.")
+        return
+
+    if GroupChoice.ALL in valid_groups:
+        valid_groups = [GroupChoice.ALL]
+
+    await state.update_data(groups=valid_groups)
+    await message.answer("Введите ключевые слова маски через запятую:")
+    await state.set_state(MaskState.text)
+
+
+async def mask_add_text_handler(message: types.Message, state: FSMContext):
+    await state.update_data(text=message.text.strip())
+    await message.answer("Введите текст ответа (HTML разрешен):")
+    await state.set_state(MaskState.content)
+
+
+async def mask_add_content_handler(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+
+    models.Mask.objects.create(
+        groups=data["groups"],
+        text=data["text"],
+        content=message.text
+    )
+
+    await message.answer("Маска добавлена.")
+    await state.clear()
+
+
+async def mask_find_handler(message: types.Message):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа.")
+        return
+
+    key = message.text.replace("/mask_find", "").strip().lower()
+    if not key:
+        await message.answer("Использование: /mask_find слово")
+        return
+
+    masks = models.Mask.objects.filter(text__contains=key)
+    if not masks.exists():
+        await message.answer("Маски не найдены.")
+        return
+
+    lines = []
+    for m in masks[:10]:
+        groups = ",".join(m.groups) if m.groups else "-"
+        lines.append(
+            f"{m.id}) [{groups}] {m.text} | used: {m.count}"
+        )
+
+    await message.answer("\n".join(lines))
+
+
+async def mask_edit_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа.")
+        return
+
+    parts = message.text.split()
+    if len(parts) != 2 or not parts[1].isdigit():
+        await message.answer("Использование: /mask_edit ID")
+        return
+
+    mask = models.Mask.objects.filter(id=int(parts[1])).first()
+    if not mask:
+        await message.answer("Маска не найдена.")
+        return
+
+    await state.update_data(mask_id=mask.id)
+    await message.answer("Введите новый текст ответа:")
+    await state.set_state(MaskEditState.content)
+
+
+async def mask_edit_content_handler(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    mask = models.Mask.objects.filter(id=data["mask_id"]).first()
+
+    if not mask:
+        await message.answer("Маска не найдена.")
+        await state.clear()
+        return
+
+    mask.content = message.text
+    mask.save()
+
+    await message.answer("Маска обновлена.")
+    await state.clear()
+
+
+async def mask_edit_groups_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа.")
+        return
+
+    parts = message.text.split()
+    if len(parts) != 2 or not parts[1].isdigit():
+        await message.answer("Использование: /mask_edit_groups ID")
+        return
+
+    mask = models.Mask.objects.filter(id=int(parts[1])).first()
+    if not mask:
+        await message.answer("Маска не найдена.")
+        return
+
+    await state.update_data(mask_id=mask.id)
+    await message.answer(
+        "Введите группы через запятую:\n"
+        "RUB, KZT, UZS, TJS, CNY, GEL, AMD, TRANSGRAN, ALL"
+    )
+    await state.set_state(MaskEditGroupsState.groups)
+
+
+async def mask_edit_groups_save_handler(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    mask = models.Mask.objects.filter(id=data["mask_id"]).first()
+
+    if not mask:
+        await message.answer("Маска не найдена.")
+        await state.clear()
+        return
+
+    raw = message.text.upper()
+    raw_groups = [g.strip() for g in raw.split(",") if g.strip()]
+
+    valid = []
+
+    for g in raw_groups:
+        if g in {"ALL", "ВСЕ", "ВСЕ ГРУППЫ"}:
+            valid.append(GroupChoice.ALL.value)
+            continue
+
+        if g in GroupChoice.values:
+            valid.append(g)
+
+    if not valid:
+        await message.answer("Некорректные группы.")
+        return
+
+    if GroupChoice.ALL.value in valid:
+        valid = [GroupChoice.ALL.value]
+
+    mask.groups = valid
+    mask.save(update_fields=["groups"])
+
+    await message.answer("Группы маски обновлены.")
+    await state.clear()
+
+
+async def mask_delete_handler(message: types.Message):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа.")
+        return
+
+    parts = message.text.split()
+    if len(parts) != 2 or not parts[1].isdigit():
+        await message.answer("Использование: /mask_delete ID")
+        return
+
+    mask = models.Mask.objects.filter(id=int(parts[1])).first()
+    if not mask:
+        await message.answer("Маска не найдена.")
+        return
+
+    mask.delete()
+    await message.answer("Маска удалена.")
