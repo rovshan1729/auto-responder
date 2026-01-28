@@ -95,25 +95,32 @@ async def get_user_start_verification_handler(message: types.Message, state: FSM
 
 
 async def get_phone_number_keyboard_handler(message: types.Message, state: FSMContext):
-    if not message.contact:
+    if not message.contact or message.contact.user_id != message.from_user.id:
         return await message.answer(
             utils.get_text("kyc_start_verification_prompt"),
             reply_markup=reply.phone_number_button()
         )
 
     phone_number = message.contact.phone_number
-
     await state.update_data(phone_number=phone_number)
 
     verification, created = await sync_to_async(
         models.Verification.objects.get_or_create
     )(
-        chat_id=str(message.from_user.id),
+        chat_id=message.from_user.id,
         defaults={
             "phone_number": phone_number,
             "status": VerificationStatusChoice.NO_PASSED
         }
     )
+
+    if not created:
+        verification.phone_number = phone_number
+        verification.status = VerificationStatusChoice.NO_PASSED
+        await sync_to_async(verification.save)(
+            update_fields=["phone_number", "status"]
+        )
+
     await state.update_data(verification_id=verification.id)
 
     await state.set_state(RegistrationState.addition_number)
