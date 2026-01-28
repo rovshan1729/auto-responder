@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from bot import utils
 from bot.keyboards import reply, inliene
-from bot.states.states import RegistrationState, WorkerState, HeadReportState
+from bot.states.states import RegistrationState, WorkerState, HeadReportState, BroadcastState
 from responder import tasks, models
 
 
@@ -534,19 +534,26 @@ from django.utils import timezone
 
 
 async def support_worker_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role=UserRole.SUPPORT
+    ).first()
+
+    if not profile:
+        await message.answer("У вас нет доступа к этой команде.")
+        return
+
     await state.clear()
-    profile = models.Profile.objects.filter(Q(user__telegram_id=message.chat.id) & Q(role=UserRole.SUPPORT))
-    if profile.exists():
-        await message.answer(
-            utils.get_text("worker_start_message"),
-            reply_markup=inliene.worker_choosing_action()
-        )
+    await message.answer(
+        utils.get_text("worker_start_message"),
+        reply_markup=inliene.worker_choosing_action()
+    )
 
 
 async def worker_start_work_handler(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
     chat_id = callback.from_user.id
-    profile = models.Profile.objects.filter(user__telegram_id=chat_id)
+    profile = models.Profile.objects.filter(user__telegram_id=chat_id, role__in=[UserRole.SUPPORT, UserRole.ADMIN])
     await callback.message.delete()
 
     if profile.exists():
@@ -575,6 +582,14 @@ async def worker_start_work_handler(callback: types.CallbackQuery, state: FSMCon
 
 
 async def worker_finish_work_handler(callback: types.CallbackQuery, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=callback.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+    ).first()
+    if not profile:
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+
     chat_id = callback.from_user.id
     work_data = models.WorkerData.objects.filter(profile__user__telegram_id=chat_id, finish_work_time__isnull=True)
 
@@ -593,6 +608,14 @@ async def cancel_finish_work_handler(callback: types.CallbackQuery, state: FSMCo
 
 
 async def dispute_add_handler(callback: types.CallbackQuery, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=callback.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+    ).first()
+    if not profile:
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+
     await callback.message.delete()
     await callback.message.answer(utils.get_text("choice_merchant"),
                                   reply_markup=inliene.merchant_choosing_inline_button())
@@ -600,6 +623,14 @@ async def dispute_add_handler(callback: types.CallbackQuery, state: FSMContext):
 
 
 async def get_merchant_handler(callback: types.CallbackQuery, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=callback.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+    ).first()
+    if not profile:
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+
     try:
         await callback.message.delete()
     except:
@@ -612,6 +643,14 @@ async def get_merchant_handler(callback: types.CallbackQuery, state: FSMContext)
 
 
 async def get_dispute_count_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+    ).first()
+    if not profile:
+        await message.answer("Нет доступа", show_alert=True)
+        return
+
     text = message.text.strip()
 
     if not text.isdigit():
@@ -655,6 +694,14 @@ async def get_add_more_dispute_handler(callback: types.CallbackQuery, state: FSM
 
 
 async def get_problem_text_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+    ).first()
+    if not profile:
+        await message.answer("Нет доступа", show_alert=True)
+        return
+
     chat_id = message.from_user.id
 
     problem_text_input = message.text.strip()
@@ -746,6 +793,14 @@ async def get_problem_text_handler(message: types.Message, state: FSMContext):
 
 
 async def get_add_problem_support_handler(callback: types.CallbackQuery, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=callback.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+    ).first()
+    if not profile:
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+
     await callback.message.answer(utils.get_text("send_text_add_problem"))
     await state.set_state(WorkerState.add_problem)
 
@@ -778,10 +833,10 @@ async def get_add_problem_text_support_handler(message: types.Message, state: FS
 async def head_report_command(message: types.Message, state: FSMContext):
     profile = models.Profile.objects.filter(
         user__telegram_id=message.from_user.id,
-        role=UserRole.HEAD_SUPPORT
+        role__in=[UserRole.HEAD_SUPPORT, UserRole.ADMIN]
     ).first()
     if not profile:
-        await message.answer("У вас нет доступа к этой команде.")
+        await message.answer(utils.get_text("access_denied"))
         return
 
     await state.clear()
@@ -836,7 +891,7 @@ async def head_report_date_to_handler(message: types.Message, state: FSMContext)
     ).select_related("merchant")
 
     if not disputes.exists():
-        await message.answer("Нет данных по диспутам за выбранный период.")
+        await message.answer(utils.get_text("access_denied"))
         await state.clear()
         return
 
@@ -877,4 +932,52 @@ async def head_report_date_to_handler(message: types.Message, state: FSMContext)
     )
 
     await message.answer("\n".join(lines))
+    await state.clear()
+
+
+async def broadcast_command_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer(utils.get_text("access_denied"))
+        return
+
+    await state.clear()
+    await message.answer(utils.get_text("show_broadcast"))
+    await state.set_state(BroadcastState.text)
+
+
+async def broadcast_text_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        return
+
+    text = message.text.strip()
+
+    users = models.Profile.objects.exclude(
+        role__in=[
+            UserRole.SUPPORT,
+            UserRole.HEAD_SUPPORT,
+            UserRole.VERIFICATOR,
+            UserRole.PAYMENT_MANAGER,
+            UserRole.ADMIN,
+        ]
+    ).select_related("user")
+
+    sent = 0
+    for p in users:
+        try:
+            utils.send_text(p.user.telegram_id, text)
+            sent += 1
+        except:
+            pass
+
+    await message.answer(f"Рассылка отправлена ({sent} пользователей).")
     await state.clear()

@@ -36,3 +36,7 @@ class WorkerState(StatesGroup):
 class HeadReportState(StatesGroup):
     date_from = State()
     date_to = State()
+
+
+class BroadcastState(StatesGroup):
+    text = State()

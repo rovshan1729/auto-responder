@@ -500,39 +500,58 @@ class Profile(BaseModel):
 
 
 class WorkerData(BaseModel):
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="profile")
-    start_work_time = models.DateTimeField()
-    finish_work_time = models.DateTimeField(null=True, blank=True)
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="profile", verbose_name="Сотрудник")
+    start_work_time = models.DateTimeField(verbose_name="Время начала смены")
+    finish_work_time = models.DateTimeField(null=True, blank=True, verbose_name="Время окончания смены")
+
+    class Meta:
+        verbose_name = "Смена сотрудника"
+        verbose_name_plural = "Смены сотрудников"
 
     def __str__(self):
         return f"{self.profile.user} | {self.start_work_time}"
 
 
 class Merchant(BaseModel):
-    title = models.CharField(max_length=512)
+    title = models.CharField(max_length=512, verbose_name="Название мерчанта")
+
+    class Meta:
+        verbose_name = "Мерчант"
+        verbose_name_plural = "Мерчанты"
 
     def __str__(self):
         return f"{self.title}"
 
 
 class WorkerShiftReport(BaseModel):
-    worker_data = models.OneToOneField(WorkerData, on_delete=models.CASCADE, related_name="report")
-    is_submitted = models.BooleanField(default=False)
-    submitted_at = models.DateTimeField(null=True, blank=True)
+    worker_data = models.OneToOneField(WorkerData, on_delete=models.CASCADE, related_name="report",
+                                       verbose_name="Смена")
+    is_submitted = models.BooleanField(default=False, verbose_name="Отчет отправлен")
+    submitted_at = models.DateTimeField(null=True, blank=True, verbose_name="Дата отправки отчета")
 
-    comment = models.TextField(null=True, blank=True)
+    comment = models.TextField(null=True, blank=True, verbose_name="Комментарий / проблема")
+
+    class Meta:
+        verbose_name = "Отчет по смене"
+        verbose_name_plural = "Отчеты по сменам"
 
     def __str__(self):
         return f"Report #{self.id} | {self.worker_data.profile.user}"
 
 
 class WorkerDispute(BaseModel):
-    report = models.ForeignKey(WorkerShiftReport, on_delete=models.CASCADE, related_name="disputes")
-    merchant = models.ForeignKey(Merchant, on_delete=models.PROTECT, related_name="dispute")
+    report = models.ForeignKey(WorkerShiftReport, on_delete=models.CASCADE, related_name="disputes",
+                               verbose_name="Отчет по смене")
+    merchant = models.ForeignKey(Merchant, on_delete=models.PROTECT, related_name="dispute", verbose_name="Мерчант")
 
-    count = models.IntegerField(default=0)
+    count = models.IntegerField(default=0, verbose_name="Количество диспутов")
 
-    status = models.CharField(max_length=32, choices=DisputeStatus.choices, default=DisputeStatus.NEW)
+    status = models.CharField(max_length=32, choices=DisputeStatus.choices, default=DisputeStatus.NEW,
+                              verbose_name="Статус диспута")
+
+    class Meta:
+        verbose_name = "Диспут"
+        verbose_name_plural = "Диспуты"
 
     def __str__(self):
         return f"{self.report.worker_data.profile.user} | {self.merchant.title} | {self.count} | {self.status}"
@@ -542,24 +561,34 @@ class WorkerIssue(BaseModel):
     report = models.ForeignKey(
         WorkerShiftReport,
         on_delete=models.CASCADE,
-        related_name="issues"
+        related_name="issues",
+        verbose_name="Отчет по смене"
     )
 
     merchant = models.ForeignKey(
         Merchant,
         on_delete=models.PROTECT,
-        related_name="issues"
+        related_name="issues",
+        verbose_name="Мерчант"
     )
 
-    text = models.TextField()
+    text = models.TextField(verbose_name="Описание проблемы")
+
+    class Meta:
+        verbose_name = "Проблема по смене"
+        verbose_name_plural = "Проблемы по сменам"
 
     def __str__(self):
         return f"{self.report.worker_data.profile.user} | {self.merchant.title}"
 
 
 class Problem(BaseModel):
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="problems")
-    text = models.TextField()
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="problems", verbose_name="Сотрудник")
+    text = models.TextField(verbose_name="Описание проблемы")
+
+    class Meta:
+        verbose_name = "Проблема сотрудника"
+        verbose_name_plural = "Проблемы сотрудников"
 
     def __str__(self):
         return self.profile.user
