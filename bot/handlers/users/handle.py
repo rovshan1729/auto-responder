@@ -95,7 +95,7 @@ async def get_user_start_verification_handler(message: types.Message, state: FSM
 
 
 async def get_phone_number_keyboard_handler(message: types.Message, state: FSMContext):
-    if not message.contact or message.contact.user_id != message.from_user.id:
+    if not message.contact:
         return await message.answer(
             utils.get_text("kyc_start_verification_prompt"),
             reply_markup=reply.phone_number_button()
@@ -122,7 +122,6 @@ async def get_phone_number_keyboard_handler(message: types.Message, state: FSMCo
         )
 
     await state.update_data(verification_id=verification.id)
-
     await state.set_state(RegistrationState.addition_number)
 
     await message.answer(
@@ -205,7 +204,7 @@ async def get_country_handler(message: types.Message, state: FSMContext):
     country = models.Country.objects.filter(title__icontains=message.text).first()
 
     if not country:
-        return await message.answer(utils.get_text("country_not_found"))
+        return await message.answer(utils.get_text("country_not_found"), reply_markup=reply.country_button())
 
     await state.update_data(country=country.pk)
     await state.set_state(RegistrationState.fullname)
