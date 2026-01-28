@@ -13,11 +13,6 @@ from bot.utils import methods
 from responder import models, mixins
 from responder.forms import ReplyMessageForm, MaskModelForm
 
-admin.site.register(models.Profile)
-admin.site.register(models.WorkerData)
-admin.site.register(models.Merchant)
-admin.site.register(models.Country)
-admin.site.register(models.StaticText)
 
 class VerificationAdminFieldInline(unfold_admin.TabularInline):
     model = models.VerificationAdminField
