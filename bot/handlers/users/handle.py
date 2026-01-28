@@ -2,14 +2,15 @@ from aiogram import types, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import ReplyKeyboardRemove
 from django.db.models import Q
-from responder.choices import VerificationStatusChoice, UserRole
+from responder.choices import VerificationStatusChoice, UserRole, DisputeStatus
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
-from datetime import timedelta
+from datetime import timedelta, datetime
+from django.utils import timezone
 
 from bot import utils
 from bot.keyboards import reply, inliene
-from bot.states.states import RegistrationState, WorkerState
+from bot.states.states import RegistrationState, WorkerState, HeadReportState, BroadcastState
 from responder import tasks, models
 
 
@@ -92,25 +93,32 @@ async def get_user_start_verification_handler(message: types.Message, state: FSM
 
 
 async def get_phone_number_keyboard_handler(message: types.Message, state: FSMContext):
-    if not message.contact:
+    if not message.contact or message.contact.user_id != message.from_user.id:
         return await message.answer(
             utils.get_text("kyc_start_verification_prompt"),
             reply_markup=reply.phone_number_button()
         )
 
     phone_number = message.contact.phone_number
-
     await state.update_data(phone_number=phone_number)
 
     verification, created = await sync_to_async(
         models.Verification.objects.get_or_create
     )(
-        chat_id=str(message.from_user.id),
+        chat_id=message.from_user.id,
         defaults={
             "phone_number": phone_number,
             "status": VerificationStatusChoice.NO_PASSED
         }
     )
+
+    if not created:
+        verification.phone_number = phone_number
+        verification.status = VerificationStatusChoice.NO_PASSED
+        await sync_to_async(verification.save)(
+            update_fields=["phone_number", "status"]
+        )
+
     await state.update_data(verification_id=verification.id)
 
     await state.set_state(RegistrationState.addition_number)
@@ -531,21 +539,26 @@ from django.utils import timezone
 
 
 async def support_worker_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role=UserRole.SUPPORT
+    ).first()
+
+    if not profile:
+        await message.answer("У вас нет доступа к этой команде.")
+        return
+
     await state.clear()
-
-    profile = models.Profile.objects.filter(Q(user__telegram_id=message.chat.id) & Q(role=UserRole.SUPPORT))
-
-    if profile.exists():
-        await message.answer(
-            utils.get_text("worker_start_message"),
-            reply_markup=inliene.worker_choosing_action()
-        )
+    await message.answer(
+        utils.get_text("worker_start_message"),
+        reply_markup=inliene.worker_choosing_action()
+    )
 
 
 async def worker_start_work_handler(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
     chat_id = callback.from_user.id
-    profile = models.Profile.objects.filter(user__telegram_id=chat_id)
+    profile = models.Profile.objects.filter(user__telegram_id=chat_id, role__in=[UserRole.SUPPORT, UserRole.ADMIN])
     await callback.message.delete()
 
     if profile.exists():
@@ -574,6 +587,14 @@ async def worker_start_work_handler(callback: types.CallbackQuery, state: FSMCon
 
 
 async def worker_finish_work_handler(callback: types.CallbackQuery, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=callback.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+    ).first()
+    if not profile:
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+
     chat_id = callback.from_user.id
     work_data = models.WorkerData.objects.filter(profile__user__telegram_id=chat_id, finish_work_time__isnull=True)
 
@@ -592,6 +613,14 @@ async def cancel_finish_work_handler(callback: types.CallbackQuery, state: FSMCo
 
 
 async def dispute_add_handler(callback: types.CallbackQuery, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=callback.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+    ).first()
+    if not profile:
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+
     await callback.message.delete()
     await callback.message.answer(utils.get_text("choice_merchant"),
                                   reply_markup=inliene.merchant_choosing_inline_button())
@@ -599,19 +628,361 @@ async def dispute_add_handler(callback: types.CallbackQuery, state: FSMContext):
 
 
 async def get_merchant_handler(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.delete()
-    merchant_id = callback.data.split("|")[1]
+    profile = models.Profile.objects.filter(
+        user__telegram_id=callback.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+    ).first()
+    if not profile:
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+
+    try:
+        await callback.message.delete()
+    except:
+        pass
+
+    merchant_id = int(callback.data.split("|")[1])
     await callback.message.answer(utils.get_text("get_merchant"))
-    await state.update_data({
-        "merchant_id": merchant_id
-    })
+    await state.update_data({"current_merchant_id": merchant_id})
     await state.set_state(WorkerState.dispute_count)
 
 
 async def get_dispute_count_handler(message: types.Message, state: FSMContext):
-    count = message.text
-    await state.update_data({
-        "dispute_count": count
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+    ).first()
+    if not profile:
+        await message.answer("Нет доступа", show_alert=True)
+        return
+
+    text = message.text.strip()
+
+    if not text.isdigit():
+        await message.answer("Просто введите число. Например: 3")
+        return
+
+    count = int(text)
+
+    data = await state.get_data()
+    merchant_id = data.get("current_merchant_id")
+
+    if not merchant_id:
+        await message.answer("Продавец не выбран. Пожалуйста, попробуйте еще раз.")
+        return
+
+    disputes = data.get("disputes", [])
+    disputes.append({
+        "merchant_id": merchant_id,
+        "dispute_count": count,
+        "status": "new"
     })
+    await state.update_data({"disputes": disputes})
     await message.answer(utils.get_text("get_dispute_count"), reply_markup=inliene.get_dispute_count_inline_button())
     await state.set_state(WorkerState.cycle)
+
+
+async def get_add_more_dispute_handler(callback: types.CallbackQuery, state: FSMContext):
+    try:
+        await callback.message.delete()
+    except:
+        pass
+
+    if callback.data == "add_more_dispute":
+        await callback.message.answer(utils.get_text("choice_merchant"),
+                                      reply_markup=inliene.merchant_choosing_inline_button())
+        await state.set_state(WorkerState.merchant)
+
+    elif callback.data == "add_more_text":
+        await callback.message.answer(utils.get_text("get_problem_info"))
+        await state.set_state(WorkerState.get_problem)
+
+
+async def get_problem_text_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+    ).first()
+    if not profile:
+        await message.answer("Нет доступа", show_alert=True)
+        return
+
+    chat_id = message.from_user.id
+
+    problem_text_input = message.text.strip()
+
+    data = await state.get_data()
+    disputes = data.get("disputes", [])
+
+    work_data = models.WorkerData.objects.filter(
+        profile__user__telegram_id=chat_id,
+        finish_work_time__isnull=True
+    ).select_related("profile__user").first()
+
+    if not work_data:
+        await message.answer(utils.get_text("no_work"))
+        return
+
+    report, _ = models.WorkerShiftReport.objects.get_or_create(worker_data=work_data)
+
+    report.comment = problem_text_input
+    report.is_submitted = True
+    report.submitted_at = timezone.now()
+    report.save(update_fields=["comment", "is_submitted", "submitted_at"])
+
+    for d in disputes:
+        merchant_id = d.get("merchant_id")
+        count = d.get("dispute_count")
+
+        if not merchant_id or count is None:
+            continue
+
+        models.WorkerDispute.objects.create(
+            report=report,
+            merchant_id=int(merchant_id),
+            count=int(count),
+            status=DisputeStatus.NEW
+        )
+
+    work_data.finish_work_time = timezone.now()
+    work_data.save(update_fields=["finish_work_time"])
+
+    head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
+    if head_profile:
+        username = message.from_user.username or message.from_user.full_name
+
+        now_str = timezone.localtime(timezone.now()).strftime("%d.%m.%Y %H:%M:%S")
+
+        db_disputes = report.disputes.select_related("merchant").all()
+
+        grouped = {}
+        # merchant_title => {resolved:0, new:0, unresolved:0}
+        for item in db_disputes:
+            title = item.merchant.title
+
+            if title not in grouped:
+                grouped[title] = {
+                    "resolved": 0,
+                    "new": 0,
+                    "unresolved": 0
+                }
+
+            if item.status == DisputeStatus.RESOLVED:
+                grouped[title]["resolved"] += item.count
+            elif item.status == DisputeStatus.NEW:
+                grouped[title]["new"] += item.count
+            elif item.status == DisputeStatus.UNRESOLVED:
+                grouped[title]["unresolved"] += item.count
+
+        lines = []
+        for merchant_title in sorted(grouped.keys()):
+            r = grouped[merchant_title]["resolved"]
+            n = grouped[merchant_title]["new"]
+            u = grouped[merchant_title]["unresolved"]
+
+            lines.append(f"{merchant_title}: решённые {r} новые {n} нерешённые {u}")
+
+        merchants_block = "\n".join(lines) if lines else "Нет диспутов"
+
+        head_text = (
+            f"Дата и время: {now_str}\n"
+            f"Саппорт: @{username}\n\n"
+            f"{merchants_block}\n\n"
+            f"Проблема:\n{report.comment or '-'}"
+        )
+
+        utils.send_text(head_profile.user.telegram_id, head_text)
+
+    await message.answer(utils.get_text("the_shift_assigned"))
+    await state.clear()
+
+
+async def get_add_problem_support_handler(callback: types.CallbackQuery, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=callback.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+    ).first()
+    if not profile:
+        await callback.answer("Нет доступа", show_alert=True)
+        return
+
+    await callback.message.answer(utils.get_text("send_text_add_problem"))
+    await state.set_state(WorkerState.add_problem)
+
+
+async def get_add_problem_text_support_handler(message: types.Message, state: FSMContext):
+    problem_text = message.text.strip()
+
+    profile = models.Profile.objects.filter(user__telegram_id=message.from_user.id).first()
+    if not profile:
+        await message.answer(utils.get_text("none_profile"))
+        return
+
+    models.Problem.objects.create(profile=profile, text=problem_text)
+
+    head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
+    if head_profile:
+        username = message.from_user.username or message.from_user.full_name
+
+        text = (
+            "Проблемы:\n"
+            f"@{username} - {problem_text}"
+        )
+
+        utils.send_text(head_profile.user.telegram_id, text)
+
+    await message.answer(utils.get_text("get_problem_text_support"))
+    await state.clear()
+
+
+async def head_report_command(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+    if not profile:
+        await message.answer(utils.get_text("access_denied"))
+        return
+
+    await state.clear()
+    await message.answer("Введите дату ОТ (формат: ДД.ММ.ГГГГ)\nПример: 25.01.2026")
+    await state.set_state(HeadReportState.date_from)
+
+
+async def head_report_date_from_handler(message: types.Message, state: FSMContext):
+    date_from = utils.parse_date_ru(message.text)
+
+    if not date_from:
+        await message.answer("Неверный формат даты. Пример: 25.01.2026")
+        return
+
+    await state.update_data({"date_from": str(date_from)})
+    await message.answer("Введите дату ДО (формат: ДД.ММ.ГГГГ)\nПример: 26.01.2026")
+    await state.set_state(HeadReportState.date_to)
+
+
+async def head_report_date_to_handler(message: types.Message, state: FSMContext):
+    date_to = utils.parse_date_ru(message.text)
+
+    if not date_to:
+        await message.answer("Неверный формат даты. Пример: 26.01.2026")
+        return
+
+    data = await state.get_data()
+    date_from_str = data.get("date_from")
+
+    if not date_from_str:
+        await message.answer("Дата ОТ не найдена. Введите /report заново.")
+        await state.clear()
+        return
+
+    date_from = datetime.strptime(date_from_str, "%Y-%m-%d").date()
+
+    if date_to < date_from:
+        await message.answer("Дата ДО не может быть меньше даты ОТ.")
+        return
+
+    dt_from = timezone.make_aware(datetime.combine(date_from, datetime.min.time()))
+    dt_to = timezone.make_aware(datetime.combine(date_to, datetime.max.time()))
+
+    report_ids = models.WorkerShiftReport.objects.filter(
+        is_submitted=True,
+        submitted_at__gte=dt_from,
+        submitted_at__lte=dt_to
+    ).values_list("id", flat=True)
+
+    disputes = models.WorkerDispute.objects.filter(
+        report_id__in=report_ids
+    ).select_related("merchant")
+
+    if not disputes.exists():
+        await message.answer(utils.get_text("access_denied"))
+        await state.clear()
+        return
+
+    grouped = {}
+    total = {"resolved": 0, "new": 0, "unresolved": 0}
+
+    for d in disputes:
+        title = d.merchant.title
+
+        if title not in grouped:
+            grouped[title] = {"resolved": 0, "new": 0, "unresolved": 0}
+
+        if d.status == DisputeStatus.RESOLVED:
+            grouped[title]["resolved"] += d.count
+            total["resolved"] += d.count
+        elif d.status == DisputeStatus.NEW:
+            grouped[title]["new"] += d.count
+            total["new"] += d.count
+        elif d.status == DisputeStatus.UNRESOLVED:
+            grouped[title]["unresolved"] += d.count
+            total["unresolved"] += d.count
+
+    lines = []
+    lines.append(f"Отчет по диспутам")
+    lines.append(f"Период: {date_from.strftime('%d.%m.%Y')} - {date_to.strftime('%d.%m.%Y')}")
+    lines.append("")
+    lines.append("По мерчантам:")
+
+    for merchant_title in sorted(grouped.keys()):
+        r = grouped[merchant_title]["resolved"]
+        n = grouped[merchant_title]["new"]
+        u = grouped[merchant_title]["unresolved"]
+        lines.append(f"{merchant_title}: решённые {r} новые {n} нерешённые {u}")
+
+    lines.append("")
+    lines.append(
+        f"ИТОГО: решённые {total['resolved']} новые {total['new']} нерешённые {total['unresolved']}"
+    )
+
+    await message.answer("\n".join(lines))
+    await state.clear()
+
+
+async def broadcast_command_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer(utils.get_text("access_denied"))
+        return
+
+    await state.clear()
+    await message.answer(utils.get_text("show_broadcast"))
+    await state.set_state(BroadcastState.text)
+
+
+async def broadcast_text_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        return
+
+    text = message.text.strip()
+
+    users = models.Profile.objects.exclude(
+        role__in=[
+            UserRole.SUPPORT,
+            UserRole.HEAD_SUPPORT,
+            UserRole.VERIFICATOR,
+            UserRole.PAYMENT_MANAGER,
+            UserRole.ADMIN,
+        ]
+    ).select_related("user")
+
+    sent = 0
+    for p in users:
+        try:
+            utils.send_text(p.user.telegram_id, text)
+            sent += 1
+        except:
+            pass
+
+    await message.answer(f"Рассылка отправлена ({sent} пользователей).")
+    await state.clear()

@@ -43,3 +43,9 @@ class UserRole(TextChoices):
     VERIFICATOR = "VERIFICATOR", "Верификатор"
     ADMIN = "ADMIN", "Администратор",
     PAYMENT_MANAGER = "PAYMENT_MANAGER", "Платёжный менеджер"
+
+
+class DisputeStatus(TextChoices):
+    NEW = "new", "Новый"
+    RESOLVED = "resolved", "Решено"
+    UNRESOLVED = "unresolved", "Нерешённый"

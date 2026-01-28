@@ -48,8 +48,8 @@ def merchant_choosing_inline_button():
 def get_dispute_count_inline_button():
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Добавить еще", callback_data="add_more")],
-            [InlineKeyboardButton(text="Далее", callback_data="next")]
+            [InlineKeyboardButton(text="Добавить еще", callback_data="add_more_dispute")],
+            [InlineKeyboardButton(text="Далее", callback_data="add_more_text")]
         ]
     )
     return keyboard

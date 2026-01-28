@@ -20,7 +20,7 @@ async def get_mask(text_list: str, credential: str | int, title: str = None):
     ).exists()
 
     if not is_blocked:
-        mask= r_models.Mask.objects.filter(
+        mask = r_models.Mask.objects.filter(
             text_list=text_list
         ).first()
 
