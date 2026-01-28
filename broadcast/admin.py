@@ -1,36 +1,75 @@
 from django.contrib import admin
 from django.contrib import messages
 
+from unfold.admin import ModelAdmin, TabularInline
+from utils import BaseModelAdmin
+
 from . import models
 from .forms import BroadcastModelForm
 
 
-class TButtonInline(admin.TabularInline):
+class TButtonInline(TabularInline):
     model = models.TemplateButton
     extra = 0
 
 
-class BButtonInline(admin.TabularInline):
+class BButtonInline(TabularInline):
     model = models.BroadcastButton
     extra = 0
 
 
 @admin.register(models.Media)
-class MediaAdmin(admin.ModelAdmin):
+class MediaAdmin(BaseModelAdmin):
     list_display = ('id', 'file_id', 'order')
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("title", "file_type", "order"),
+                ("file", "file_id"),
+            )
+        }),
+    )
 
 
 @admin.register(models.BroadcastTemplate)
-class BroadcastTemplateAdmin(admin.ModelAdmin):
+class BroadcastTemplateAdmin(BaseModelAdmin):
+
+    filter_horizontal = ("medias",)
     inlines = (TButtonInline,)
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("title",),
+                ("content", "cleaned_content"),
+                ("medias",)
+            )
+        }),
+    )
 
 
 @admin.register(models.Broadcast)
-class BroadcastAdmin(admin.ModelAdmin):
+class BroadcastAdmin(BaseModelAdmin):
     form = BroadcastModelForm
     list_display = ('id', 'title', 'percent', 'is_sent', 'created_at')
-    fields = ('title', 'template', 'groups', 'medias', 'content', 'scheduled_at')
+    # fields = ('title', 'template', 'groups', 'medias', 'content', 'scheduled_at')
     inlines = (BButtonInline,)
+
+
+    fieldsets = (
+        (None, {
+            "fields": (
+                ("title", "template"),
+                ("content", "cleaned_content"),
+                ("medias",),
+                ("groups",),
+                ("scheduled_at", "task_id"),
+                ("percent", "is_sent"),
+            )
+        }),
+    )
+
 
     def response_add(self, request, obj, post_url_continue=None):
         if "_save_now" in request.POST:

@@ -260,7 +260,6 @@ class TelegramCommand(BaseModel):
         blank=True,
         null=True,
         verbose_name="Файл ID"
-
     )
 
     class Meta:
@@ -290,11 +289,6 @@ class Mask(BaseModel):
         null=True,
         default=list
     )
-    # groups = models.ManyToManyField(
-    #     TelegramGroup,
-    #     blank=True,
-    #     related_name='masks',
-    # )
     text = models.CharField(
         max_length=4095,
         verbose_name="Текст"

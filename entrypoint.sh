@@ -14,5 +14,15 @@ python manage.py migrate --noinput
 echo "🧼 Сборка статики..."
 python manage.py collectstatic --noinput
 
+
+echo "✅ Установка Webhook (бот не активен)..."
+python manage.py setwebhook
+
+#echo "🚀 Запуск Gunicorn..."
+#exec gunicorn src.wsgi:application --bind 0.0.0.0:8022 --workers=4 --threads=2 --worker-class=gthread
+
+
 echo "🚀 Запуск Gunicorn..."
-exec gunicorn src.wsgi:application --bind 0.0.0.0:8011 --workers=4 --threads=2 --worker-class=gthread
+exec gunicorn src.asgi:application \
+    --worker-class=uvicorn.workers.UvicornWorker \
+    --bind 0.0.0.0:8022

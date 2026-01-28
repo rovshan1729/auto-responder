@@ -1,5 +1,3 @@
-from pyexpat.errors import messages
-
 from aiogram import types, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import ReplyKeyboardRemove

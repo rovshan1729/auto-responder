@@ -14,6 +14,8 @@ def prepare_router():
 
     router.message.register(support_worker_handler, Command("work")),
     router.message.register(kyc_command_handler, Command("kyc"))
+    router.message.register(command_handler, users.IsCommandFilter())
+
     router.message.register(get_user_start_verification_handler, RegistrationState.start)
     router.message.register(get_phone_number_keyboard_handler, RegistrationState.phone_number)
     router.message.register(get_phone_number_addition_handler, RegistrationState.addition_number)
@@ -53,7 +55,6 @@ def prepare_router():
     router.message.register(broadcast_command_handler, Command("broadcast"))
     router.message.register(broadcast_text_handler, BroadcastState.text)
 
-    router.message.register(command_handler, users.IsCommandFilter())
     router.callback_query.register(accept_handler, F.data.split("|")[0] == "accepted")
     router.callback_query.register(closed_handler, F.data.split("|")[0] == "closed")
     router.message.register(respond_handler)
