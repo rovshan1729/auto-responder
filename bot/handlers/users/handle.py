@@ -275,7 +275,7 @@ async def get_user_registration_page_passport_handler(message: types.Message, st
 
     await state.set_state(RegistrationState.additional_information_passport)
     await message.answer(
-        utils.get_text("passport_additional_page_request")
+        utils.get_text("passport_additional_page_request"), reply_markup=reply.skip_button()
     )
 
 
