@@ -7,6 +7,7 @@ from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
 from datetime import timedelta, datetime
 from django.utils import timezone
+from io import BytesIO
 
 from bot import utils
 from bot.keyboards import reply, inliene
@@ -246,65 +247,74 @@ async def get_user_current_live_address_handler(message: types.Message, state: F
     await message.answer(utils.get_text("address_request"))
 
 
-async def _save_photo(message, state, field_name, bot: Bot):
-    try:
-        file = await bot.get_file(message.photo[-1].file_id)
-        file_bytes = await message.bot.download_file(file.file_path)
-        await state.update_data({field_name: file_bytes, f"{field_name}_id": message.photo[-1].file_id})
-        return True
-    except Exception as e:
-        print(e)
+async def get_user_main_page_passport_handler(message: types.Message, state: FSMContext):
+    if not message.photo:
+        return await message.answer(
+            utils.get_text("passport_main_page_error")
+        )
 
-
-async def get_user_main_page_passport_handler(message, state, bot):
-    if not await _save_photo(message, state, "main_page_passport", bot):
-        return await message.answer(utils.get_text("passport_main_page_error"))
+    await state.update_data(
+        main_page_passport_id=message.photo[-1].file_id
+    )
 
     await state.set_state(RegistrationState.registration_page_passport)
-    await message.answer(utils.get_text("passport_main_page_request"))
+    await message.answer(
+        utils.get_text("passport_main_page_request")
+    )
 
 
-async def get_user_registration_page_passport_handler(message, state, bot):
-    if not await _save_photo(message, state, "registration_page_passport", bot):
-        return await message.answer(utils.get_text("passport_registration_page_error"))
+async def get_user_registration_page_passport_handler(message: types.Message, state: FSMContext):
+    if not message.photo:
+        return await message.answer(
+            utils.get_text("passport_registration_page_error")
+        )
+
+    await state.update_data(
+        registration_page_passport_id=message.photo[-1].file_id
+    )
 
     await state.set_state(RegistrationState.additional_information_passport)
     await message.answer(
-        utils.get_text("passport_registration_page_request"),
-        reply_markup=reply.skip_button()
+        utils.get_text("passport_additional_page_request")
     )
 
 
-async def get_user_additional_information_passport_handler(message, state, bot):
+async def get_user_additional_information_passport_handler(message: types.Message, state: FSMContext):
     if message.text == "Пропускать":
-        await state.update_data(additional_information_passport=None)
-
+        await state.update_data(
+            additional_information_passport_id=None
+        )
     else:
-        if not await _save_photo(message, state, "additional_information_passport", bot):
-            return await message.answer(utils.get_text("passport_additional_page_error"))
+        if not message.photo:
+            return await message.answer(
+                utils.get_text("passport_additional_page_error")
+            )
+
+        await state.update_data(
+            additional_information_passport_id=message.photo[-1].file_id
+        )
 
     await state.set_state(RegistrationState.round_video)
     await message.answer(
-        utils.get_text("passport_additional_page_request"),
-        reply_markup=ReplyKeyboardRemove()
+        utils.get_text("round_video_request"),
+        reply_markup=types.ReplyKeyboardRemove()
     )
 
 
-async def get_user_round_video_handler(message, state, bot):
+async def get_user_round_video_handler(message, state):
     if not message.video_note:
-        return await message.answer(utils.get_text("round_video_invalid"))
+        return await message.answer(
+            utils.get_text("round_video_invalid")
+        )
 
-    try:
-        file = await bot.get_file(message.video_note.file_id)
-        file_bytes = await bot.download_file(file.file_path)
+    await state.update_data(
+        round_video_id=message.video_note.file_id
+    )
 
-        await state.update_data(round_video=file_bytes, round_video_id=message.video_note.file_id)
-        await state.set_state(RegistrationState.geo)
-
-        await message.answer(utils.get_text("round_video_request"))
-
-    except Exception as e:
-        print(e)
+    await state.set_state(RegistrationState.geo)
+    await message.answer(
+        utils.get_text("round_video_request")
+    )
 
 
 async def get_user_geo_handler(message, state):
@@ -339,6 +349,14 @@ async def get_user_worked_platform_handler(message, state):
     await message.answer(utils.get_text("worked_platform_request"))
 
 
+async def _save_file_from_telegram(bot, file_id, filename):
+    file = await bot.get_file(file_id)
+    buffer = BytesIO()
+    await bot.download_file(file.file_path, destination=buffer)
+    buffer.seek(0)
+    return ContentFile(buffer.read(), name=filename)
+
+
 async def get_user_recommendation_user_contact_handler(message: types.Message, state: FSMContext):
     await state.update_data(recommendation_user_contact=message.text)
     await message.answer(
@@ -364,30 +382,33 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
         worked_platform = data.get("worked_platform")
         recommendation_user_contact = data.get("recommendation_user_contact")
         status = VerificationStatusChoice.WAITING
-        files = {}
 
-        if data.get("main_page_passport"):
-            files["main_page_passport"] = ContentFile(
-                data["main_page_passport"].read(),
-                name=f"{verification.pk}_main_passport.jpg"
+        if data.get("main_page_passport_id"):
+            verification.main_page_passport = await _save_file_from_telegram(
+                message.bot,
+                data["main_page_passport_id"],
+                f"{verification.pk}_main_passport.jpg"
             )
 
-        if data.get("registration_page_passport"):
-            files["registration_page_passport"] = ContentFile(
-                data["registration_page_passport"].read(),
-                name=f"{verification.pk}_registration_page_passport.jpg"
+        if data.get("registration_page_passport_id"):
+            verification.registration_page_passport = await _save_file_from_telegram(
+                message.bot,
+                data["registration_page_passport_id"],
+                f"{verification.pk}_registration_page_passport.jpg"
             )
 
-        if data.get("additional_information_passport"):
-            files["additional_information_passport"] = ContentFile(
-                data["additional_information_passport"].read(),
-                name=f"{verification.pk}_additional_information_passport.jpg"
+        if data.get("additional_information_passport_id"):
+            verification.additional_information_passport = await _save_file_from_telegram(
+                message.bot,
+                data["additional_information_passport_id"],
+                f"{verification.pk}_additional_information_passport.jpg"
             )
 
-        if data.get("round_video"):
-            files["round_video"] = ContentFile(
-                data["round_video"].read(),
-                name=f"{verification.pk}_round_video.mp4"
+        if data.get("round_video_id"):
+            verification.round_video = await _save_file_from_telegram(
+                message.bot,
+                data["round_video_id"],
+                f"{verification.pk}_round_video.mp4"
             )
 
         text = (
@@ -416,16 +437,11 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
         if additional_information_passport_id:
             multi_files.append(additional_information_passport_id)
         round_video_id = data["round_video_id"]
-        group = models.TelegramGroup.objects.filter(title__contains=token).first()
         utils.send_file(ADMIN_CHAT_ID, file_type="video", file_id=round_video_id)
 
         utils.send_multi_file_by_file_id(ADMIN_CHAT_ID, file_type="photo",
                                          file_ids=multi_files)
         utils.send_text(ADMIN_CHAT_ID, text=text, reply_markup=inliene.check_manager(message.from_user.id))
-        # utils.send_multi_file_by_file_id(group.telegram_id, file_type="photo",
-        #                                  file_ids=multi_files)
-        # utils.send_file(group.telegram_id, file_type="video", file_id=round_video_id)
-        # utils.send_text(group.telegram_id, text=text, reply_markup=inliene.check_manager(message.from_user.id))
 
         verification.username = message.chat.username
         verification.phone_number = phone_number
@@ -436,10 +452,6 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
         verification.recommend_user = recommend_user
         verification.recommendation_user_contact = recommendation_user_contact
         verification.status = status
-        verification.main_page_passport = files.get("main_page_passport")
-        verification.registration_page_passport = files.get("registration_page_passport")
-        verification.additional_information_passport = files.get("additional_information_passport")
-        verification.round_video = files.get("round_video")
         verification.country_id = country_id
         verification.fullname = fullname
         verification.live_address = live_address
