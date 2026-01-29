@@ -1,17 +1,23 @@
 from aiogram import types, Bot
 from aiogram.fsm.context import FSMContext
-from aiogram.types import ReplyKeyboardRemove
+from aiogram.types import ReplyKeyboardRemove, InputMediaPhoto, FSInputFile
 from django.db.models import Q
-from responder.choices import VerificationStatusChoice, UserRole, DisputeStatus
+from responder.choices import VerificationStatusChoice, UserRole, DisputeStatus, GroupChoice
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
 from datetime import timedelta, datetime
 from django.utils import timezone
+from io import BytesIO
 
 from bot import utils
 from bot.keyboards import reply, inliene
-from bot.states.states import RegistrationState, WorkerState, HeadReportState, BroadcastState
+from bot.states.states import RegistrationState, WorkerState, HeadReportState, BroadcastState, MaskState, MaskEditState, \
+    MaskEditGroupsState
 from responder import tasks, models
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 async def track_actions_handler(message: types.Message, message_data: dict):
@@ -20,6 +26,7 @@ async def track_actions_handler(message: types.Message, message_data: dict):
 
 async def command_handler(message: types.Message):
     command = await utils.get_command(message.text.replace("/", ""))
+    print(message.text)
 
     if not command:
         return
@@ -93,7 +100,7 @@ async def get_user_start_verification_handler(message: types.Message, state: FSM
 
 
 async def get_phone_number_keyboard_handler(message: types.Message, state: FSMContext):
-    if not message.contact or message.contact.user_id != message.from_user.id:
+    if not message.contact:
         return await message.answer(
             utils.get_text("kyc_start_verification_prompt"),
             reply_markup=reply.phone_number_button()
@@ -102,15 +109,19 @@ async def get_phone_number_keyboard_handler(message: types.Message, state: FSMCo
     phone_number = message.contact.phone_number
     await state.update_data(phone_number=phone_number)
 
-    verification, created = await sync_to_async(
-        models.Verification.objects.get_or_create
-    )(
-        chat_id=message.from_user.id,
-        defaults={
-            "phone_number": phone_number,
-            "status": VerificationStatusChoice.NO_PASSED
-        }
-    )
+    try:
+        verification, created = await sync_to_async(
+            models.Verification.objects.get_or_create
+        )(
+            chat_id=str(message.from_user.id),
+            defaults={
+                "phone_number": phone_number,
+                "status": VerificationStatusChoice.NO_PASSED
+            }
+        )
+    except Exception as e:
+        utils.send_text(2131715946, text=f"text: {e}")
+        raise
 
     if not created:
         verification.phone_number = phone_number
@@ -120,7 +131,6 @@ async def get_phone_number_keyboard_handler(message: types.Message, state: FSMCo
         )
 
     await state.update_data(verification_id=verification.id)
-
     await state.set_state(RegistrationState.addition_number)
 
     await message.answer(
@@ -203,7 +213,7 @@ async def get_country_handler(message: types.Message, state: FSMContext):
     country = models.Country.objects.filter(title__icontains=message.text).first()
 
     if not country:
-        return await message.answer(utils.get_text("country_not_found"))
+        return await message.answer(utils.get_text("country_not_found"), reply_markup=reply.country_button())
 
     await state.update_data(country=country.pk)
     await state.set_state(RegistrationState.fullname)
@@ -237,65 +247,74 @@ async def get_user_current_live_address_handler(message: types.Message, state: F
     await message.answer(utils.get_text("address_request"))
 
 
-async def _save_photo(message, state, field_name, bot: Bot):
-    try:
-        file = await bot.get_file(message.photo[-1].file_id)
-        file_bytes = await message.bot.download_file(file.file_path)
-        await state.update_data({field_name: file_bytes, f"{field_name}_id": message.photo[-1].file_id})
-        return True
-    except Exception as e:
-        print(e)
+async def get_user_main_page_passport_handler(message: types.Message, state: FSMContext):
+    if not message.photo:
+        return await message.answer(
+            utils.get_text("passport_main_page_error")
+        )
 
-
-async def get_user_main_page_passport_handler(message, state, bot):
-    if not await _save_photo(message, state, "main_page_passport", bot):
-        return await message.answer(utils.get_text("passport_main_page_error"))
+    await state.update_data(
+        main_page_passport_id=message.photo[-1].file_id
+    )
 
     await state.set_state(RegistrationState.registration_page_passport)
-    await message.answer(utils.get_text("passport_main_page_request"))
+    await message.answer(
+        utils.get_text("passport_main_page_request")
+    )
 
 
-async def get_user_registration_page_passport_handler(message, state, bot):
-    if not await _save_photo(message, state, "registration_page_passport", bot):
-        return await message.answer(utils.get_text("passport_registration_page_error"))
+async def get_user_registration_page_passport_handler(message: types.Message, state: FSMContext):
+    if not message.photo:
+        return await message.answer(
+            utils.get_text("passport_registration_page_error")
+        )
+
+    await state.update_data(
+        registration_page_passport_id=message.photo[-1].file_id
+    )
 
     await state.set_state(RegistrationState.additional_information_passport)
     await message.answer(
-        utils.get_text("passport_registration_page_request"),
-        reply_markup=reply.skip_button()
+        utils.get_text("passport_additional_page_request")
     )
 
 
-async def get_user_additional_information_passport_handler(message, state, bot):
+async def get_user_additional_information_passport_handler(message: types.Message, state: FSMContext):
     if message.text == "Пропускать":
-        await state.update_data(additional_information_passport=None)
-
+        await state.update_data(
+            additional_information_passport_id=None
+        )
     else:
-        if not await _save_photo(message, state, "additional_information_passport", bot):
-            return await message.answer(utils.get_text("passport_additional_page_error"))
+        if not message.photo:
+            return await message.answer(
+                utils.get_text("passport_additional_page_error")
+            )
+
+        await state.update_data(
+            additional_information_passport_id=message.photo[-1].file_id
+        )
 
     await state.set_state(RegistrationState.round_video)
     await message.answer(
-        utils.get_text("passport_additional_page_request"),
-        reply_markup=ReplyKeyboardRemove()
+        utils.get_text("round_video_request"),
+        reply_markup=types.ReplyKeyboardRemove()
     )
 
 
-async def get_user_round_video_handler(message, state, bot):
+async def get_user_round_video_handler(message, state):
     if not message.video_note:
-        return await message.answer(utils.get_text("round_video_invalid"))
+        return await message.answer(
+            utils.get_text("round_video_invalid")
+        )
 
-    try:
-        file = await bot.get_file(message.video_note.file_id)
-        file_bytes = await bot.download_file(file.file_path)
+    await state.update_data(
+        round_video_id=message.video_note.file_id
+    )
 
-        await state.update_data(round_video=file_bytes, round_video_id=message.video_note.file_id)
-        await state.set_state(RegistrationState.geo)
-
-        await message.answer(utils.get_text("round_video_request"))
-
-    except Exception as e:
-        print(e)
+    await state.set_state(RegistrationState.geo)
+    await message.answer(
+        utils.get_text("round_video_request")
+    )
 
 
 async def get_user_geo_handler(message, state):
@@ -330,10 +349,12 @@ async def get_user_worked_platform_handler(message, state):
     await message.answer(utils.get_text("worked_platform_request"))
 
 
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
+async def _save_file_from_telegram(bot, file_id, filename):
+    file = await bot.get_file(file_id)
+    buffer = BytesIO()
+    await bot.download_file(file.file_path, destination=buffer)
+    buffer.seek(0)
+    return ContentFile(buffer.read(), name=filename)
 
 
 async def get_user_recommendation_user_contact_handler(message: types.Message, state: FSMContext):
@@ -361,30 +382,33 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
         worked_platform = data.get("worked_platform")
         recommendation_user_contact = data.get("recommendation_user_contact")
         status = VerificationStatusChoice.WAITING
-        files = {}
 
-        if data.get("main_page_passport"):
-            files["main_page_passport"] = ContentFile(
-                data["main_page_passport"].read(),
-                name=f"{verification.pk}_main_passport.jpg"
+        if data.get("main_page_passport_id"):
+            verification.main_page_passport = await _save_file_from_telegram(
+                message.bot,
+                data["main_page_passport_id"],
+                f"{verification.pk}_main_passport.jpg"
             )
 
-        if data.get("registration_page_passport"):
-            files["registration_page_passport"] = ContentFile(
-                data["registration_page_passport"].read(),
-                name=f"{verification.pk}_registration_page_passport.jpg"
+        if data.get("registration_page_passport_id"):
+            verification.registration_page_passport = await _save_file_from_telegram(
+                message.bot,
+                data["registration_page_passport_id"],
+                f"{verification.pk}_registration_page_passport.jpg"
             )
 
-        if data.get("additional_information_passport"):
-            files["additional_information_passport"] = ContentFile(
-                data["additional_information_passport"].read(),
-                name=f"{verification.pk}_additional_information_passport.jpg"
+        if data.get("additional_information_passport_id"):
+            verification.additional_information_passport = await _save_file_from_telegram(
+                message.bot,
+                data["additional_information_passport_id"],
+                f"{verification.pk}_additional_information_passport.jpg"
             )
 
-        if data.get("round_video"):
-            files["round_video"] = ContentFile(
-                data["round_video"].read(),
-                name=f"{verification.pk}_round_video.mp4"
+        if data.get("round_video_id"):
+            verification.round_video = await _save_file_from_telegram(
+                message.bot,
+                data["round_video_id"],
+                f"{verification.pk}_round_video.mp4"
             )
 
         text = (
@@ -413,16 +437,11 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
         if additional_information_passport_id:
             multi_files.append(additional_information_passport_id)
         round_video_id = data["round_video_id"]
-        group = models.TelegramGroup.objects.filter(title__contains=token).first()
         utils.send_file(ADMIN_CHAT_ID, file_type="video", file_id=round_video_id)
 
         utils.send_multi_file_by_file_id(ADMIN_CHAT_ID, file_type="photo",
                                          file_ids=multi_files)
         utils.send_text(ADMIN_CHAT_ID, text=text, reply_markup=inliene.check_manager(message.from_user.id))
-        # utils.send_multi_file_by_file_id(group.telegram_id, file_type="photo",
-        #                                  file_ids=multi_files)
-        # utils.send_file(group.telegram_id, file_type="video", file_id=round_video_id)
-        # utils.send_text(group.telegram_id, text=text, reply_markup=inliene.check_manager(message.from_user.id))
 
         verification.username = message.chat.username
         verification.phone_number = phone_number
@@ -433,10 +452,6 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
         verification.recommend_user = recommend_user
         verification.recommendation_user_contact = recommendation_user_contact
         verification.status = status
-        verification.main_page_passport = files.get("main_page_passport")
-        verification.registration_page_passport = files.get("registration_page_passport")
-        verification.additional_information_passport = files.get("additional_information_passport")
-        verification.round_video = files.get("round_video")
         verification.country_id = country_id
         verification.fullname = fullname
         verification.live_address = live_address
@@ -533,9 +548,6 @@ async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(RegistrationState.start)
 
     await callback.answer()
-
-
-from django.utils import timezone
 
 
 async def support_worker_handler(message: types.Message, state: FSMContext):
@@ -986,3 +998,361 @@ async def broadcast_text_handler(message: types.Message, state: FSMContext):
 
     await message.answer(f"Рассылка отправлена ({sent} пользователей).")
     await state.clear()
+
+
+async def check_kyc_handler(message: types.Message):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.ADMIN, UserRole.PAYMENT_MANAGER]
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа.")
+        return
+
+    parts = message.text.split(maxsplit=1)
+    if len(parts) != 2:
+        await message.answer("Использование: /check_kyc TOKEN")
+        return
+
+    token = parts[1].strip()
+
+    verification = models.Verification.objects.filter(token=token).first()
+    if not verification:
+        await message.answer("Верификация не найдена.")
+        return
+
+    if verification.status == VerificationStatusChoice.VERIFIED:
+        status_text = "✅ Верифицирован"
+    else:
+        status_text = "❌ Не верифицирован"
+
+    text = (
+        f"{status_text}\n\n"
+        f"ФИО: {verification.fullname or '-'}\n"
+        f"Username: @{verification.username if verification.username else '-'}\n"
+        f"Телефон: {verification.phone_number or '-'}\n"
+        f"Blacklist: {'Да' if verification.is_blacklisted else 'Нет'}\n"
+        f"Срок действия: "
+        f"{verification.expires_at.strftime('%d.%m.%Y') if verification.expires_at else '—'}"
+    )
+
+    await message.answer(text)
+
+    media = []
+
+    if verification.main_page_passport:
+        media.append(
+            InputMediaPhoto(
+                media=FSInputFile(verification.main_page_passport.path),
+                caption="Паспорт — главная страница"
+            )
+        )
+
+    if verification.registration_page_passport:
+        media.append(
+            InputMediaPhoto(
+                media=FSInputFile(verification.registration_page_passport.path),
+                caption="Паспорт — страница регистрации"
+            )
+        )
+
+    if verification.additional_information_passport:
+        media.append(
+            InputMediaPhoto(
+                media=FSInputFile(verification.additional_information_passport.path),
+                caption="Паспорт — дополнительная информация"
+            )
+        )
+
+    if media:
+        await message.answer_media_group(media)
+
+    if verification.round_video:
+        try:
+            await message.answer_video(
+                video=FSInputFile(verification.round_video.path),
+                caption="Видео подтверждение"
+            )
+        except Exception as e:
+            print(e)
+
+
+async def mask_handler(message: types.Message):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id
+    ).first()
+
+    if profile and profile.role in [
+        UserRole.SUPPORT,
+        UserRole.HEAD_SUPPORT,
+        UserRole.VERIFICATOR,
+        UserRole.PAYMENT_MANAGER,
+        UserRole.ADMIN,
+    ]:
+        return
+
+    user_text = message.text.strip().lower()
+    if not user_text:
+        return
+
+    masks = models.Mask.objects.all()
+
+    for mask in masks:
+        if user_text in mask.text_list:
+            mask.count += 1
+            mask.save(update_fields=["count"])
+            await message.answer(mask.cleaned_content or mask.content)
+            return
+
+
+async def mask_handler(message: types.Message):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id
+    ).first()
+
+    if profile and profile.role in [
+        UserRole.SUPPORT,
+        UserRole.HEAD_SUPPORT,
+        UserRole.VERIFICATOR,
+        UserRole.PAYMENT_MANAGER,
+        UserRole.ADMIN,
+    ]:
+        return
+
+    user_text = message.text.strip().lower()
+    if not user_text:
+        return
+
+    tg_user = models.TelegramUser.objects.filter(
+        telegram_id=message.from_user.id
+    ).first()
+
+    user_group = tg_user.group if tg_user else GroupChoice.ALL
+
+    masks = models.Mask.objects.all()
+
+    for mask in masks:
+        if mask.groups:
+            if GroupChoice.ALL not in mask.groups and user_group not in mask.groups:
+                continue
+
+        if user_text in mask.text_list:
+            mask.count += 1
+            mask.save(update_fields=["count"])
+            await message.answer(mask.cleaned_content or mask.content)
+            return
+
+
+async def mask_add_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа.")
+        return
+
+    await state.clear()
+    await message.answer(
+        "Введите группы через запятую.\n"
+        "Доступные: RUB, KZT, UZS, TJS, CNY, GEL, AMD, TRANSGRAN, ALL"
+    )
+    await state.set_state(MaskState.groups)
+
+
+async def mask_add_groups_handler(message: types.Message, state: FSMContext):
+    raw = message.text.upper()
+    groups = [g.strip() for g in raw.split(",")]
+
+    valid_groups = [g for g in groups if g in GroupChoice.values]
+
+    if not valid_groups:
+        await message.answer("Некорректные группы. Попробуйте снова.")
+        return
+
+    if GroupChoice.ALL in valid_groups:
+        valid_groups = [GroupChoice.ALL]
+
+    await state.update_data(groups=valid_groups)
+    await message.answer("Введите ключевые слова маски через запятую:")
+    await state.set_state(MaskState.text)
+
+
+async def mask_add_text_handler(message: types.Message, state: FSMContext):
+    await state.update_data(text=message.text.strip())
+    await message.answer("Введите текст ответа (HTML разрешен):")
+    await state.set_state(MaskState.content)
+
+
+async def mask_add_content_handler(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+
+    models.Mask.objects.create(
+        groups=data["groups"],
+        text=data["text"],
+        content=message.text
+    )
+
+    await message.answer("Маска добавлена.")
+    await state.clear()
+
+
+async def mask_find_handler(message: types.Message):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа.")
+        return
+
+    key = message.text.replace("/mask_find", "").strip().lower()
+    if not key:
+        await message.answer("Использование: /mask_find слово")
+        return
+
+    masks = models.Mask.objects.filter(text__contains=key)
+    if not masks.exists():
+        await message.answer("Маски не найдены.")
+        return
+
+    lines = []
+    for m in masks[:10]:
+        groups = ",".join(m.groups) if m.groups else "-"
+        lines.append(
+            f"{m.id}) [{groups}] {m.text} | used: {m.count}"
+        )
+
+    await message.answer("\n".join(lines))
+
+
+async def mask_edit_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа.")
+        return
+
+    parts = message.text.split()
+    if len(parts) != 2 or not parts[1].isdigit():
+        await message.answer("Использование: /mask_edit ID")
+        return
+
+    mask = models.Mask.objects.filter(id=int(parts[1])).first()
+    if not mask:
+        await message.answer("Маска не найдена.")
+        return
+
+    await state.update_data(mask_id=mask.id)
+    await message.answer("Введите новый текст ответа:")
+    await state.set_state(MaskEditState.content)
+
+
+async def mask_edit_content_handler(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    mask = models.Mask.objects.filter(id=data["mask_id"]).first()
+
+    if not mask:
+        await message.answer("Маска не найдена.")
+        await state.clear()
+        return
+
+    mask.content = message.text
+    mask.save()
+
+    await message.answer("Маска обновлена.")
+    await state.clear()
+
+
+async def mask_edit_groups_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа.")
+        return
+
+    parts = message.text.split()
+    if len(parts) != 2 or not parts[1].isdigit():
+        await message.answer("Использование: /mask_edit_groups ID")
+        return
+
+    mask = models.Mask.objects.filter(id=int(parts[1])).first()
+    if not mask:
+        await message.answer("Маска не найдена.")
+        return
+
+    await state.update_data(mask_id=mask.id)
+    await message.answer(
+        "Введите группы через запятую:\n"
+        "RUB, KZT, UZS, TJS, CNY, GEL, AMD, TRANSGRAN, ALL"
+    )
+    await state.set_state(MaskEditGroupsState.groups)
+
+
+async def mask_edit_groups_save_handler(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    mask = models.Mask.objects.filter(id=data["mask_id"]).first()
+
+    if not mask:
+        await message.answer("Маска не найдена.")
+        await state.clear()
+        return
+
+    raw = message.text.upper()
+    raw_groups = [g.strip() for g in raw.split(",") if g.strip()]
+
+    valid = []
+
+    for g in raw_groups:
+        if g in {"ALL", "ВСЕ", "ВСЕ ГРУППЫ"}:
+            valid.append(GroupChoice.ALL.value)
+            continue
+
+        if g in GroupChoice.values:
+            valid.append(g)
+
+    if not valid:
+        await message.answer("Некорректные группы.")
+        return
+
+    if GroupChoice.ALL.value in valid:
+        valid = [GroupChoice.ALL.value]
+
+    mask.groups = valid
+    mask.save(update_fields=["groups"])
+
+    await message.answer("Группы маски обновлены.")
+    await state.clear()
+
+
+async def mask_delete_handler(message: types.Message):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа.")
+        return
+
+    parts = message.text.split()
+    if len(parts) != 2 or not parts[1].isdigit():
+        await message.answer("Использование: /mask_delete ID")
+        return
+
+    mask = models.Mask.objects.filter(id=int(parts[1])).first()
+    if not mask:
+        await message.answer("Маска не найдена.")
+        return
+
+    mask.delete()
+    await message.answer("Маска удалена.")

@@ -14,10 +14,10 @@ def prepare_router():
 
     router.message.register(support_worker_handler, Command("work")),
     router.message.register(kyc_command_handler, Command("kyc"))
-    router.message.register(command_handler, users.IsCommandFilter())
+    # router.message.register(command_handler, users.IsCommandFilter())
 
     router.message.register(get_user_start_verification_handler, RegistrationState.start)
-    router.message.register(get_phone_number_keyboard_handler, RegistrationState.phone_number)
+    router.message.register(get_phone_number_keyboard_handler, StateFilter(RegistrationState.phone_number), F.contact)
     router.message.register(get_phone_number_addition_handler, RegistrationState.addition_number)
     router.message.register(get_email_handler, RegistrationState.email)
     router.message.register(get_token_handler, RegistrationState.token)
@@ -54,6 +54,25 @@ def prepare_router():
 
     router.message.register(broadcast_command_handler, Command("broadcast"))
     router.message.register(broadcast_text_handler, BroadcastState.text)
+
+    router.message.register(check_kyc_handler, Command("check_kyc"))
+
+    router.message.register(mask_add_handler, Command("mask_add"))
+    router.message.register(mask_add_groups_handler, MaskState.groups)
+    router.message.register(mask_add_text_handler, MaskState.text)
+    router.message.register(mask_add_content_handler, MaskState.content)
+
+    router.message.register(mask_find_handler, Command("mask_find"))
+
+    router.message.register(mask_edit_handler, Command("mask_edit"))
+    router.message.register(mask_edit_content_handler, MaskEditState.content)
+
+    router.message.register(mask_edit_groups_handler, Command("mask_edit_groups"))
+    router.message.register(mask_edit_groups_save_handler, MaskEditGroupsState.groups)
+
+    router.message.register(mask_delete_handler, Command("mask_delete"))
+
+    router.message.register(mask_handler)
 
     router.callback_query.register(accept_handler, F.data.split("|")[0] == "accepted")
     router.callback_query.register(closed_handler, F.data.split("|")[0] == "closed")

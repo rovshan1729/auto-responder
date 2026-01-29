@@ -381,7 +381,7 @@ class Verification(BaseModel):
     phone_number = models.CharField(max_length=20, null=True, blank=True, verbose_name="Номер телефона")
     add_phone = models.CharField(max_length=20, null=True, blank=True, verbose_name="Дополнительный телефон")
 
-    email = models.EmailField(verbose_name="Email")
+    email = models.EmailField(verbose_name="Email", null=True, blank=True)
     experience = models.CharField(max_length=50, null=True, blank=True, verbose_name="Опыт работы")
 
     token = models.CharField(max_length=255, null=True, blank=True, verbose_name="Токен")

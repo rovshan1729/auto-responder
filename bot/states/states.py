@@ -40,3 +40,17 @@ class HeadReportState(StatesGroup):
 
 class BroadcastState(StatesGroup):
     text = State()
+
+
+class MaskState(StatesGroup):
+    groups = State()
+    text = State()
+    content = State()
+
+
+class MaskEditState(StatesGroup):
+    content = State()
+
+
+class MaskEditGroupsState(StatesGroup):
+    groups = State()
