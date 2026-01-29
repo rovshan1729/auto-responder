@@ -296,7 +296,7 @@ async def get_user_additional_information_passport_handler(message: types.Messag
 
     await state.set_state(RegistrationState.round_video)
     await message.answer(
-        utils.get_text("round_video_request"),
+        utils.get_text("request_for_video"),
         reply_markup=types.ReplyKeyboardRemove()
     )
 
