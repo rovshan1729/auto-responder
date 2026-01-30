@@ -1,4 +1,7 @@
 import asyncio
+
+asyncio.set_event_loop(asyncio.new_event_loop())
+
 from django.core.management.base import BaseCommand
 from django.core.cache import cache
 

@@ -7,23 +7,10 @@ from responder import models as r_models
 from responder.choices import VerificationStatusChoice
 from django.db.models import Q
 from environs import Env
+from responder.models import BlackList
 
 env = Env()
 env.read_env()
-
-import re
-
-
-def normalize_text(value: str) -> str:
-    if not value:
-        return ""
-    return re.sub(r"[^a-zа-я0-9]", "", value.lower())
-
-
-def normalize_phone(phone: str) -> str:
-    if not phone:
-        return ""
-    return re.sub(r"\D", "", phone)
 
 
 async def sync_group_users(client: Client, groups):
@@ -46,15 +33,10 @@ async def sync_group_users(client: Client, groups):
             continue
 
         async for member in client.get_chat_members(chat.id):
-
             user = member.user
             if not user or user.is_bot:
                 continue
 
-            user_fullname = normalize_text(
-                f"{user.first_name or ''} {user.last_name or ''}"
-            )
-            user_username = normalize_text(user.username)
             user_phone = normalize_phone(user.phone_number)
 
             verification_qs = r_models.Verification.objects.filter(
@@ -62,24 +44,29 @@ async def sync_group_users(client: Client, groups):
             )
 
             for verification in verification_qs:
-                v_fullname = normalize_text(verification.fullname)
-                v_username = normalize_text(verification.username)
                 v_phone = normalize_phone(verification.phone_number)
 
+                fields_present = []
                 matched_fields = []
 
-                if v_fullname and user_fullname and v_fullname == user_fullname:
+                if not verification.fullname:
+                    fields_present.append("FULLNAME")
                     matched_fields.append("FULLNAME")
 
-                if v_username and user_username and v_username == user_username:
+                if not verification.username:
+                    fields_present.append("USERNAME")
                     matched_fields.append("USERNAME")
 
-                if v_phone and user_phone and v_phone == user_phone:
-                    matched_fields.append("PHONE")
+                if v_phone and user_phone:
+                    fields_present.append("PHONE")
+                    if v_phone == user_phone:
+                        matched_fields.append("PHONE")
 
-                if matched_fields:
-                    verification.is_blacklisted = True
-                    verification.save(update_fields=["is_blacklisted"])
+                print(f"{fields_present = }")
+                print(f"{matched_fields = }")
+
+                if len(fields_present) >= 2 and len(matched_fields) == len(fields_present):
+                    get, _ = BlackList.objects.get_or_create(verification=verification)
 
                     last_message = None
 

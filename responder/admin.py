@@ -13,6 +13,7 @@ from bot.utils import methods
 from responder import models, mixins
 from responder.forms import ReplyMessageForm, MaskModelForm
 
+admin.site.register(models.BlackList)
 
 class VerificationAdminFieldInline(unfold_admin.TabularInline):
     model = models.VerificationAdminField
