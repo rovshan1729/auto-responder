@@ -55,6 +55,7 @@ class BroadcastAdmin(BaseModelAdmin):
     list_display = ('id', 'title', 'percent', 'is_sent', 'created_at')
     # fields = ('title', 'template', 'groups', 'medias', 'content', 'scheduled_at')
     inlines = (BButtonInline,)
+    readonly_fields = ("cleaned_content", "percent", "is_sent", "task_id")
 
 
     fieldsets = (
