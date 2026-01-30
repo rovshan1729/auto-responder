@@ -1,0 +1,36 @@
+/* Центрирование текста в таблицах django-unfold (changelist) */
+
+/* Заголовки и ячейки */
+.unfold-table th,
+.unfold-table td {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+/* Если unfold использует стандартную admin-таблицу */
+#changelist table th,
+#changelist table td {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+/* Центрирование ID, дат, текста */
+#changelist table tbody tr td {
+    text-align: center !important;
+}
+
+/* Центрирование заголовков колонок */
+#changelist table thead th {
+    text-align: center !important;
+}
+
+/* Убираем смещение сортировочных иконок */
+#changelist table thead th a {
+    justify-content: center;
+}
+
+/* Центрирование чекбоксов */
+.action-checkbox,
+.action-checkbox-column {
+    text-align: center !important;
+}
