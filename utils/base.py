@@ -22,8 +22,8 @@ class BaseModelAdmin(UnfoldModelAdmin):
     class Media:
         css = {
             'all': (
-                'css/global.css',
-                # 'css/global2.css'
+                # 'css/global.css',
+                'css/global2.css',
                 # 'css/ckeditor_custom.css',
             )
         }
