@@ -142,7 +142,7 @@ async def get_phone_number_keyboard_handler(message: types.Message, state: FSMCo
 async def get_phone_number_addition_handler(message: types.Message, state: FSMContext):
     text = message.text.strip()
 
-    if text == "Пропускать":
+    if text == "Пропустить шаг":
         await state.update_data(add_phone=None)
         await state.set_state(RegistrationState.email)
         return await message.answer(
@@ -193,7 +193,7 @@ async def get_token_handler(message: types.Message, state: FSMContext):
 
 
 async def get_team_lead_handler(message: types.Message, state: FSMContext):
-    if message.text == "Пропускать":
+    if message.text == "Пропустить шаг":
         await state.update_data(team_lead=None)
         await state.set_state(RegistrationState.recommend_user)
         return await message.answer(utils.get_text("team_lead_skip"))
@@ -280,7 +280,7 @@ async def get_user_registration_page_passport_handler(message: types.Message, st
 
 
 async def get_user_additional_information_passport_handler(message: types.Message, state: FSMContext):
-    if message.text == "Пропускать":
+    if message.text == "Пропустить шаг":
         await state.update_data(
             additional_information_passport_id=None
         )
@@ -474,7 +474,6 @@ async def accept_handler(callback: types.CallbackQuery, state: FSMContext):
     if not user:
         return
 
-    # 🔹 Expiration time (updated_at + 90 дней)
     base_time = user.updated_at or timezone.now()
     user.expires_at = base_time + timedelta(days=90)
     user.status = VerificationStatusChoice.VERIFIED
