@@ -7,7 +7,7 @@ class IsCommandFilter(Filter):
         pass
 
     async def __call__(self, message: types.Message):
-        if len(message.text.split(' ')) == 1 and message.text.startswith('/'):
+        if message.text and len(message.text.split(' ')) == 1 and message.text.startswith('/'):
             return True
         return False
 
