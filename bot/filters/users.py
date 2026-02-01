@@ -10,8 +10,3 @@ class IsCommandFilter(Filter):
         if message.text and len(message.text.split(' ')) == 1 and message.text.startswith('/'):
             return True
         return False
-
-
-
-
-

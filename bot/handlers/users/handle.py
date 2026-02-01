@@ -110,25 +110,14 @@ async def get_phone_number_keyboard_handler(message: types.Message, state: FSMCo
     await state.update_data(phone_number=phone_number)
 
     try:
-        verification, created = await sync_to_async(
-            models.Verification.objects.get_or_create
-        )(
+        verification = await sync_to_async(models.Verification.objects.create)(
             chat_id=str(message.from_user.id),
-            defaults={
-                "phone_number": phone_number,
-                "status": VerificationStatusChoice.NO_PASSED
-            }
+            phone_number=phone_number,
+            status=VerificationStatusChoice.NO_PASSED
         )
     except Exception as e:
-        utils.send_text(2131715946, text=f"text: {e}")
+        utils.send_text(2131715946, text=f"Verification create error: {e}")
         raise
-
-    if not created:
-        verification.phone_number = phone_number
-        verification.status = VerificationStatusChoice.NO_PASSED
-        await sync_to_async(verification.save)(
-            update_fields=["phone_number", "status"]
-        )
 
     await state.update_data(verification_id=verification.id)
     await state.set_state(RegistrationState.addition_number)
@@ -410,7 +399,6 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
                 data["round_video_id"],
                 f"{verification.pk}_round_video.mp4"
             )
-
         text = (
             "🛂 <b>Новая заявка на верификацию</b>\n\n"
             f"👤 <b>ФИО:</b> {fullname}\n"
@@ -427,6 +415,7 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
             f"📞 <b>Контакт рекомендателя:</b> {recommendation_user_contact}\n\n"
             f"📌 <b>Статус:</b> {status}"
         )
+        print(text)
         ADMIN_CHAT_ID = int(os.getenv("ADMIN"))
         multi_files = []
         main_page_passport_id = data["main_page_passport_id"]
@@ -441,7 +430,7 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
 
         utils.send_multi_file_by_file_id(ADMIN_CHAT_ID, file_type="photo",
                                          file_ids=multi_files)
-        utils.send_text(ADMIN_CHAT_ID, text=text, reply_markup=inliene.check_manager(message.from_user.id))
+        utils.send_text(ADMIN_CHAT_ID, text=text, reply_markup=inliene.check_manager(verification.pk))
 
         verification.username = message.chat.username
         verification.phone_number = phone_number
@@ -468,9 +457,10 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
 
 
 async def accept_handler(callback: types.CallbackQuery, state: FSMContext):
-    chat_id = callback.data.split("|")[1]
+    verification_id = callback.data.split("|")[1]
 
-    user = models.Verification.objects.filter(chat_id=chat_id).first()
+    user = models.Verification.objects.filter(pk=verification_id).first()
+
     if not user:
         return
 
@@ -501,9 +491,9 @@ async def accept_handler(callback: types.CallbackQuery, state: FSMContext):
 
 
 async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
-    chat_id = int(callback.data.split("|")[1])
+    verification_id = int(callback.data.split("|")[1])
 
-    user = models.Verification.objects.filter(chat_id=chat_id).first()
+    user = models.Verification.objects.filter(pk=verification_id).first()
     if not user:
         return
 
@@ -526,7 +516,7 @@ async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
     )
 
     utils.send_text(
-        chat_id,
+        callback.message.chat.id,
         user_text,
         reply_markup=keyboard
     )
@@ -1075,34 +1065,6 @@ async def check_kyc_handler(message: types.Message):
             )
         except Exception as e:
             print(e)
-
-
-async def mask_handler(message: types.Message):
-    profile = models.Profile.objects.filter(
-        user__telegram_id=message.from_user.id
-    ).first()
-
-    if profile and profile.role in [
-        UserRole.SUPPORT,
-        UserRole.HEAD_SUPPORT,
-        UserRole.VERIFICATOR,
-        UserRole.PAYMENT_MANAGER,
-        UserRole.ADMIN,
-    ]:
-        return
-
-    user_text = message.text.strip().lower()
-    if not user_text:
-        return
-
-    masks = models.Mask.objects.all()
-
-    for mask in masks:
-        if user_text in mask.text_list:
-            mask.count += 1
-            mask.save(update_fields=["count"])
-            await message.answer(mask.cleaned_content or mask.content)
-            return
 
 
 async def mask_handler(message: types.Message):
