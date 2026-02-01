@@ -3,7 +3,10 @@ from responder.models import Country
 
 def start_verification():
     return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="Приступить к верификации")]],
+        keyboard=[
+            [KeyboardButton(text="Приступить к верификации")],
+            [KeyboardButton(text="Отменить")]
+        ],
         resize_keyboard=True
     )
 

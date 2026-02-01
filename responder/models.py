@@ -585,7 +585,7 @@ class Problem(BaseModel):
         verbose_name_plural = "Проблемы сотрудников"
 
     def __str__(self):
-        return self.profile.user
+        return str(self.profile.user)
 
 
 class BlackList(BaseModel):

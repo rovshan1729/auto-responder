@@ -92,11 +92,11 @@ async def get_user_start_verification_handler(message: types.Message, state: FSM
             utils.get_text("kyc_start_verification_prompt"),
             reply_markup=reply.phone_number_button()
         )
-
-    return await message.answer(
-        utils.get_text("kyc_start_message"),
-        reply_markup=reply.start_verification()
-    )
+    elif message.text == "Отменить":
+        await message.answer(
+            utils.get_text("dont_start"), reply_markup=ReplyKeyboardRemove()
+        )
+        await state.clear()
 
 
 async def get_phone_number_keyboard_handler(message: types.Message, state: FSMContext):
@@ -569,16 +569,14 @@ async def worker_start_work_handler(callback: types.CallbackQuery, state: FSMCon
             models.WorkerData.objects.create(profile=profile, start_work_time=timezone.now().isoformat())
             await callback.message.answer(utils.get_text("worker_start_work_message"))
             head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
-            text = (f"USER: {callback.from_user.username}\n"
-                    f"Start time: {timezone.now().isoformat()}")
+            text = f"Саппорт @{callback.from_user.username} начал работу в {timezone.now().isoformat()}\n"
             utils.send_text(head_profile.user.telegram_id, text)
 
         elif not worker_data.exists():
             models.WorkerData.objects.create(profile=profile, start_work_time=timezone.now().isoformat())
             await callback.message.answer(utils.get_text("worker_start_work_message"))
             head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
-            text = (f"USER: {callback.from_user.username}\n"
-                    f"Start time: {timezone.now().isoformat()}")
+            text = f"Саппорт @{callback.from_user.username} начал работу в {timezone.now().isoformat()}\n"
             utils.send_text(head_profile.user.telegram_id, text)
 
         else:
@@ -704,12 +702,12 @@ async def get_problem_text_handler(message: types.Message, state: FSMContext):
         user__telegram_id=message.from_user.id,
         role__in=[UserRole.SUPPORT, UserRole.ADMIN]
     ).first()
+
     if not profile:
-        await message.answer("Нет доступа", show_alert=True)
+        await message.answer("Нет доступа")
         return
 
     chat_id = message.from_user.id
-
     problem_text_input = message.text.strip()
 
     data = await state.get_data()
@@ -724,7 +722,9 @@ async def get_problem_text_handler(message: types.Message, state: FSMContext):
         await message.answer(utils.get_text("no_work"))
         return
 
-    report, _ = models.WorkerShiftReport.objects.get_or_create(worker_data=work_data)
+    report, _ = models.WorkerShiftReport.objects.get_or_create(
+        worker_data=work_data
+    )
 
     report.comment = problem_text_input
     report.is_submitted = True
@@ -748,16 +748,24 @@ async def get_problem_text_handler(message: types.Message, state: FSMContext):
     work_data.finish_work_time = timezone.now()
     work_data.save(update_fields=["finish_work_time"])
 
-    head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
+    head_profile = models.Profile.objects.filter(
+        role=UserRole.HEAD_SUPPORT
+    ).select_related("user").first()
+
     if head_profile:
         username = message.from_user.username or message.from_user.full_name
 
-        now_str = timezone.localtime(timezone.now()).strftime("%d.%m.%Y %H:%M:%S")
+        start_time_str = timezone.localtime(
+            work_data.start_work_time
+        ).strftime("%d.%m.%Y %H:%M:%S")
+
+        end_time_str = timezone.localtime(
+            work_data.finish_work_time
+        ).strftime("%d.%m.%Y %H:%M:%S")
 
         db_disputes = report.disputes.select_related("merchant").all()
 
         grouped = {}
-        # merchant_title => {resolved:0, new:0, unresolved:0}
         for item in db_disputes:
             title = item.merchant.title
 
@@ -765,7 +773,7 @@ async def get_problem_text_handler(message: types.Message, state: FSMContext):
                 grouped[title] = {
                     "resolved": 0,
                     "new": 0,
-                    "unresolved": 0
+                    "unresolved": 0,
                 }
 
             if item.status == DisputeStatus.RESOLVED:
@@ -778,21 +786,32 @@ async def get_problem_text_handler(message: types.Message, state: FSMContext):
         lines = []
         for merchant_title in sorted(grouped.keys()):
             r = grouped[merchant_title]["resolved"]
-            n = grouped[merchant_title]["new"]
             u = grouped[merchant_title]["unresolved"]
+            n = grouped[merchant_title]["new"]
 
-            lines.append(f"{merchant_title}: решённые {r} новые {n} нерешённые {u}")
+            lines.append(
+                f"{merchant_title} | решенные {r} | не решенные {u} | новые {n}"
+            )
 
-        merchants_block = "\n".join(lines) if lines else "Нет диспутов"
+        disputes_block = "\n".join(lines) if lines else "Нет диспутов"
+
+        problems_block = report.comment.strip() if report.comment else "Нету"
 
         head_text = (
-            f"Дата и время: {now_str}\n"
-            f"Саппорт: @{username}\n\n"
-            f"{merchants_block}\n\n"
-            f"Проблема:\n{report.comment or '-'}"
+            "Отчет о смене:\n"
+            f"Саппорт: @{username}\n"
+            f"Дата начала: {start_time_str}\n"
+            f"Дата завершения: {end_time_str}\n\n"
+            "Диспуты:\n"
+            f"{disputes_block}\n\n"
+            "Проблемы:\n"
+            f"{problems_block}"
         )
 
-        utils.send_text(head_profile.user.telegram_id, head_text)
+        utils.send_text(
+            head_profile.user.telegram_id,
+            head_text
+        )
 
     await message.answer(utils.get_text("the_shift_assigned"))
     await state.clear()
@@ -807,7 +826,7 @@ async def get_add_problem_support_handler(callback: types.CallbackQuery, state: 
         await callback.answer("Нет доступа", show_alert=True)
         return
 
-    await callback.message.answer(utils.get_text("send_text_add_problem"))
+    await callback.message.answer(utils.get_text("send_text_add_problem"), reply_markup=reply.skip_button())
     await state.set_state(WorkerState.add_problem)
 
 
