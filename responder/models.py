@@ -589,10 +589,8 @@ class Problem(BaseModel):
 
 
 class BlackList(BaseModel):
-    verification = models.ForeignKey(Verification, on_delete=models.CASCADE, related_name="blacklist")
+    data = models.JSONField(verbose_name="Данные анкеты (snapshot)")
 
     class Meta:
         verbose_name = "Черные списки"
         verbose_name_plural = "Черный список"
-    def __str__(self):
-        return str(self.verification.chat_id)

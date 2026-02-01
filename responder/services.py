@@ -8,12 +8,44 @@ from responder.choices import VerificationStatusChoice
 from django.db.models import Q
 from environs import Env
 from responder.models import BlackList
+import json
 
 env = Env()
 env.read_env()
 
+import re
+
+
+def normalize_phone(phone: str | None) -> str | None:
+    if not phone:
+        return None
+
+    phone = str(phone).strip()
+
+    phone = re.sub(r"[^\d+]", "", phone)
+
+    if phone.startswith("+"):
+        phone = phone[1:]
+
+    if phone.startswith("00"):
+        phone = phone[2:]
+
+    phone = re.sub(r"\D", "", phone)
+
+    if len(phone) < 8:
+        return None
+
+    return phone
+
 
 async def sync_group_users(client: Client, groups):
+    started_at = timezone.now()
+    service_log = {
+        "service": "sync_group_users",
+        "started_at": started_at.strftime("%Y-%m-%d %H:%M:%S"),
+        "ended_at": None,
+        "checked_groups": []
+    }
     print("=== SYNC STARTED ===")
 
     group_telegram_ids = set()
@@ -66,7 +98,6 @@ async def sync_group_users(client: Client, groups):
                 print(f"{matched_fields = }")
 
                 if len(fields_present) >= 2 and len(matched_fields) == len(fields_present):
-                    get, _ = BlackList.objects.get_or_create(verification=verification)
 
                     last_message = None
 
@@ -84,6 +115,30 @@ async def sync_group_users(client: Client, groups):
                             message_url = f"https://t.me/c/{chat_id}/{last_message.id}"
 
                     checked_at_str = timezone.now().strftime("%d-%m-%Y %H:%M:%S")
+
+                    blacklist_data = {
+                        "verification_id": verification.id,
+                        "chat_id": verification.chat_id,
+                        "status": verification.status,
+                        "fullname": verification.fullname,
+                        "username": verification.username,
+                        "phone_number": verification.phone_number,
+                        "add_phone": verification.add_phone,
+                        "email": verification.email,
+                        "live_address": verification.live_address,
+                        "geo": verification.geo,
+                        "worked_platform": verification.worked_platform,
+                        "experience": verification.experience,
+                        "team_lead": verification.team_lead,
+                        "recommend_user": verification.recommend_user,
+                        "recommendation_user_contact": verification.recommendation_user_contact,
+                        "additionally": verification.additionally,
+                        "commentary": verification.commentary,
+                        "matched_fields": matched_fields,
+                        "source_message_url": message_url,
+                        "checked_at": timezone.now().isoformat(),
+                    }
+                    BlackList.objects.create(data=blacklist_data)
 
                     text = (
                         "❗️ОБНАРУЖЕН В ЧЕРНОМ СПИСКЕ❗️\n\n"
