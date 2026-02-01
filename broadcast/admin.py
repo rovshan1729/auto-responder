@@ -36,6 +36,7 @@ class MediaAdmin(BaseModelAdmin):
 class BroadcastTemplateAdmin(BaseModelAdmin):
 
     filter_horizontal = ("medias",)
+    readonly_fields = ("cleaned_content", )
     inlines = (TButtonInline,)
 
     fieldsets = (
@@ -54,6 +55,7 @@ class BroadcastAdmin(BaseModelAdmin):
     form = BroadcastModelForm
     list_display = ('id', 'title', 'percent', 'is_sent', 'created_at')
     # fields = ('title', 'template', 'groups', 'medias', 'content', 'scheduled_at')
+    readonly_fields = ("cleaned_content", )
     inlines = (BButtonInline,)
     readonly_fields = ("cleaned_content", "percent", "is_sent", "task_id")
 

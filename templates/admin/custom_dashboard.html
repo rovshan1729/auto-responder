@@ -4,305 +4,431 @@
 {% block title %}Аналитика{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-    <!-- Заголовок с градиентом -->
-    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 shadow-xl mx-4 mb-6">
-        <div class="absolute inset-0 bg-grid-white/10"></div>
-        <div class="relative">
-            <div class="flex items-center gap-3 mb-2">
-                <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl">
-                    📊
-                </div>
-                <div>
-                    <h1 class="text-3xl font-bold text-black tracking-tight">
-                        Аналитика
-                    </h1>
-                    <p class="text-blue-100 text-sm mt-1">
-                        Подробная статистика и метрики активности
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Фильтр с улучшенным дизайном -->
-    <form method="get" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200 mx-4 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    📅 Дата начала
-                </label>
-                <input type="date"
-                       name="start_date"
-                       value="{{ request.GET.start_date }}"
-                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    📅 Дата конца
-                </label>
-                <input type="date"
-                       name="end_date"
-                       value="{{ request.GET.end_date }}"
-                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
-            </div>
-
-            <div class="flex items-end md:col-span-2">
-                <button type="submit"
-                        class="border-2 border-black-700 w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 font-semibold py-2.5 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
-                        style="color: black;">
-                    Применить фильтры
-                </button>
-            </div>
-        </div>
-    </form>
-
-    <!-- Контент с улучшенными карточками -->
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mx-4 mb-6">
-
-        <!-- Топ пользователей -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200">
-            <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-200 px-6 py-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center text-xl shadow-sm">
-                        📈
+        <!-- Заголовок с анимацией -->
+        <div class="mb-8">
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 shadow-2xl">
+                <div class="absolute inset-0 bg-grid-white opacity-10"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-3xl shadow-lg">
+                            📊
+                        </div>
+                        <div>
+                            <h1 class="text-4xl font-black text-black tracking-tight mb-2">
+                                Панель аналитики
+                            </h1>
+                            <p class="text-blue-100 text-base font-medium">
+                                Статистика активности пользователей и сообщений в реальном времени
+                            </p>
+                        </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Фильтры -->
+        <div class="mb-8">
+            <form method="get"
+                  class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 transition-all hover:shadow-xl">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                            <span class="text-lg">📅</span>
+                            Период с
+                        </label>
+                        <input type="date"
+                               name="start_date"
+                               value="{{ request.GET.start_date }}"
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                            <span class="text-lg">📅</span>
+                            Период по
+                        </label>
+                        <input type="date"
+                               name="end_date"
+                               value="{{ request.GET.end_date }}"
+                               class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium">
+                    </div>
+
                     <div>
-                        <h3 class="font-bold text-gray-800 text-lg">Топ активных пользователей</h3>
-                        <p class="text-sm text-gray-600">Пользователи с наибольшим количеством сообщений</p>
+                        <button type="submit"
+                                class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-black font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2">
+                            <span>🔍</span>
+                            Применить
+                        </button>
                     </div>
                 </div>
+            </form>
+        </div>
+
+        <!-- Статистические карточки -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <!-- Всего пользователей -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all transform hover:-translate-y-1">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-2xl shadow-lg">
+                        👥
+                    </div>
+                    <div class="text-3xl font-black text-gray-800">
+                        {{ top_users|length }}
+                    </div>
+                </div>
+                <h3 class="text-sm font-bold text-gray-600 uppercase tracking-wide">Активных пользователей</h3>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50 border-b border-gray-200">
+
+            <!-- Всего вопросов -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all transform hover:-translate-y-1">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-2xl shadow-lg">
+                        💬
+                    </div>
+                    <div class="text-3xl font-black text-gray-800">
+                        {{ top_questions.count }}
+                    </div>
+                </div>
+                <h3 class="text-sm font-bold text-gray-600 uppercase tracking-wide">Всего вопросов</h3>
+            </div>
+
+            <!-- С ответами -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all transform hover:-translate-y-1">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-2xl shadow-lg">
+                        ✅
+                    </div>
+                    <div class="text-3xl font-black text-gray-800">
+                        {{ top_answers.count }}
+                    </div>
+                </div>
+                <h3 class="text-sm font-bold text-gray-600 uppercase tracking-wide">Обработано ответов</h3>
+            </div>
+
+            <!-- Без ответов -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all transform hover:-translate-y-1">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center text-2xl shadow-lg">
+                        ❗
+                    </div>
+                    <div class="text-3xl font-black text-gray-800">
+                        {{ top_not_answers.count }}
+                    </div>
+                </div>
+                <h3 class="text-sm font-bold text-gray-600 uppercase tracking-wide">Без ответов</h3>
+            </div>
+        </div>
+
+        <!-- Основные таблицы -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+            <!-- Топ активных пользователей -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-green-500 to-emerald-500 px-6 py-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-white/30 backdrop-blur-sm flex items-center justify-center text-2xl">
+                            🏆
+                        </div>
+                        <div>
+                            <h3 class="font-black text-black text-xl">Топ пользователей</h3>
+                            <p class="text-green-50 text-sm font-medium">Наиболее активные участники</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">#</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Пользователь</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Имя</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Сообщения</th>
+                            <th class="px-6 py-4 text-left text-xs font-black text-gray-600 uppercase tracking-wider">
+                                Место
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-black text-gray-600 uppercase tracking-wider">
+                                Пользователь
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-black text-gray-600 uppercase tracking-wider">
+                                Имя
+                            </th>
+                            <th class="px-6 py-4 text-right text-xs font-black text-gray-600 uppercase tracking-wider">
+                                Сообщений
+                            </th>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
                         {% for user in top_users %}
-                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                        <tr class="hover:bg-green-50 transition-colors duration-150">
                             <td class="px-6 py-4">
-                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-800 font-bold text-sm">
-                                    {{ forloop.counter }}
-                                </span>
+                                {% if forloop.counter <= 3 %}
+                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full text-black font-black text-sm shadow-md
+                                            {% if forloop.counter == 1 %}bg-gradient-to-br from-yellow-400 to-yellow-500
+                                            {% elif forloop.counter == 2 %}bg-gradient-to-br from-gray-300 to-gray-400
+                                            {% else %}bg-gradient-to-br from-orange-400 to-orange-500{% endif %}">
+                                            {{ forloop.counter }}
+                                        </span>
+                                {% else %}
+                                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-green-100 text-green-700 font-bold text-sm">
+                                            {{ forloop.counter }}
+                                        </span>
+                                {% endif %}
                             </td>
                             <td class="px-6 py-4">
                                 <a href="{{ user.get_admin_url }}"
-                                   class="text-blue-600 hover:text-blue-800 font-semibold hover:underline transition-colors">
-                                    {{ user.username|default:user.telegram_id }}
+                                   class="text-blue-600 hover:text-blue-800 font-bold hover:underline transition-colors">
+                                    @{{ user.username|default:user.telegram_id }}
                                 </a>
                             </td>
-                            <td class="px-6 py-4 text-gray-600">
+                            <td class="px-6 py-4 text-gray-700 font-medium">
                                 {{ user.first_name|default:"—" }}
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-green-100 text-green-800">
-                                    {{ user.message_count }}
-                                </span>
+                                    <span class="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-black bg-green-100 text-green-700 shadow-sm">
+                                        {{ user.message_count }}
+                                    </span>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="px-6 py-12 text-center">
-                                <div class="text-gray-400 text-4xl mb-2">📭</div>
-                                <p class="text-gray-500 font-medium">Нет данных</p>
+                            <td colspan="4" class="px-6 py-16 text-center">
+                                <div class="text-gray-300 text-6xl mb-3">📭</div>
+                                <p class="text-gray-500 font-bold text-lg">Нет активных пользователей</p>
+                                <p class="text-gray-400 text-sm mt-1">Измените период фильтрации</p>
                             </td>
                         </tr>
                         {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Без ответов -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200">
-            <div class="bg-gradient-to-r from-orange-50 to-red-50 border-b border-gray-200 px-6 py-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center text-xl shadow-sm">
-                        ❓
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-800 text-lg">Вопросы без ответов</h3>
-                        <p class="text-sm text-gray-600">Требуют внимания и обработки</p>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">#</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Вопрос</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Дата</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Кол-во</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        {% for q in top_not_answers %}
-                        <tr class="hover:bg-gray-50 transition-colors duration-150">
-                            <td class="px-6 py-4">
-                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800 font-bold text-sm">
-                                    {{ forloop.counter }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="max-w-md truncate text-gray-800 font-medium">
-                                    {{ q.text }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-gray-500 text-sm">
-                                {{ q.date }}
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-orange-100 text-orange-800">
-                                    {{ q.count }}
-                                </span>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="px-6 py-12 text-center">
-                                <div class="text-gray-400 text-4xl mb-2">✅</div>
-                                <p class="text-gray-500 font-medium">Все вопросы обработаны</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
 
-        <!-- Частые вопросы -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200">
-            <div class="bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200 px-6 py-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center text-xl shadow-sm">
-                        💬
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-800 text-lg">Самые частые вопросы</h3>
-                        <p class="text-sm text-gray-600">Популярные запросы пользователей</p>
+            <!-- Вопросы без ответов -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-white/30 backdrop-blur-sm flex items-center justify-center text-2xl">
+                            ⚠️
+                        </div>
+                        <div>
+                            <h3 class="font-black text-black text-xl">Требуют ответа</h3>
+                            <p class="text-orange-50 text-sm font-medium">Необработанные сообщения</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50 border-b border-gray-200">
+                <div class="overflow-x-auto max-h-96">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 sticky top-0">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">#</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Вопрос</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Дата</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Кол-во</th>
+                            <th class="px-6 py-4 text-left text-xs font-black text-gray-600 uppercase tracking-wider">
+                                ID
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-black text-gray-600 uppercase tracking-wider">
+                                Сообщение
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-black text-gray-600 uppercase tracking-wider">
+                                Дата
+                            </th>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        {% for q in top_questions %}
-                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                        {% for msg in top_not_answers|slice:":20" %}
+                        <tr class="hover:bg-orange-50 transition-colors duration-150">
                             <td class="px-6 py-4">
-                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-800 font-bold text-sm">
-                                    {{ forloop.counter }}
-                                </span>
+                                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-orange-100 text-orange-700 font-bold text-sm">
+                                        {{ forloop.counter }}
+                                    </span>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="max-w-md truncate text-gray-800 font-medium">
-                                    {{ q.text }}
+                                <div class="max-w-md">
+                                    <p class="text-gray-800 font-medium line-clamp-2">
+                                        {{ msg.text|truncatewords:15 }}
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        от @{{ msg.user.username|default:msg.user.telegram_id }}
+                                    </p>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 text-gray-500 text-sm">
-                                {{ q.date }}
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-purple-100 text-purple-800">
-                                    {{ q.count }}
-                                </span>
+                            <td class="px-6 py-4 text-gray-500 text-sm font-medium whitespace-nowrap">
+                                {{ msg.created_at|date:"d.m.Y H:i" }}
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="px-6 py-12 text-center">
-                                <div class="text-gray-400 text-4xl mb-2">🤔</div>
-                                <p class="text-gray-500 font-medium">Нет данных</p>
+                            <td colspan="3" class="px-6 py-16 text-center">
+                                <div class="text-gray-300 text-6xl mb-3">✅</div>
+                                <p class="text-gray-500 font-bold text-lg">Все вопросы обработаны!</p>
+                                <p class="text-gray-400 text-sm mt-1">Отличная работа команды</p>
                             </td>
                         </tr>
                         {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Частые ответы -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200">
-            <div class="bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-gray-200 px-6 py-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center text-xl shadow-sm">
-                        ✅
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-800 text-lg">Часто используемые ответы</h3>
-                        <p class="text-sm text-gray-600">Самые популярные ответы системы</p>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50 border-b border-gray-200">
+
+            <!-- Последние вопросы -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-white/30 backdrop-blur-sm flex items-center justify-center text-2xl">
+                            💭
+                        </div>
+                        <div>
+                            <h3 class="font-black text-black text-xl">Последние вопросы</h3>
+                            <p class="text-purple-50 text-sm font-medium">Недавняя активность</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto max-h-96">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 sticky top-0">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">#</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Ответ</th>
-                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Дата</th>
-                            <th class="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Кол-во</th>
+                            <th class="px-6 py-4 text-left text-xs font-black text-gray-600 uppercase tracking-wider">
+                                №
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-black text-gray-600 uppercase tracking-wider">
+                                Вопрос
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-black text-gray-600 uppercase tracking-wider">
+                                Дата
+                            </th>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        {% for ans in top_answers %}
-                        <tr class="hover:bg-gray-50 transition-colors duration-150">
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                        {% for msg in top_questions|slice:":20" %}
+                        <tr class="hover:bg-purple-50 transition-colors duration-150">
                             <td class="px-6 py-4">
-                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-bold text-sm">
-                                    {{ forloop.counter }}
-                                </span>
+                                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 text-purple-700 font-bold text-sm">
+                                        {{ forloop.counter }}
+                                    </span>
                             </td>
                             <td class="px-6 py-4">
-                                <div class="max-w-md truncate text-gray-800 font-medium">
-                                    {{ ans.text }}
+                                <div class="max-w-md">
+                                    <p class="text-gray-800 font-medium line-clamp-2">
+                                        {{ msg.text|truncatewords:15 }}
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        от @{{ msg.user.username|default:msg.user.telegram_id }}
+                                    </p>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 text-gray-500 text-sm">
-                                {{ ans.date }}
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-800">
-                                    {{ ans.count }}
-                                </span>
+                            <td class="px-6 py-4 text-gray-500 text-sm font-medium whitespace-nowrap">
+                                {{ msg.created_at|date:"d.m.Y H:i" }}
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="px-6 py-12 text-center">
-                                <div class="text-gray-400 text-4xl mb-2">💭</div>
-                                <p class="text-gray-500 font-medium">Нет данных</p>
+                            <td colspan="3" class="px-6 py-16 text-center">
+                                <div class="text-gray-300 text-6xl mb-3">🤔</div>
+                                <p class="text-gray-500 font-bold text-lg">Нет вопросов</p>
+                                <p class="text-gray-400 text-sm mt-1">За выбранный период</p>
                             </td>
                         </tr>
                         {% endfor %}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
+            <!-- Последние ответы -->
+            <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-white/30 backdrop-blur-sm flex items-center justify-center text-2xl">
+                            💡
+                        </div>
+                        <div>
+                            <h3 class="font-black text-black text-xl">Последние ответы</h3>
+                            <p class="text-blue-50 text-sm font-medium">Обработанные сообщения</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto max-h-96">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 sticky top-0">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-black text-gray-600 uppercase tracking-wider">
+                                №
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-black text-gray-600 uppercase tracking-wider">
+                                Ответ
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-black text-gray-600 uppercase tracking-wider">
+                                Дата
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                        {% for msg in top_answers|slice:":20" %}
+                        <tr class="hover:bg-blue-50 transition-colors duration-150">
+                            <td class="px-6 py-4">
+                                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-bold text-sm">
+                                        {{ forloop.counter }}
+                                    </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="max-w-md">
+                                    <p class="text-gray-800 font-medium line-clamp-2">
+                                        {{ msg.answer|truncatewords:15 }}
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        на вопрос от @{{ msg.user.username|default:msg.user.telegram_id }}
+                                    </p>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-gray-500 text-sm font-medium whitespace-nowrap">
+                                {{ msg.created_at|date:"d.m.Y H:i" }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="px-6 py-16 text-center">
+                                <div class="text-gray-300 text-6xl mb-3">💬</div>
+                                <p class="text-gray-500 font-bold text-lg">Нет ответов</p>
+                                <p class="text-gray-400 text-sm mt-1">За выбранный период</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
 
     </div>
 </div>
 
 <style>
-    .bg-grid-white\/10 {
-        background-image: linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-        background-size: 20px 20px;
+    .bg-grid-white {
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+        background-size: 30px 30px;
+    }
+
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Плавная анимация при загрузке */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.5s ease-out;
     }
 </style>
 {% endblock %}
