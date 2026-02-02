@@ -589,8 +589,13 @@ class Problem(BaseModel):
 
 
 class BlackList(BaseModel):
-    data = models.JSONField(verbose_name="Данные анкеты (snapshot)")
+    groups = models.ForeignKey(TelegramGroup, on_delete=models.CASCADE, verbose_name="Название группы")
+    verification = models.ManyToManyField(Verification, related_name="blacklists",
+                                          verbose_name="Найденные профили")
 
     class Meta:
         verbose_name = "Черные списки"
         verbose_name_plural = "Черный список"
+
+    def __str__(self):
+        return f"{self.groups} | {self.verification}"

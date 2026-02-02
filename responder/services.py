@@ -39,40 +39,40 @@ def normalize_phone(phone: str | None) -> str | None:
 
 
 async def sync_group_users(client: Client, groups):
-    started_at = timezone.now()
-    service_log = {
-        "service": "sync_group_users",
-        "started_at": started_at.strftime("%Y-%m-%d %H:%M:%S"),
-        "ended_at": None,
-        "checked_groups": []
-    }
     print("=== SYNC STARTED ===")
-
-    group_telegram_ids = set()
 
     me = await client.get_me()
     print("SESSION USER:", me.id, me.username)
 
-    group_ids = {int(g.telegram_id) for g in groups}
+    group_map = {int(g.telegram_id): g for g in groups}
 
     async for dialog in client.get_dialogs():
         chat = dialog.chat
 
-        if chat.id not in group_ids:
+        if chat.id not in group_map:
             continue
 
         if chat.type not in (ChatType.GROUP, ChatType.SUPERGROUP):
             continue
+
+        g = group_map[chat.id]
+
+        blacklist = None
+        added_user_ids = set()
 
         async for member in client.get_chat_members(chat.id):
             user = member.user
             if not user or user.is_bot:
                 continue
 
+            if user.id in added_user_ids:
+                continue
+
             user_phone = normalize_phone(user.phone_number)
 
             verification_qs = r_models.Verification.objects.filter(
-                Q(chat_id=user.id) & ~Q(status=VerificationStatusChoice.ARCHIVE)
+                Q(chat_id=user.id) &
+                ~Q(status=VerificationStatusChoice.ARCHIVE)
             )
 
             for verification in verification_qs:
@@ -94,19 +94,26 @@ async def sync_group_users(client: Client, groups):
                     if v_phone == user_phone:
                         matched_fields.append("PHONE")
 
-                print(f"{fields_present = }")
-                print(f"{matched_fields = }")
-
                 if len(fields_present) >= 2 and len(matched_fields) == len(fields_present):
 
-                    last_message = None
+                    added_user_ids.add(user.id)
 
+                    if blacklist is None:
+                        blacklist = BlackList.objects.create(groups=g)
+
+                    blacklist.verification.add(verification)
+
+                    if not verification.is_blacklisted:
+                        verification.is_blacklisted = True
+                        verification.save(update_fields=["is_blacklisted"])
+
+                    last_message = None
                     async for msg in client.get_chat_history(chat.id, limit=300):
                         if msg.from_user and msg.from_user.id == user.id:
                             last_message = msg
                             break
 
-                    message_url = " "
+                    message_url = "—"
                     if last_message:
                         if chat.username:
                             message_url = f"https://t.me/{chat.username}/{last_message.id}"
@@ -116,56 +123,16 @@ async def sync_group_users(client: Client, groups):
 
                     checked_at_str = timezone.now().strftime("%d-%m-%Y %H:%M:%S")
 
-                    blacklist_data = {
-                        "verification_id": verification.id,
-                        "chat_id": verification.chat_id,
-                        "status": verification.status,
-                        "fullname": verification.fullname,
-                        "username": verification.username,
-                        "phone_number": verification.phone_number,
-                        "add_phone": verification.add_phone,
-                        "email": verification.email,
-                        "live_address": verification.live_address,
-                        "geo": verification.geo,
-                        "worked_platform": verification.worked_platform,
-                        "experience": verification.experience,
-                        "team_lead": verification.team_lead,
-                        "recommend_user": verification.recommend_user,
-                        "recommendation_user_contact": verification.recommendation_user_contact,
-                        "additionally": verification.additionally,
-                        "commentary": verification.commentary,
-                        "matched_fields": matched_fields,
-                        "source_message_url": message_url,
-                        "checked_at": timezone.now().isoformat(),
-                    }
-                    BlackList.objects.create(data=blacklist_data)
-
                     text = (
                         "❗️ОБНАРУЖЕН В ЧЕРНОМ СПИСКЕ❗️\n\n"
                         f"🆔 Анкета ID: {verification.id}\n"
                         f"📌 Статус: {verification.get_status_display()}\n\n"
-
                         f"👤 ФИО: {verification.fullname or '—'}\n"
                         f"👤 Username: @{verification.username or '—'}\n"
-                        f"📞 Телефон: {verification.phone_number or '—'}\n"
-                        f"📞 Доп. телефон: {verification.add_phone or '—'}\n"
-                        f"✉️ Email: {verification.email or '—'}\n\n"
-
-                        f"🏠 Адрес проживания: {verification.live_address or '—'}\n"
-                        f"🌍 Геолокация: {verification.geo or '—'}\n"
-                        f"🌐 Рабочие платформы: {verification.worked_platform or '—'}\n\n"
-
-                        f"💼 Опыт работы: {verification.experience or '—'}\n"
-                        f"👨‍💼 Тимлид: {verification.team_lead or '—'}\n"
-                        f"🤝 Рекомендовал: {verification.recommend_user or '—'}\n"
-                        f"📇 Контакт рекомендателя: {verification.recommendation_user_contact or '—'}\n\n"
-
-                        f"📝 Дополнительно: {verification.additionally or '—'}\n"
-                        f"🗒 Комментарий администратора: {verification.commentary or '—'}\n\n"
-
-                        f"🚫 В черном списке: {'ДА' if verification.is_blacklisted else 'НЕТ'}\n"
-                        f"🕒 Дата последней проверки: {checked_at_str}\n\n"
-                        f"\n🔗 Ссылка на источник:\n{message_url}"
+                        f"📞 Телефон: {verification.phone_number or '—'}\n\n"
+                        f"🚫 В черном списке: ДА\n"
+                        f"🕒 Дата проверки: {checked_at_str}\n\n"
+                        f"🔗 Источник:\n{message_url}"
                     )
 
                     await client.send_message(
@@ -175,10 +142,8 @@ async def sync_group_users(client: Client, groups):
                     )
 
                     photos = []
-
                     if verification.main_page_passport:
                         photos.append(InputMediaPhoto(verification.main_page_passport.path))
-
                     if verification.registration_page_passport:
                         photos.append(InputMediaPhoto(verification.registration_page_passport.path))
 
@@ -188,4 +153,4 @@ async def sync_group_users(client: Client, groups):
                             media=photos
                         )
 
-    return group_telegram_ids
+                    break

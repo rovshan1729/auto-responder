@@ -13,7 +13,21 @@ from bot.utils import methods
 from responder import models, mixins
 from responder.forms import ReplyMessageForm, MaskModelForm
 
-admin.site.register(models.BlackList)
+@admin.register(models.BlackList)
+class BlackListAdmin(BaseModelAdmin):
+    list_display = (
+        "id",
+        "groups",
+        "verification_list",
+        "created_at",
+    )
+
+    def verification_list(self, obj):
+        return ", ".join(
+            str(v.id) for v in obj.verification.all()
+        )
+
+    verification_list.short_description = "Найденные профили"
 
 class VerificationAdminFieldInline(unfold_admin.TabularInline):
     model = models.VerificationAdminField
