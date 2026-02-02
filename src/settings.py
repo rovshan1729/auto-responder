@@ -321,22 +321,22 @@ UNFOLD = {
                         "link": lambda request: reverse_lazy("admin:responder_mask_changelist"),
                     },
                     {
-                        "title": "Телеграм команды",
+                        "title": "Команды",
                         "icon": "code_blocks",
                         "link": lambda request: reverse_lazy("admin:responder_telegramcommand_changelist"),
                     },
                     {
-                        "title": "Телеграм Пользователи",
+                        "title": "Пользователи",
                         "icon": "person_pin",
                         "link": lambda request: reverse_lazy("admin:responder_telegramuser_changelist"),
                     },
                     {
-                        "title": "Телеграм Сообщения",
+                        "title": "Сообщения",
                         "icon": "chat",
                         "link": lambda request: reverse_lazy("admin:responder_telegrammessage_changelist"),
                     },
                     {
-                        "title": "Телеграм Группы",
+                        "title": "Группы",
                         "icon": "family_group",
                         "link": lambda request: reverse_lazy("admin:responder_telegramgroup_changelist"),
                     },
@@ -404,7 +404,7 @@ UNFOLD = {
                         "link": lambda request: reverse_lazy("admin:responder_profile_changelist"),
                     },
                     {
-                        "title": "WorkerData",
+                        "title": "Смена сотрудника",
                         "icon": "data_array",
                         "link": lambda request: reverse_lazy("admin:responder_workerdata_changelist"),
                     },
