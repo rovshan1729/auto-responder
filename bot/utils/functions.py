@@ -152,7 +152,7 @@ def is_valid_phone(phone: str) -> bool:
 
 
 def is_valid_email(email: str) -> bool:
-    pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+    pattern = r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
     return bool(re.match(pattern, email))
 
 def parse_date_ru(date_str: str):

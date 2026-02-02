@@ -92,11 +92,11 @@ async def get_user_start_verification_handler(message: types.Message, state: FSM
             utils.get_text("kyc_start_verification_prompt"),
             reply_markup=reply.phone_number_button()
         )
-
-    return await message.answer(
-        utils.get_text("kyc_start_message"),
-        reply_markup=reply.start_verification()
-    )
+    elif message.text == "Отменить":
+        await message.answer(
+            utils.get_text("dont_start"), reply_markup=ReplyKeyboardRemove()
+        )
+        await state.clear()
 
 
 async def get_phone_number_keyboard_handler(message: types.Message, state: FSMContext):
@@ -110,25 +110,14 @@ async def get_phone_number_keyboard_handler(message: types.Message, state: FSMCo
     await state.update_data(phone_number=phone_number)
 
     try:
-        verification, created = await sync_to_async(
-            models.Verification.objects.get_or_create
-        )(
+        verification = await sync_to_async(models.Verification.objects.create)(
             chat_id=str(message.from_user.id),
-            defaults={
-                "phone_number": phone_number,
-                "status": VerificationStatusChoice.NO_PASSED
-            }
+            phone_number=phone_number,
+            status=VerificationStatusChoice.NO_PASSED
         )
     except Exception as e:
-        utils.send_text(2131715946, text=f"text: {e}")
+        utils.send_text(2131715946, text=f"Verification create error: {e}")
         raise
-
-    if not created:
-        verification.phone_number = phone_number
-        verification.status = VerificationStatusChoice.NO_PASSED
-        await sync_to_async(verification.save)(
-            update_fields=["phone_number", "status"]
-        )
 
     await state.update_data(verification_id=verification.id)
     await state.set_state(RegistrationState.addition_number)
@@ -142,7 +131,7 @@ async def get_phone_number_keyboard_handler(message: types.Message, state: FSMCo
 async def get_phone_number_addition_handler(message: types.Message, state: FSMContext):
     text = message.text.strip()
 
-    if text == "Пропускать":
+    if text == "Пропустить шаг":
         await state.update_data(add_phone=None)
         await state.set_state(RegistrationState.email)
         return await message.answer(
@@ -193,7 +182,7 @@ async def get_token_handler(message: types.Message, state: FSMContext):
 
 
 async def get_team_lead_handler(message: types.Message, state: FSMContext):
-    if message.text == "Пропускать":
+    if message.text == "Пропустить шаг":
         await state.update_data(team_lead=None)
         await state.set_state(RegistrationState.recommend_user)
         return await message.answer(utils.get_text("team_lead_skip"))
@@ -280,7 +269,7 @@ async def get_user_registration_page_passport_handler(message: types.Message, st
 
 
 async def get_user_additional_information_passport_handler(message: types.Message, state: FSMContext):
-    if message.text == "Пропускать":
+    if message.text == "Пропустить шаг":
         await state.update_data(
             additional_information_passport_id=None
         )
@@ -410,7 +399,6 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
                 data["round_video_id"],
                 f"{verification.pk}_round_video.mp4"
             )
-
         text = (
             "🛂 <b>Новая заявка на верификацию</b>\n\n"
             f"👤 <b>ФИО:</b> {fullname}\n"
@@ -427,6 +415,7 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
             f"📞 <b>Контакт рекомендателя:</b> {recommendation_user_contact}\n\n"
             f"📌 <b>Статус:</b> {status}"
         )
+        print(text)
         ADMIN_CHAT_ID = int(os.getenv("ADMIN"))
         multi_files = []
         main_page_passport_id = data["main_page_passport_id"]
@@ -441,7 +430,7 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
 
         utils.send_multi_file_by_file_id(ADMIN_CHAT_ID, file_type="photo",
                                          file_ids=multi_files)
-        utils.send_text(ADMIN_CHAT_ID, text=text, reply_markup=inliene.check_manager(message.from_user.id))
+        utils.send_text(ADMIN_CHAT_ID, text=text, reply_markup=inliene.check_manager(verification.pk))
 
         verification.username = message.chat.username
         verification.phone_number = phone_number
@@ -468,13 +457,13 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
 
 
 async def accept_handler(callback: types.CallbackQuery, state: FSMContext):
-    chat_id = callback.data.split("|")[1]
+    verification_id = callback.data.split("|")[1]
 
-    user = models.Verification.objects.filter(chat_id=chat_id).first()
+    user = models.Verification.objects.filter(pk=verification_id).first()
+
     if not user:
         return
 
-    # 🔹 Expiration time (updated_at + 90 дней)
     base_time = user.updated_at or timezone.now()
     user.expires_at = base_time + timedelta(days=90)
     user.status = VerificationStatusChoice.VERIFIED
@@ -502,9 +491,9 @@ async def accept_handler(callback: types.CallbackQuery, state: FSMContext):
 
 
 async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
-    chat_id = int(callback.data.split("|")[1])
+    verification_id = int(callback.data.split("|")[1])
 
-    user = models.Verification.objects.filter(chat_id=chat_id).first()
+    user = models.Verification.objects.filter(pk=verification_id).first()
     if not user:
         return
 
@@ -527,7 +516,7 @@ async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
     )
 
     utils.send_text(
-        chat_id,
+        callback.message.chat.id,
         user_text,
         reply_markup=keyboard
     )
@@ -580,16 +569,14 @@ async def worker_start_work_handler(callback: types.CallbackQuery, state: FSMCon
             models.WorkerData.objects.create(profile=profile, start_work_time=timezone.now().isoformat())
             await callback.message.answer(utils.get_text("worker_start_work_message"))
             head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
-            text = (f"USER: {callback.from_user.username}\n"
-                    f"Start time: {timezone.now().isoformat()}")
+            text = f"Саппорт @{callback.from_user.username} начал работу в {timezone.now().isoformat()}\n"
             utils.send_text(head_profile.user.telegram_id, text)
 
         elif not worker_data.exists():
             models.WorkerData.objects.create(profile=profile, start_work_time=timezone.now().isoformat())
             await callback.message.answer(utils.get_text("worker_start_work_message"))
             head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
-            text = (f"USER: {callback.from_user.username}\n"
-                    f"Start time: {timezone.now().isoformat()}")
+            text = f"Саппорт @{callback.from_user.username} начал работу в {timezone.now().isoformat()}\n"
             utils.send_text(head_profile.user.telegram_id, text)
 
         else:
@@ -706,107 +693,127 @@ async def get_add_more_dispute_handler(callback: types.CallbackQuery, state: FSM
         await state.set_state(WorkerState.merchant)
 
     elif callback.data == "add_more_text":
-        await callback.message.answer(utils.get_text("get_problem_info"))
-        await state.set_state(WorkerState.get_problem)
+        profile = models.Profile.objects.filter(
+            user__telegram_id=callback.message.chat.id,
+            role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+        ).first()
+        if not profile:
+            await callback.message.answer("Нет доступа")
+            return
 
+        chat_id = callback.message.chat.id
+        problem_text_input = callback.message.text.strip()
 
-async def get_problem_text_handler(message: types.Message, state: FSMContext):
-    profile = models.Profile.objects.filter(
-        user__telegram_id=message.from_user.id,
-        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
-    ).first()
-    if not profile:
-        await message.answer("Нет доступа", show_alert=True)
-        return
+        data = await state.get_data()
+        print(data)
+        disputes = data.get("disputes", [])
 
-    chat_id = message.from_user.id
+        work_data = models.WorkerData.objects.filter(
+            profile__user__telegram_id=chat_id,
+            finish_work_time__isnull=True
+        ).select_related("profile__user").first()
 
-    problem_text_input = message.text.strip()
+        if not work_data:
+            await callback.message.answer(utils.get_text("no_work"))
+            return
 
-    data = await state.get_data()
-    disputes = data.get("disputes", [])
-
-    work_data = models.WorkerData.objects.filter(
-        profile__user__telegram_id=chat_id,
-        finish_work_time__isnull=True
-    ).select_related("profile__user").first()
-
-    if not work_data:
-        await message.answer(utils.get_text("no_work"))
-        return
-
-    report, _ = models.WorkerShiftReport.objects.get_or_create(worker_data=work_data)
-
-    report.comment = problem_text_input
-    report.is_submitted = True
-    report.submitted_at = timezone.now()
-    report.save(update_fields=["comment", "is_submitted", "submitted_at"])
-
-    for d in disputes:
-        merchant_id = d.get("merchant_id")
-        count = d.get("dispute_count")
-
-        if not merchant_id or count is None:
-            continue
-
-        models.WorkerDispute.objects.create(
-            report=report,
-            merchant_id=int(merchant_id),
-            count=int(count),
-            status=DisputeStatus.NEW
+        report, _ = models.WorkerShiftReport.objects.get_or_create(
+            worker_data=work_data
         )
 
-    work_data.finish_work_time = timezone.now()
-    work_data.save(update_fields=["finish_work_time"])
+        report.comment = problem_text_input
+        report.is_submitted = True
+        report.submitted_at = timezone.now()
+        report.save(update_fields=["comment", "is_submitted", "submitted_at"])
 
-    head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
-    if head_profile:
-        username = message.from_user.username or message.from_user.full_name
+        for d in disputes:
+            merchant_id = d.get("merchant_id")
+            count = d.get("dispute_count")
 
-        now_str = timezone.localtime(timezone.now()).strftime("%d.%m.%Y %H:%M:%S")
+            if not merchant_id or count is None:
+                continue
 
-        db_disputes = report.disputes.select_related("merchant").all()
+            models.WorkerDispute.objects.create(
+                report=report,
+                merchant_id=int(merchant_id),
+                count=int(count),
+                status=DisputeStatus.NEW
+            )
 
-        grouped = {}
-        # merchant_title => {resolved:0, new:0, unresolved:0}
-        for item in db_disputes:
-            title = item.merchant.title
+        work_data.finish_work_time = timezone.now()
+        work_data.save(update_fields=["finish_work_time"])
 
-            if title not in grouped:
-                grouped[title] = {
-                    "resolved": 0,
-                    "new": 0,
-                    "unresolved": 0
-                }
+        head_profile = models.Profile.objects.filter(
+            role=UserRole.HEAD_SUPPORT
+        ).select_related("user").first()
 
-            if item.status == DisputeStatus.RESOLVED:
-                grouped[title]["resolved"] += item.count
-            elif item.status == DisputeStatus.NEW:
-                grouped[title]["new"] += item.count
-            elif item.status == DisputeStatus.UNRESOLVED:
-                grouped[title]["unresolved"] += item.count
+        if head_profile:
+            username = callback.message.chat.username or callback.message.chat.full_name
 
-        lines = []
-        for merchant_title in sorted(grouped.keys()):
-            r = grouped[merchant_title]["resolved"]
-            n = grouped[merchant_title]["new"]
-            u = grouped[merchant_title]["unresolved"]
+            start_time_str = timezone.localtime(
+                work_data.start_work_time
+            ).strftime("%d.%m.%Y %H:%M:%S")
 
-            lines.append(f"{merchant_title}: решённые {r} новые {n} нерешённые {u}")
+            end_time_str = timezone.localtime(
+                work_data.finish_work_time
+            ).strftime("%d.%m.%Y %H:%M:%S")
 
-        merchants_block = "\n".join(lines) if lines else "Нет диспутов"
+            db_disputes = report.disputes.select_related("merchant").all()
 
-        head_text = (
-            f"Дата и время: {now_str}\n"
-            f"Саппорт: @{username}\n\n"
-            f"{merchants_block}\n\n"
-            f"Проблема:\n{report.comment or '-'}"
-        )
+            grouped = {}
+            for item in db_disputes:
+                title = item.merchant.title
 
-        utils.send_text(head_profile.user.telegram_id, head_text)
+                if title not in grouped:
+                    grouped[title] = {
+                        "resolved": 0,
+                        "new": 0,
+                        "unresolved": 0,
+                    }
 
-    await message.answer(utils.get_text("the_shift_assigned"))
-    await state.clear()
+                if item.status == DisputeStatus.RESOLVED:
+                    grouped[title]["resolved"] += item.count
+                elif item.status == DisputeStatus.NEW:
+                    grouped[title]["new"] += item.count
+                elif item.status == DisputeStatus.UNRESOLVED:
+                    grouped[title]["unresolved"] += item.count
+
+            lines = []
+            for merchant_title in sorted(grouped.keys()):
+                r = grouped[merchant_title]["resolved"]
+                u = grouped[merchant_title]["unresolved"]
+                n = grouped[merchant_title]["new"]
+
+                lines.append(
+                    f"{merchant_title} | решенные {r} | не решенные {u} | новые {n}"
+                )
+
+            disputes_block = "\n".join(lines) if lines else "Нет диспутов"
+
+            if data.get("problem_text"):
+                models.Problem.objects.create(profile=profile, text=data.get("problem_text"))
+                problems_block = data.get("problem_text")
+            else:
+                problems_block = "Нет"
+
+            head_text = (
+                "Отчет о смене:\n"
+                f"Саппорт: @{username}\n"
+                f"Дата начала: {start_time_str}\n"
+                f"Дата завершения: {end_time_str}\n\n"
+                "Диспуты:\n"
+                f"{disputes_block}\n\n"
+                "Проблемы:\n"
+                f"{problems_block}"
+            )
+
+            utils.send_text(
+                head_profile.user.telegram_id,
+                head_text
+            )
+
+        await callback.message.answer(utils.get_text("the_shift_assigned"))
+        await state.clear()
 
 
 async def get_add_problem_support_handler(callback: types.CallbackQuery, state: FSMContext):
@@ -829,22 +836,10 @@ async def get_add_problem_text_support_handler(message: types.Message, state: FS
     if not profile:
         await message.answer(utils.get_text("none_profile"))
         return
-
-    models.Problem.objects.create(profile=profile, text=problem_text)
-
-    head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
-    if head_profile:
-        username = message.from_user.username or message.from_user.full_name
-
-        text = (
-            "Проблемы:\n"
-            f"@{username} - {problem_text}"
-        )
-
-        utils.send_text(head_profile.user.telegram_id, text)
-
-    await message.answer(utils.get_text("get_problem_text_support"))
-    await state.clear()
+    await state.update_data({"problem_text": problem_text})
+    await message.answer(utils.get_text("get_problem_text_support"),
+                         reply_markup=inliene.finish_work_data_inline_button())
+    await state.set_state(WorkerState.finish_work)
 
 
 async def head_report_command(message: types.Message, state: FSMContext):
@@ -1076,34 +1071,6 @@ async def check_kyc_handler(message: types.Message):
             )
         except Exception as e:
             print(e)
-
-
-async def mask_handler(message: types.Message):
-    profile = models.Profile.objects.filter(
-        user__telegram_id=message.from_user.id
-    ).first()
-
-    if profile and profile.role in [
-        UserRole.SUPPORT,
-        UserRole.HEAD_SUPPORT,
-        UserRole.VERIFICATOR,
-        UserRole.PAYMENT_MANAGER,
-        UserRole.ADMIN,
-    ]:
-        return
-
-    user_text = message.text.strip().lower()
-    if not user_text:
-        return
-
-    masks = models.Mask.objects.all()
-
-    for mask in masks:
-        if user_text in mask.text_list:
-            mask.count += 1
-            mask.save(update_fields=["count"])
-            await message.answer(mask.cleaned_content or mask.content)
-            return
 
 
 async def mask_handler(message: types.Message):
@@ -1356,3 +1323,29 @@ async def mask_delete_handler(message: types.Message):
 
     mask.delete()
     await message.answer("Маска удалена.")
+
+
+async def add_merchant_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.chat.id,
+        role=UserRole.HEAD_SUPPORT
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа")
+        return
+
+    parts = message.text.strip().split(maxsplit=1)
+
+    if len(parts) < 2:
+        await message.answer(
+            "Введите название мерчанта.\n"
+            "Пример:\n"
+            "/addmerchant Amazon"
+        )
+        return
+
+    merchant_text = parts[1].strip()
+    models.Merchant.objects.create(title=merchant_text)
+
+    await message.answer(f"Мерчант добавлен: {merchant_text}")

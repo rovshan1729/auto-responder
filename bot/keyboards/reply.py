@@ -3,19 +3,22 @@ from responder.models import Country
 
 def start_verification():
     return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="Приступить к верификации")]],
+        keyboard=[
+            [KeyboardButton(text="Приступить к верификации")],
+            [KeyboardButton(text="Отменить")]
+        ],
         resize_keyboard=True
     )
 
 def phone_number_button():
     return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="Отправить номер телефона", request_contact=True)]],
+        keyboard=[[KeyboardButton(text="Поделиться контактом", request_contact=True)]],
         resize_keyboard=True
     )
 
 def skip_button():
     return ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="Пропускать")]],
+        keyboard=[[KeyboardButton(text="Пропустить шаг")]],
         resize_keyboard=True
     )
 

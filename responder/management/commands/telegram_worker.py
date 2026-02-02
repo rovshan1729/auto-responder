@@ -1,4 +1,7 @@
 import asyncio
+
+asyncio.set_event_loop(asyncio.new_event_loop())
+
 from django.core.management.base import BaseCommand
 from django.core.cache import cache
 
@@ -19,7 +22,6 @@ class Command(BaseCommand):
         await client.start()
         try:
             while True:
-                # signal bormi?
                 if cache.get("telegram_sync_required"):
                     cache.delete("telegram_sync_required")
 
@@ -27,11 +29,6 @@ class Command(BaseCommand):
                         is_active=True)
 
                     await sync_group_users(client, groups)
-
-                    # # blacklist update
-                    # r_models.Verification.objects.exclude(
-                    #     chat_id__in=group_ids
-                    # ).update(is_blacklisted=False)
 
                 await asyncio.sleep(5)
 

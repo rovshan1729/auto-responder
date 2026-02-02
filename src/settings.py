@@ -409,7 +409,7 @@ UNFOLD = {
                         "link": lambda request: reverse_lazy("admin:responder_workerdata_changelist"),
                     },
                     {
-                        "title": "Торговец",
+                        "title": "Мерчанты",
                         "icon": "point_of_sale",
                         "link": lambda request: reverse_lazy("admin:responder_merchant_changelist"),
                     }

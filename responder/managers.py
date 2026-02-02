@@ -5,10 +5,7 @@ from responder.choices import VerificationStatusChoice
 class CurrentVerificationManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(
-            status__in=[
-                VerificationStatusChoice.NO_PASSED,
-                VerificationStatusChoice.WAITING,
-            ]
+            status=VerificationStatusChoice.VERIFIED
         )
 
 
