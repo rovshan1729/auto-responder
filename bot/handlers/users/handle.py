@@ -415,8 +415,11 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
             f"📞 <b>Контакт рекомендателя:</b> {recommendation_user_contact}\n\n"
             f"📌 <b>Статус:</b> {status}"
         )
-        print(text)
-        ADMIN_CHAT_ID = int(os.getenv("ADMIN"))
+        admin_chat_id = models.Profile.objects.filter(
+            role=UserRole.VERIFICATOR
+        ).select_related("user").values_list(
+            "user__telegram_id", flat=True
+        ).first()
         multi_files = []
         main_page_passport_id = data["main_page_passport_id"]
         multi_files.append(main_page_passport_id)
@@ -426,12 +429,11 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
         if additional_information_passport_id:
             multi_files.append(additional_information_passport_id)
         round_video_id = data["round_video_id"]
-        utils.send_file(ADMIN_CHAT_ID, file_type="video", file_id=round_video_id)
+        utils.send_file(admin_chat_id, file_type="video", file_id=round_video_id)
 
-        utils.send_multi_file_by_file_id(ADMIN_CHAT_ID, file_type="photo",
+        utils.send_multi_file_by_file_id(admin_chat_id, file_type="photo",
                                          file_ids=multi_files)
-        utils.send_text(ADMIN_CHAT_ID, text=text, reply_markup=inliene.check_manager(verification.pk))
-
+        utils.send_text(admin_chat_id, text=text, reply_markup=inliene.check_manager(verification.pk))
         verification.username = message.chat.username
         verification.phone_number = phone_number
         verification.add_phone = add_phone
@@ -455,6 +457,7 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
 
     return await state.clear()
 
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 async def accept_handler(callback: types.CallbackQuery, state: FSMContext):
     verification_id = callback.data.split("|")[1]
@@ -473,6 +476,18 @@ async def accept_handler(callback: types.CallbackQuery, state: FSMContext):
     expired_at = user.expires_at.strftime("%d.%m.%Y %H:%M")
     token = user.token
     group = models.TelegramGroup.objects.filter(title__contains=token).first()
+    await callback.message.edit_reply_markup(
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="✅",
+                        callback_data="verified_done"
+                    )
+                ]
+            ]
+        )
+    )
     user_text = (
         "✅ <b>Верификация подтверждена</b>\n\n"
         f"👤 Пользователь: {username}\n"
@@ -500,7 +515,18 @@ async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
     user.status = VerificationStatusChoice.NoVERIFIED
     user.save(update_fields=["expires_at", "status"])
     token = user.token
-
+    await callback.message.edit_reply_markup(
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="❌",
+                        callback_data="verified_close"
+                    )
+                ]
+            ]
+        )
+    )
     keyboard = {
         "keyboard": [
             [{"text": "Приступить к верификации"}]
@@ -516,7 +542,7 @@ async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
     )
 
     utils.send_text(
-        callback.message.chat.id,
+        user.chat_id,
         user_text,
         reply_markup=keyboard
     )
