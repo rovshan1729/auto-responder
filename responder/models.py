@@ -26,7 +26,8 @@ class Data(SingletonModel):
     )
 
     class Meta:
-        verbose_name = 'Настройки'
+        verbose_name = 'Настройка'
+        verbose_name_plural = 'Настройки'
 
     def __str__(self):
         return "Data Model"
@@ -62,8 +63,8 @@ class TelegramGroup(BaseModel):
 
     class Meta:
         ordering = ('-created_at',)
-        verbose_name = 'Телеграм Группа'
-        verbose_name_plural = 'Телеграм Группы'
+        verbose_name = 'Группа'
+        verbose_name_plural = 'Группы'
         # abstract = True
 
     def __str__(self):
@@ -106,8 +107,8 @@ class TelegramUser(BaseModel):
 
     class Meta:
         # ordering = ('-created_at',)
-        verbose_name = 'телеграм пользователя'
-        verbose_name_plural = 'Телеграм Пользователи'
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
         # abstract = True
 
     def get_admin_url(self):
@@ -174,8 +175,8 @@ class TelegramMessage(BaseModel):
 
     class Meta:
         ordering = ('-created_at',)
-        verbose_name = "Телеграм сообщения"
-        verbose_name_plural = "Телеграм Сообщения"
+        verbose_name = "Сообщение"
+        verbose_name_plural = "Сообщения"
         # abstract = True
 
     def get_admin_url(self):
@@ -264,8 +265,8 @@ class TelegramCommand(BaseModel):
 
     class Meta:
         ordering = ('-created_at',)
-        verbose_name = 'команду'
-        verbose_name_plural = 'Телеграм команды'
+        verbose_name = 'Команда'
+        verbose_name_plural = 'Команды'
         # abstract = True
 
     def get_admin_url(self):
@@ -503,7 +504,7 @@ class WorkerData(BaseModel):
         verbose_name_plural = "Смены сотрудников"
 
     def __str__(self):
-        return f"{self.profile.user} | {self.start_work_time}"
+        return f"{self.profile.user.username} | {self.start_work_time}"
 
 
 class Merchant(BaseModel):

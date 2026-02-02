@@ -435,7 +435,7 @@ class ProfileAdmin(BaseModelAdmin):
 
 @admin.register(models.WorkerData)
 class WorkerDataAdmin(BaseModelAdmin):
-    list_display = ('id', 'profile', 'start_work_time', 'finish_work_time')
+    list_display = ('id', 'get_username', 'start_work_time', 'finish_work_time')
 
 
     fieldsets = (
@@ -447,6 +447,9 @@ class WorkerDataAdmin(BaseModelAdmin):
         }),
     )
 
+    @admin.display(description="Username")
+    def get_username(self, obj):
+        return obj.profile.user.username
 
 @admin.register(models.Merchant)
 class MerchantAdmin(BaseModelAdmin):
@@ -460,7 +463,7 @@ class CountryAdmin(BaseModelAdmin):
 
 @admin.register(models.StaticText)
 class StaticTextAdmin(BaseModelAdmin):
-    list_display = ("id", "code",)
+    list_display = ("id", "code", "text")
 
     fieldsets = (
         (None, {

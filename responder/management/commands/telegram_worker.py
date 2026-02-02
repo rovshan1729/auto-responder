@@ -22,7 +22,6 @@ class Command(BaseCommand):
         await client.start()
         try:
             while True:
-                # signal bormi?
                 if cache.get("telegram_sync_required"):
                     cache.delete("telegram_sync_required")
 
@@ -30,11 +29,6 @@ class Command(BaseCommand):
                         is_active=True)
 
                     await sync_group_users(client, groups)
-
-                    # # blacklist update
-                    # r_models.Verification.objects.exclude(
-                    #     chat_id__in=group_ids
-                    # ).update(is_blacklisted=False)
 
                 await asyncio.sleep(5)
 

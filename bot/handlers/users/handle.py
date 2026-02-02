@@ -17,7 +17,6 @@ from responder import tasks, models
 import os
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
 
@@ -817,7 +816,6 @@ async def get_add_more_dispute_handler(callback: types.CallbackQuery, state: FSM
         await state.clear()
 
 
-
 async def get_add_problem_support_handler(callback: types.CallbackQuery, state: FSMContext):
     profile = models.Profile.objects.filter(
         user__telegram_id=callback.from_user.id,
@@ -839,7 +837,8 @@ async def get_add_problem_text_support_handler(message: types.Message, state: FS
         await message.answer(utils.get_text("none_profile"))
         return
     await state.update_data({"problem_text": problem_text})
-    await message.answer(utils.get_text("get_problem_text_support"), reply_markup=inliene.finish_work_data_inline_button())
+    await message.answer(utils.get_text("get_problem_text_support"),
+                         reply_markup=inliene.finish_work_data_inline_button())
     await state.set_state(WorkerState.finish_work)
 
 
@@ -1324,3 +1323,29 @@ async def mask_delete_handler(message: types.Message):
 
     mask.delete()
     await message.answer("Маска удалена.")
+
+
+async def add_merchant_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.chat.id,
+        role=UserRole.HEAD_SUPPORT
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа")
+        return
+
+    parts = message.text.strip().split(maxsplit=1)
+
+    if len(parts) < 2:
+        await message.answer(
+            "Введите название мерчанта.\n"
+            "Пример:\n"
+            "/addmerchant Amazon"
+        )
+        return
+
+    merchant_text = parts[1].strip()
+    models.Merchant.objects.create(title=merchant_text)
+
+    await message.answer(f"Мерчант добавлен: {merchant_text}")
