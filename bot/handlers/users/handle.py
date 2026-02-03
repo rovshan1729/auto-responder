@@ -757,7 +757,6 @@ async def get_problem_text_handler(message: types.Message, state: FSMContext):
         worker_data=work_data
     )
 
-    report.comment = problem_text_input
     report.is_submitted = True
     report.submitted_at = timezone.now()
     report.save(update_fields=["comment", "is_submitted", "submitted_at"])
