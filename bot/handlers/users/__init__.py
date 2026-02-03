@@ -42,6 +42,7 @@ def prepare_router():
     router.callback_query.register(dispute_add_handler, StateFilter(WorkerState.finish_work), F.data == "add_dispute")
     router.callback_query.register(get_merchant_handler, StateFilter(WorkerState.merchant),
                                    F.data.split("|")[0] == "merchant")
+    router.message.register(get_problem_text_handler, WorkerState.get_problem)
     router.message.register(add_merchant_handler, Command("addmerchant"))
     router.message.register(get_dispute_count_handler, WorkerState.dispute_count)
     router.callback_query.register(get_add_more_dispute_handler, StateFilter(WorkerState.cycle),

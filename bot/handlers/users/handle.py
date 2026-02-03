@@ -457,7 +457,9 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
 
     return await state.clear()
 
+
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 
 async def accept_handler(callback: types.CallbackQuery, state: FSMContext):
     verification_id = callback.data.split("|")[1]
@@ -719,127 +721,128 @@ async def get_add_more_dispute_handler(callback: types.CallbackQuery, state: FSM
         await state.set_state(WorkerState.merchant)
 
     elif callback.data == "add_more_text":
-        profile = models.Profile.objects.filter(
-            user__telegram_id=callback.message.chat.id,
-            role__in=[UserRole.SUPPORT, UserRole.ADMIN]
-        ).first()
-        if not profile:
-            await callback.message.answer("Нет доступа")
-            return
+        await callback.message.answer(utils.get_text("get_problem_info"))
+        await state.set_state(WorkerState.get_problem)
 
-        chat_id = callback.message.chat.id
-        problem_text_input = callback.message.text.strip()
 
-        data = await state.get_data()
-        print(data)
-        disputes = data.get("disputes", [])
+async def get_problem_text_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+    ).first()
 
-        work_data = models.WorkerData.objects.filter(
-            profile__user__telegram_id=chat_id,
-            finish_work_time__isnull=True
-        ).select_related("profile__user").first()
+    if not profile:
+        await message.answer("Нет доступа")
+        return
 
-        if not work_data:
-            await callback.message.answer(utils.get_text("no_work"))
-            return
+    chat_id = message.from_user.id
+    problem_text_input = message.text.strip()
 
-        report, _ = models.WorkerShiftReport.objects.get_or_create(
-            worker_data=work_data
+    data = await state.get_data()
+    disputes = data.get("disputes", [])
+
+    work_data = models.WorkerData.objects.filter(
+        profile__user__telegram_id=chat_id,
+        finish_work_time__isnull=True
+    ).select_related("profile__user").first()
+
+    if not work_data:
+        await message.answer(utils.get_text("no_work"))
+        return
+
+    report, _ = models.WorkerShiftReport.objects.get_or_create(
+        worker_data=work_data
+    )
+
+    report.comment = problem_text_input
+    report.is_submitted = True
+    report.submitted_at = timezone.now()
+    report.save(update_fields=["comment", "is_submitted", "submitted_at"])
+
+    for d in disputes:
+        merchant_id = d.get("merchant_id")
+        count = d.get("dispute_count")
+
+        if not merchant_id or count is None:
+            continue
+
+        models.WorkerDispute.objects.create(
+            report=report,
+            merchant_id=int(merchant_id),
+            count=int(count),
+            status=DisputeStatus.NEW
         )
 
-        report.comment = problem_text_input
-        report.is_submitted = True
-        report.submitted_at = timezone.now()
-        report.save(update_fields=["comment", "is_submitted", "submitted_at"])
+    work_data.finish_work_time = timezone.now()
+    work_data.save(update_fields=["finish_work_time"])
 
-        for d in disputes:
-            merchant_id = d.get("merchant_id")
-            count = d.get("dispute_count")
+    head_profile = models.Profile.objects.filter(
+        role=UserRole.HEAD_SUPPORT
+    ).select_related("user").first()
 
-            if not merchant_id or count is None:
-                continue
+    if head_profile:
+        username = message.from_user.username or message.from_user.full_name
 
-            models.WorkerDispute.objects.create(
-                report=report,
-                merchant_id=int(merchant_id),
-                count=int(count),
-                status=DisputeStatus.NEW
+        start_time_str = timezone.localtime(
+            work_data.start_work_time
+        ).strftime("%d.%m.%Y %H:%M:%S")
+
+        end_time_str = timezone.localtime(
+            work_data.finish_work_time
+        ).strftime("%d.%m.%Y %H:%M:%S")
+
+        db_disputes = report.disputes.select_related("merchant").all()
+
+        grouped = {}
+        for item in db_disputes:
+            title = item.merchant.title
+
+            if title not in grouped:
+                grouped[title] = {
+                    "resolved": 0,
+                    "new": 0,
+                    "unresolved": 0,
+                }
+
+            if item.status == DisputeStatus.RESOLVED:
+                grouped[title]["resolved"] += item.count
+            elif item.status == DisputeStatus.NEW:
+                grouped[title]["new"] += item.count
+            elif item.status == DisputeStatus.UNRESOLVED:
+                grouped[title]["unresolved"] += item.count
+
+        lines = []
+        for merchant_title in sorted(grouped.keys()):
+            r = grouped[merchant_title]["resolved"]
+            u = grouped[merchant_title]["unresolved"]
+            n = grouped[merchant_title]["new"]
+
+            lines.append(
+                f"{merchant_title} | решенные {r} | не решенные {u} | новые {n}"
+
             )
 
-        work_data.finish_work_time = timezone.now()
-        work_data.save(update_fields=["finish_work_time"])
+        disputes_block = "\n".join(lines) if lines else "Нет диспутов"
 
-        head_profile = models.Profile.objects.filter(
-            role=UserRole.HEAD_SUPPORT
-        ).select_related("user").first()
+        problems_block = report.comment.strip() if report.comment else "Нету"
+        head_text = (
+            "Отчет о смене:\n"
+            f"Саппорт: @{username}\n"
+            f"Дата начала: {start_time_str}\n"
+            f"Дата завершения: {end_time_str}\n\n"
+            "Диспуты:\n"
+            f"{disputes_block}\n\n"
+            "Проблемы:\n"
+            f"{problems_block}"
+        )
 
-        if head_profile:
-            username = callback.message.chat.username or callback.message.chat.full_name
+        utils.send_text(
+            head_profile.user.telegram_id,
+            head_text
+        )
 
-            start_time_str = timezone.localtime(
-                work_data.start_work_time
-            ).strftime("%d.%m.%Y %H:%M:%S")
-
-            end_time_str = timezone.localtime(
-                work_data.finish_work_time
-            ).strftime("%d.%m.%Y %H:%M:%S")
-
-            db_disputes = report.disputes.select_related("merchant").all()
-
-            grouped = {}
-            for item in db_disputes:
-                title = item.merchant.title
-
-                if title not in grouped:
-                    grouped[title] = {
-                        "resolved": 0,
-                        "new": 0,
-                        "unresolved": 0,
-                    }
-
-                if item.status == DisputeStatus.RESOLVED:
-                    grouped[title]["resolved"] += item.count
-                elif item.status == DisputeStatus.NEW:
-                    grouped[title]["new"] += item.count
-                elif item.status == DisputeStatus.UNRESOLVED:
-                    grouped[title]["unresolved"] += item.count
-
-            lines = []
-            for merchant_title in sorted(grouped.keys()):
-                r = grouped[merchant_title]["resolved"]
-                u = grouped[merchant_title]["unresolved"]
-                n = grouped[merchant_title]["new"]
-
-                lines.append(
-                    f"{merchant_title} | решенные {r} | не решенные {u} | новые {n}"
-                )
-
-            disputes_block = "\n".join(lines) if lines else "Нет диспутов"
-
-            if data.get("problem_text"):
-                models.Problem.objects.create(profile=profile, text=data.get("problem_text"))
-                problems_block = data.get("problem_text")
-            else:
-                problems_block = "Нет"
-
-            head_text = (
-                "Отчет о смене:\n"
-                f"Саппорт: @{username}\n"
-                f"Дата начала: {start_time_str}\n"
-                f"Дата завершения: {end_time_str}\n\n"
-                "Диспуты:\n"
-                f"{disputes_block}\n\n"
-                "Проблемы:\n"
-                f"{problems_block}"
-            )
-
-            utils.send_text(
-                head_profile.user.telegram_id,
-                head_text
-            )
-
-        await callback.message.answer(utils.get_text("the_shift_assigned"))
-        await state.clear()
+    await message.answer(utils.get_text("the_shift_assigned"))
+    await state.clear()
 
 
 async def get_add_problem_support_handler(callback: types.CallbackQuery, state: FSMContext):
@@ -862,10 +865,22 @@ async def get_add_problem_text_support_handler(message: types.Message, state: FS
     if not profile:
         await message.answer(utils.get_text("none_profile"))
         return
-    await state.update_data({"problem_text": problem_text})
-    await message.answer(utils.get_text("get_problem_text_support"),
-                         reply_markup=inliene.finish_work_data_inline_button())
-    await state.set_state(WorkerState.finish_work)
+
+    models.Problem.objects.create(profile=profile, text=problem_text)
+
+    head_profile = models.Profile.objects.filter(role=UserRole.HEAD_SUPPORT).first()
+    if head_profile:
+        username = message.from_user.username or message.from_user.full_name
+
+        text = (
+            "Проблемы:\n"
+            f"@{username} - {problem_text}"
+        )
+
+        utils.send_text(head_profile.user.telegram_id, text)
+
+    await message.answer(utils.get_text("get_problem_text_support"))
+    await state.clear()
 
 
 async def head_report_command(message: types.Message, state: FSMContext):
