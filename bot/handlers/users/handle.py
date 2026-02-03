@@ -562,10 +562,13 @@ async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
     utils.send_text(group.telegram_id, group_text)
 
     await state.clear()
-    await state.set_state(RegistrationState.start)
 
-    await callback.answer()
-
+async def start_verification_after_close_handler(message: types.Message, state: FSMContext):
+    await state.set_state(RegistrationState.phone_number)
+    return await message.answer(
+        utils.get_text("kyc_start_verification_prompt"),
+        reply_markup=reply.phone_number_button()
+    )
 
 async def support_worker_handler(message: types.Message, state: FSMContext):
     profile = models.Profile.objects.filter(

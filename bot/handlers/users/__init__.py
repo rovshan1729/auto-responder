@@ -17,6 +17,7 @@ def prepare_router():
     router.message.register(command_handler, users.IsCommandFilter())
 
     router.message.register(get_user_start_verification_handler, RegistrationState.start)
+    router.message.register(start_verification_after_close_handler, F.text == "Приступить к верификации")
     router.message.register(get_phone_number_keyboard_handler, StateFilter(RegistrationState.phone_number), F.contact)
     router.message.register(get_phone_number_addition_handler, RegistrationState.addition_number)
     router.message.register(get_email_handler, RegistrationState.email)
