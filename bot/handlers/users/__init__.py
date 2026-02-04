@@ -60,6 +60,13 @@ def prepare_router():
     router.message.register(broadcast_template_id_handler, BroadcastState.template_id)
     router.message.register(broadcast_content_handler, BroadcastState.content)
     router.callback_query.register(broadcast_group_choice, BroadcastState.group_choice)
+    router.message.register(broadcast_scheduled_at_handler, BroadcastState.scheduled_at)
+    router.message.register(broadcast_media_file_handler, BroadcastState.media_file)
+    router.message.register(broadcast_media_position_handler, BroadcastState.media_position)
+    router.message.register(broadcast_button_title_handler, BroadcastState.get_button_title)
+    router.message.register(broadcast_button_url_handler, BroadcastState.get_button_url)
+    router.message.register(broadcast_button_order, BroadcastState.get_button_order)
+
 
     router.message.register(check_kyc_handler, Command("check_kyc"))
 

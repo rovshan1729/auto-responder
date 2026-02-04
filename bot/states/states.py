@@ -46,6 +46,10 @@ class BroadcastState(StatesGroup):
     group_choice = State()
     scheduled_at = State()
     media_file = State()
+    media_position = State()
+    get_button_title = State()
+    get_button_url = State()
+    get_button_order = State()
 
 
 class MaskState(StatesGroup):

@@ -1,6 +1,7 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from responder.models import Country
 
+
 def start_verification():
     return ReplyKeyboardMarkup(
         keyboard=[
@@ -10,11 +11,13 @@ def start_verification():
         resize_keyboard=True
     )
 
+
 def phone_number_button():
     return ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="Поделиться контактом", request_contact=True)]],
         resize_keyboard=True
     )
+
 
 def skip_button():
     return ReplyKeyboardMarkup(
@@ -60,8 +63,15 @@ def experience_button():
         resize_keyboard=True
     )
 
+
 def verify_button():
     return ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="Перепройти верификацию")]],
         resize_keyboard=True
+    )
+
+
+def next_broadcast_button():
+    return ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="Далее")]], resize_keyboard=True
     )

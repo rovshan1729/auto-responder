@@ -1175,7 +1175,176 @@ async def broadcast_scheduled_at_handler(message: types.Message, state: FSMConte
 
 
 async def broadcast_media_file_handler(message: types.Message, state: FSMContext):
-    pass
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer(utils.get_text("access_denied"))
+        return
+
+    if message.text:
+        if message.text == "Далее":
+            data = await state.get_data()
+            medias = data.get("medias", [])
+            medias_sorted = sorted(medias, key=lambda x: x["position"])
+            await state.update_data(medias=medias_sorted)
+            await message.answer(utils.get_text("get_btn_title"), reply_markup=reply.skip_button())
+            await state.set_state(BroadcastState.get_button_title)
+            return
+
+    if not message.photo:
+        await message.answer(utils.get_text("show_media_file"))
+        return
+
+    file_id = message.photo[-1].file_id
+
+    await state.update_data(temp_file_id=file_id)
+
+    await message.answer(
+        "Введите позицию для этого файла (например: 1)"
+    )
+
+    await state.set_state(BroadcastState.media_position)
+
+
+async def broadcast_media_position_handler(message: types.Message, state: FSMContext):
+    text = message.text.strip()
+
+    if not text.isdigit():
+        await message.answer("Введите число позиции.")
+        return
+
+    position = int(text)
+
+    data = await state.get_data()
+    medias = data.get("medias", [])
+    file_id = data.get("temp_file_id")
+
+    if not file_id:
+        await message.answer("Ошибка. Отправьте файл заново.")
+        await state.set_state(BroadcastState.media_file)
+        return
+
+    medias.append({
+        "file_id": file_id,
+        "position": position
+    })
+
+    await state.update_data(
+        medias=medias,
+        temp_file_id=None
+    )
+
+    await message.answer(
+        "Файл добавлен.\n"
+        "Отправьте следующий файл или нажмите «Далее».",
+        reply_markup=reply.next_broadcast_button()
+    )
+    await state.set_state(BroadcastState.media_file)
+
+
+async def broadcast_button_title_handler(message: types.Message, state: FSMContext):
+    text = message.text.strip()
+
+    if text == "Пропустить шаг":
+        await message.answer("Кнопки пропущены.")
+        return
+
+    if text == "Далее":
+        data = await state.get_data()
+        buttons = data.get("buttons", [])
+        print(data)
+        buttons_sorted = sorted(buttons, key=lambda x: x["order"])
+
+        await state.update_data(buttons=buttons_sorted)
+
+        await message.answer("Кнопки сохранены ✅")
+        return
+
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer(utils.get_text("access_denied"))
+        return
+
+    await state.update_data(temp_button={"title": text})
+
+    await message.answer(utils.get_text("get_button_url"))
+    await state.set_state(BroadcastState.get_button_url)
+
+
+async def broadcast_button_url_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer(utils.get_text("access_denied"))
+        return
+
+    url = message.text.strip()
+
+    if not url.startswith("https://"):
+        await message.answer("Ссылка должна начинаться с https://")
+        return
+
+    data = await state.get_data()
+    temp_button = data.get("temp_button", {})
+
+    temp_button["url"] = url
+    await state.update_data(temp_button=temp_button)
+
+    await message.answer(utils.get_text("get_button_order"))
+    await state.set_state(BroadcastState.get_button_order)
+
+
+async def broadcast_button_order(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer(utils.get_text("access_denied"))
+        return
+
+    text = message.text.strip()
+
+    if not text.isdigit():
+        await message.answer("Введите номер позиции кнопки.")
+        return
+
+    order = int(text)
+
+    data = await state.get_data()
+    buttons = data.get("buttons", [])
+    temp_button = data.get("temp_button")
+
+    if not temp_button:
+        await message.answer("Ошибка. Начните заново.")
+        return
+
+    temp_button["order"] = order
+    buttons.append(temp_button)
+
+    await state.update_data(
+        buttons=buttons,
+        temp_button=None
+    )
+
+    await message.answer(
+        "Кнопка добавлена.\n"
+        "Введите следующую кнопку или нажмите «Далее».",
+        reply_markup=reply.next_broadcast_button()
+    )
+
+    await state.set_state(BroadcastState.get_button_title)
 
 
 async def check_kyc_handler(message: types.Message):
