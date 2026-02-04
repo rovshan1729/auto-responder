@@ -8,6 +8,9 @@ from django.core.files.base import ContentFile
 from datetime import timedelta, datetime
 from django.utils import timezone
 from io import BytesIO
+from django.utils.dateparse import parse_datetime
+from django.db import transaction
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot import utils
 from bot.keyboards import reply, inliene
@@ -456,9 +459,6 @@ async def get_user_recommendation_user_contact_handler(message: types.Message, s
         print("error:", e)
 
     return await state.clear()
-
-
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 async def accept_handler(callback: types.CallbackQuery, state: FSMContext):
@@ -1083,14 +1083,22 @@ async def broadcast_title_handler(message: types.Message, state: FSMContext):
     title = message.text.strip()
 
     await state.update_data({"title": title})
-    await message.answer(utils.get_text("show_template_id"))
+    await message.answer(utils.get_text("show_template_id"), reply_markup=reply.skip_button())
     await state.set_state(BroadcastState.template_id)
 
 
-from broadcast.models import BaseModel, BroadcastTemplate
+from broadcast.models import Broadcast, BroadcastTemplate, BroadcastButton, Media
 
 
 async def broadcast_template_id_handler(message: types.Message, state: FSMContext):
+    template_id = message.text.strip()
+
+    if template_id == "Пропустить шаг":
+        await state.update_data({"template_id": None})
+        await message.answer(utils.get_text("show_content"), reply_markup=ReplyKeyboardRemove())
+        await state.set_state(BroadcastState.content)
+        return
+
     profile = models.Profile.objects.filter(
         user__telegram_id=message.from_user.id,
         role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
@@ -1099,8 +1107,6 @@ async def broadcast_template_id_handler(message: types.Message, state: FSMContex
     if not profile:
         await message.answer(utils.get_text("access_denied"))
         return
-
-    template_id = message.text.strip()
 
     if template_id.isdigit():
         template = BroadcastTemplate.objects.filter(pk=template_id).first()
@@ -1111,7 +1117,7 @@ async def broadcast_template_id_handler(message: types.Message, state: FSMContex
 
         await state.update_data({"template_id": int(template_id)})
 
-        await message.answer(utils.get_text("show_content"))
+        await message.answer(utils.get_text("show_content"), reply_markup=ReplyKeyboardRemove())
         await state.set_state(BroadcastState.content)
         return
 
@@ -1130,23 +1136,46 @@ async def broadcast_content_handler(message: types.Message, state: FSMContext):
 
     content = message.text.strip()
     await state.update_data({"content": content})
-    await message.answer(utils.get_text("group_choice"), reply_markup=inliene.broadcast_group_keyboard())
+    # await message.answer(utils.get_text("group_choice"), reply_markup=inliene.broadcast_group_keyboard())
+    await message.answer(
+        "Введите группы через запятую:\n"
+        "RUB, KZT, UZS, TJS, CNY, GEL, AMD, TRANSGRAN, ALL"
+    )
     await state.set_state(BroadcastState.group_choice)
 
 
-async def broadcast_group_choice(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.delete()
+async def broadcast_group_choice(message: types.Message, state: FSMContext):
     profile = models.Profile.objects.filter(
-        user__telegram_id=callback.from_user.id,
+        user__telegram_id=message.from_user.id,
         role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
     ).first()
 
     if not profile:
-        await callback.message.answer(utils.get_text("access_denied"))
+        await message.answer(utils.get_text("access_denied"))
         return
-    group_choice = callback.data.split("|")[1]
-    await state.update_data({"group_choice": group_choice})
-    await callback.message.answer(utils.get_text("show_scheduled_at"))
+
+    raw = message.text.upper()
+    raw_groups = [g.strip() for g in raw.split(",") if g.strip()]
+
+    valid = []
+
+    for g in raw_groups:
+        if g in {"ALL", "ВСЕ", "ВСЕ ГРУППЫ"}:
+            valid.append(GroupChoice.ALL.value)
+            continue
+
+        if g in GroupChoice.values:
+            valid.append(g)
+
+    if not valid:
+        await message.answer("Некорректные группы.")
+        return
+
+    if GroupChoice.ALL.value in valid:
+        valid = [GroupChoice.ALL.value]
+
+    await state.update_data({"group_choice": valid})
+    await message.answer(utils.get_text("show_scheduled_at"))
     await state.set_state(BroadcastState.scheduled_at)
 
 
@@ -1170,7 +1199,7 @@ async def broadcast_scheduled_at_handler(message: types.Message, state: FSMConte
         return
 
     await state.update_data({"scheduled_at": dt.isoformat()})
-    await message.answer(utils.get_text("show_media_file"))
+    await message.answer(utils.get_text("show_media_file"), reply_markup=reply.skip_button())
     await state.set_state(BroadcastState.media_file)
 
 
@@ -1185,6 +1214,12 @@ async def broadcast_media_file_handler(message: types.Message, state: FSMContext
         return
 
     if message.text:
+        if message.text == "Пропустить шаг":
+            await state.update_data({"medias": []})
+            await message.answer(utils.get_text("get_btn_title"), reply_markup=reply.skip_button())
+            await state.set_state(BroadcastState.get_button_title)
+            return
+
         if message.text == "Далее":
             data = await state.get_data()
             medias = data.get("medias", [])
@@ -1245,22 +1280,88 @@ async def broadcast_media_position_handler(message: types.Message, state: FSMCon
     await state.set_state(BroadcastState.media_file)
 
 
+async def save_buttons_to_db(state: FSMContext, bot):
+    data = await state.get_data()
+
+    title = data.get("title")
+    template_id = data.get("template_id")
+    content = data.get("content")
+    group_choice = data.get("group_choice")
+    scheduled_at = parse_datetime(data.get("scheduled_at"))
+
+    buttons = data.get("buttons", [])
+    medias = data.get("medias", [])
+
+    try:
+        with transaction.atomic():
+            broadcast = Broadcast.objects.create(
+                title=title,
+                template_id=template_id,
+                content=content,
+                groups=group_choice,
+                scheduled_at=scheduled_at
+            )
+
+            btn_objects = [
+                BroadcastButton(
+                    broadcast=broadcast,
+                    text=btn.get("title"),
+                    url=btn.get("url"),
+                    order=btn.get("order", 0)
+                )
+                for btn in buttons
+            ]
+
+            if btn_objects:
+                BroadcastButton.objects.bulk_create(btn_objects)
+
+            media_ids = []
+
+            for i, m in enumerate(medias):
+                file_id = m.get("file_id")
+                order = m.get("position", i)
+
+                django_file = await _save_file_from_telegram(
+                    bot,
+                    file_id,
+                    filename=f"tg_{file_id}.dat"
+                )
+
+                media = Media.objects.create(
+                    file=django_file,
+                    file_id=file_id,
+                    order=order,
+                    file_type="telegram"
+                )
+
+                media_ids.append(media.pk)
+
+            if media_ids:
+                broadcast.medias.set(media_ids)
+
+
+    except Exception as e:
+        print("SAVE ERROR:", e)
+
+
 async def broadcast_button_title_handler(message: types.Message, state: FSMContext):
     text = message.text.strip()
 
     if text == "Пропустить шаг":
-        await message.answer("Кнопки пропущены.")
+        await state.update_data({"buttons": []})
+        await save_buttons_to_db(state, message.bot)
+
+        await message.answer(utils.get_text("skip_btn"), reply_markup=ReplyKeyboardRemove())
         return
 
     if text == "Далее":
         data = await state.get_data()
         buttons = data.get("buttons", [])
-        print(data)
         buttons_sorted = sorted(buttons, key=lambda x: x["order"])
 
         await state.update_data(buttons=buttons_sorted)
-
-        await message.answer("Кнопки сохранены ✅")
+        await save_buttons_to_db(state, message.bot)
+        await message.answer("Кнопки сохранены ✅", reply_markup=ReplyKeyboardRemove())
         return
 
     profile = models.Profile.objects.filter(
