@@ -13,6 +13,7 @@ from bot.utils import methods
 from responder import models, mixins
 from responder.forms import ReplyMessageForm, MaskModelForm
 
+
 @admin.register(models.BlackList)
 class BlackListAdmin(BaseModelAdmin):
     list_display = (
@@ -28,6 +29,7 @@ class BlackListAdmin(BaseModelAdmin):
         )
 
     verification_list.short_description = "Найденные профили"
+
 
 class VerificationAdminFieldInline(unfold_admin.TabularInline):
     model = models.VerificationAdminField
@@ -437,7 +439,6 @@ class ProfileAdmin(BaseModelAdmin):
 class WorkerDataAdmin(BaseModelAdmin):
     list_display = ('id', 'get_username', 'start_work_time', 'finish_work_time')
 
-
     fieldsets = (
         (None, {
             "fields": (
@@ -450,6 +451,7 @@ class WorkerDataAdmin(BaseModelAdmin):
     @admin.display(description="Username")
     def get_username(self, obj):
         return obj.profile.user.username
+
 
 @admin.register(models.Merchant)
 class MerchantAdmin(BaseModelAdmin):
@@ -474,18 +476,16 @@ class StaticTextAdmin(BaseModelAdmin):
     )
 
 
-
 @admin.register(models.WorkerShiftReport)
 class WorkerShiftReportAdmin(BaseModelAdmin):
     pass
 
 
-@admin.register(models.WorkerDispute)
-class WorkerDisputeAdmin(BaseModelAdmin):
+@admin.register(models.WorkerMerchantStat)
+class WorkerMerchantStatAdmin(BaseModelAdmin):
     pass
 
 
 @admin.register(models.Problem)
 class ProblemAdmin(BaseModelAdmin):
     pass
-

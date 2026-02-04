@@ -27,7 +27,8 @@ class RegistrationState(StatesGroup):
 class WorkerState(StatesGroup):
     finish_work = State()
     merchant = State()
-    dispute_count = State()
+    new_dispute_count = State()
+    resolved_dispute_count = State()
     cycle = State()
     get_problem = State()
     add_problem = State()
@@ -39,7 +40,12 @@ class HeadReportState(StatesGroup):
 
 
 class BroadcastState(StatesGroup):
-    text = State()
+    title = State()
+    template_id = State()
+    content = State()
+    group_choice = State()
+    scheduled_at = State()
+    media_file = State()
 
 
 class MaskState(StatesGroup):

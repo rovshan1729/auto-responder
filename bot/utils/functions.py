@@ -5,7 +5,7 @@ import unicodedata
 import orjson
 from bs4 import BeautifulSoup
 from datetime import datetime
-
+from django.utils import timezone
 
 PUNCTUATION_TRANSLATOR = str.maketrans('', '', string.punctuation + string.digits)
 EMOJI_PATTERN = re.compile(
@@ -29,6 +29,7 @@ EMOJI_PATTERN = re.compile(
     "\ufe0f"
     "]+", flags=re.UNICODE
 )
+
 
 def create_json_file(path_file: str, data: dict):
     with open(path_file, mode="wb") as f:
@@ -58,6 +59,7 @@ def get_clean_sorted_text_list(text: str):
     text_list.sort()
     return text_list
 
+
 def get_file_type(extension: str) -> str:
     if extension in ('jpg', 'jpeg', 'png'):
         file_type = 'photo'
@@ -70,13 +72,10 @@ def get_file_type(extension: str) -> str:
     return file_type
 
 
-
-
 def clean_from_html(text: str) -> str:
     allowed_tags = {"b", "strong", "i", "em", "u", "ins", "s", "strike", "del", "span", "tg-spoiler",
                     "code", "pre", "a"}
     allowed_attrs = {"href"}
-
 
     soup = BeautifulSoup(text, "html.parser")
 
@@ -155,8 +154,16 @@ def is_valid_email(email: str) -> bool:
     pattern = r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
     return bool(re.match(pattern, email))
 
+
 def parse_date_ru(date_str: str):
     try:
         return datetime.strptime(date_str.strip(), "%d.%m.%Y").date()
     except:
+        return None
+
+def parse_datetime_ru(text: str):
+    try:
+        dt = datetime.strptime(text.strip(), "%d.%m.%Y %H:%M")
+        return timezone.make_aware(dt)
+    except ValueError:
         return None

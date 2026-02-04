@@ -563,12 +563,14 @@ async def closed_handler(callback: types.CallbackQuery, state: FSMContext):
 
     await state.clear()
 
+
 async def start_verification_after_close_handler(message: types.Message, state: FSMContext):
     await state.set_state(RegistrationState.phone_number)
     return await message.answer(
         utils.get_text("kyc_start_verification_prompt"),
         reply_markup=reply.phone_number_button()
     )
+
 
 async def support_worker_handler(message: types.Message, state: FSMContext):
     profile = models.Profile.objects.filter(
@@ -674,10 +676,51 @@ async def get_merchant_handler(callback: types.CallbackQuery, state: FSMContext)
     merchant_id = int(callback.data.split("|")[1])
     await callback.message.answer(utils.get_text("get_merchant"))
     await state.update_data({"current_merchant_id": merchant_id})
-    await state.set_state(WorkerState.dispute_count)
+    await state.set_state(WorkerState.new_dispute_count)
 
 
-async def get_dispute_count_handler(message: types.Message, state: FSMContext):
+async def get_new_dispute_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer("Нет доступа", show_alert=True)
+        return
+
+    text = message.text.strip()
+    if not text.isdigit():
+        await message.answer("Просто введите число. Например: 3")
+        return
+
+    count = int(text)
+
+    data = await state.get_data()
+    merchant_id = data.get("current_merchant_id")
+    if not merchant_id:
+        await message.answer("Продавец не выбран. Пожалуйста, попробуйте еще раз.")
+        return
+
+    disputes = data.get("disputes", [])
+
+    merchant_data = next((d for d in disputes if d["merchant_id"] == merchant_id), None)
+
+    if merchant_data:
+        merchant_data["new_dispute_count"] = count
+    else:
+        disputes.append({
+            "merchant_id": merchant_id,
+            "new_dispute_count": count,
+            "resolved_dispute_count": 0
+        })
+
+    await state.update_data({"disputes": disputes})
+    await message.answer(utils.get_text("get_new_dispute_count"))
+    await state.set_state(WorkerState.resolved_dispute_count)
+
+
+async def get_resolved_dispute_count_handler(message: types.Message, state: FSMContext):
     profile = models.Profile.objects.filter(
         user__telegram_id=message.from_user.id,
         role__in=[UserRole.SUPPORT, UserRole.ADMIN]
@@ -692,8 +735,6 @@ async def get_dispute_count_handler(message: types.Message, state: FSMContext):
         await message.answer("Просто введите число. Например: 3")
         return
 
-    count = int(text)
-
     data = await state.get_data()
     merchant_id = data.get("current_merchant_id")
 
@@ -701,12 +742,31 @@ async def get_dispute_count_handler(message: types.Message, state: FSMContext):
         await message.answer("Продавец не выбран. Пожалуйста, попробуйте еще раз.")
         return
 
+    resolved_count = int(text)
     disputes = data.get("disputes", [])
-    disputes.append({
-        "merchant_id": merchant_id,
-        "dispute_count": count,
-        "status": "new"
-    })
+
+    merchant_data = next((d for d in disputes if d["merchant_id"] == merchant_id), None)
+
+    new_count = merchant_data.get("new_dispute_count", 0) if merchant_data else 0
+
+    if resolved_count > new_count:
+        await message.answer(
+            f"Решенных диспутов не может быть больше новых.\n"
+            f"Новые: {new_count}\n"
+            f"Введите число от 0 до {new_count}."
+        )
+        await state.set_state(WorkerState.resolved_dispute_count)
+        return
+
+    if merchant_data:
+        merchant_data["resolved_dispute_count"] = resolved_count
+    else:
+        disputes.append({
+            "merchant_id": merchant_id,
+            "new_dispute_count": 0,
+            "resolved_dispute_count": resolved_count
+        })
+
     await state.update_data({"disputes": disputes})
     await message.answer(utils.get_text("get_dispute_count"), reply_markup=inliene.get_dispute_count_inline_button())
     await state.set_state(WorkerState.cycle)
@@ -760,28 +820,26 @@ async def get_problem_text_handler(message: types.Message, state: FSMContext):
     report.is_submitted = True
     report.submitted_at = timezone.now()
     report.save(update_fields=["comment", "is_submitted", "submitted_at"])
-
     for d in disputes:
-        merchant_id = d.get("merchant_id")
-        count = d.get("dispute_count")
-
-        if not merchant_id or count is None:
+        merchant_id = int(d.get("merchant_id"))
+        new_count = int(d.get("new_dispute_count"))
+        resolved_count = int(d.get("resolved_dispute_count"))
+        if not merchant_id or new_count is None or resolved_count is None:
             continue
-
-        models.WorkerDispute.objects.create(
+        unresolved_count = new_count - resolved_count
+        models.WorkerMerchantStat.objects.create(
             report=report,
-            merchant_id=int(merchant_id),
-            count=int(count),
-            status=DisputeStatus.NEW
+            merchant_id=merchant_id,
+            new_count=new_count,
+            resolved_count=resolved_count,
+            unresolved_count=unresolved_count
         )
-
     work_data.finish_work_time = timezone.now()
     work_data.save(update_fields=["finish_work_time"])
 
     head_profile = models.Profile.objects.filter(
         role=UserRole.HEAD_SUPPORT
     ).select_related("user").first()
-
     if head_profile:
         username = message.from_user.username or message.from_user.full_name
 
@@ -793,40 +851,45 @@ async def get_problem_text_handler(message: types.Message, state: FSMContext):
             work_data.finish_work_time
         ).strftime("%d.%m.%Y %H:%M:%S")
 
-        db_disputes = report.disputes.select_related("merchant").all()
+        db_disputes = report.merchant_stats.select_related("merchant").all()
 
-        grouped = {}
+        grouped: dict[str, dict[str, int]] = {}
+
         for item in db_disputes:
             title = item.merchant.title
 
             if title not in grouped:
                 grouped[title] = {
-                    "resolved": 0,
                     "new": 0,
+                    "resolved": 0,
                     "unresolved": 0,
                 }
 
-            if item.status == DisputeStatus.RESOLVED:
-                grouped[title]["resolved"] += item.count
-            elif item.status == DisputeStatus.NEW:
-                grouped[title]["new"] += item.count
-            elif item.status == DisputeStatus.UNRESOLVED:
-                grouped[title]["unresolved"] += item.count
+            grouped[title]["new"] += item.new_count or 0
+            grouped[title]["resolved"] += item.resolved_count or 0
+
+        for title in grouped:
+            grouped[title]["unresolved"] = max(
+                grouped[title]["new"] - grouped[title]["resolved"],
+                0
+            )
 
         lines = []
+
         for merchant_title in sorted(grouped.keys()):
-            r = grouped[merchant_title]["resolved"]
-            u = grouped[merchant_title]["unresolved"]
-            n = grouped[merchant_title]["new"]
+            stats = grouped[merchant_title]
 
             lines.append(
-                f"{merchant_title} | решенные {r} | не решенные {u} | новые {n}"
-
+                f"{merchant_title} | "
+                f"новые {stats['new']}"
+                f"решенные {stats['resolved']} | "
+                f"не решенные {stats['unresolved']} | "
             )
 
         disputes_block = "\n".join(lines) if lines else "Нет диспутов"
 
         problems_block = report.comment.strip() if report.comment else "Нету"
+
         head_text = (
             "Отчет о смене:\n"
             f"Саппорт: @{username}\n"
@@ -940,8 +1003,7 @@ async def head_report_date_to_handler(message: types.Message, state: FSMContext)
         submitted_at__gte=dt_from,
         submitted_at__lte=dt_to
     ).values_list("id", flat=True)
-
-    disputes = models.WorkerDispute.objects.filter(
+    disputes = models.WorkerMerchantStat.objects.filter(
         report_id__in=report_ids
     ).select_related("merchant")
 
@@ -959,18 +1021,20 @@ async def head_report_date_to_handler(message: types.Message, state: FSMContext)
         if title not in grouped:
             grouped[title] = {"resolved": 0, "new": 0, "unresolved": 0}
 
-        if d.status == DisputeStatus.RESOLVED:
-            grouped[title]["resolved"] += d.count
-            total["resolved"] += d.count
-        elif d.status == DisputeStatus.NEW:
-            grouped[title]["new"] += d.count
-            total["new"] += d.count
-        elif d.status == DisputeStatus.UNRESOLVED:
-            grouped[title]["unresolved"] += d.count
-            total["unresolved"] += d.count
+        new_count = d.new_count or 0
+        resolved_count = d.resolved_count or 0
+        unresolved_count = d.unresolved_count or 0
+
+        grouped[title]["new"] += new_count
+        grouped[title]["resolved"] += resolved_count
+        grouped[title]["unresolved"] += unresolved_count
+
+        total["new"] += new_count
+        total["resolved"] += resolved_count
+        total["unresolved"] += unresolved_count
 
     lines = []
-    lines.append(f"Отчет по диспутам")
+    lines.append("Отчет по диспутам")
     lines.append(f"Период: {date_from.strftime('%d.%m.%Y')} - {date_to.strftime('%d.%m.%Y')}")
     lines.append("")
     lines.append("По мерчантам:")
@@ -979,6 +1043,7 @@ async def head_report_date_to_handler(message: types.Message, state: FSMContext)
         r = grouped[merchant_title]["resolved"]
         n = grouped[merchant_title]["new"]
         u = grouped[merchant_title]["unresolved"]
+
         lines.append(f"{merchant_title}: решённые {r} новые {n} нерешённые {u}")
 
     lines.append("")
@@ -1001,41 +1066,116 @@ async def broadcast_command_handler(message: types.Message, state: FSMContext):
         return
 
     await state.clear()
-    await message.answer(utils.get_text("show_broadcast"))
-    await state.set_state(BroadcastState.text)
+    await message.answer(utils.get_text("show_title"))
+    await state.set_state(BroadcastState.title)
 
 
-async def broadcast_text_handler(message: types.Message, state: FSMContext):
+async def broadcast_title_handler(message: types.Message, state: FSMContext):
     profile = models.Profile.objects.filter(
         user__telegram_id=message.from_user.id,
         role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
     ).first()
 
     if not profile:
+        await message.answer(utils.get_text("access_denied"))
         return
 
-    text = message.text.strip()
+    title = message.text.strip()
 
-    users = models.Profile.objects.exclude(
-        role__in=[
-            UserRole.SUPPORT,
-            UserRole.HEAD_SUPPORT,
-            UserRole.VERIFICATOR,
-            UserRole.PAYMENT_MANAGER,
-            UserRole.ADMIN,
-        ]
-    ).select_related("user")
+    await state.update_data({"title": title})
+    await message.answer(utils.get_text("show_template_id"))
+    await state.set_state(BroadcastState.template_id)
 
-    sent = 0
-    for p in users:
-        try:
-            utils.send_text(p.user.telegram_id, text)
-            sent += 1
-        except:
-            pass
 
-    await message.answer(f"Рассылка отправлена ({sent} пользователей).")
-    await state.clear()
+from broadcast.models import BaseModel, BroadcastTemplate
+
+
+async def broadcast_template_id_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer(utils.get_text("access_denied"))
+        return
+
+    template_id = message.text.strip()
+
+    if template_id.isdigit():
+        template = BroadcastTemplate.objects.filter(pk=template_id).first()
+        if not template:
+            await message.answer(utils.get_text("show_template_id"))
+            await state.set_state(BroadcastState.template_id)
+            return
+
+        await state.update_data({"template_id": int(template_id)})
+
+        await message.answer(utils.get_text("show_content"))
+        await state.set_state(BroadcastState.content)
+        return
+
+    await message.answer(utils.get_text("show_template_id"))
+    await state.set_state(BroadcastState.template_id)
+
+
+async def broadcast_content_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+    if not profile:
+        await message.answer(utils.get_text("access_denied"))
+        return
+
+    content = message.text.strip()
+    await state.update_data({"content": content})
+    await message.answer(utils.get_text("group_choice"), reply_markup=inliene.broadcast_group_keyboard())
+    await state.set_state(BroadcastState.group_choice)
+
+
+async def broadcast_group_choice(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    profile = models.Profile.objects.filter(
+        user__telegram_id=callback.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await callback.message.answer(utils.get_text("access_denied"))
+        return
+    group_choice = callback.data.split("|")[1]
+    await state.update_data({"group_choice": group_choice})
+    await callback.message.answer(utils.get_text("show_scheduled_at"))
+    await state.set_state(BroadcastState.scheduled_at)
+
+
+async def broadcast_scheduled_at_handler(message: types.Message, state: FSMContext):
+    profile = models.Profile.objects.filter(
+        user__telegram_id=message.from_user.id,
+        role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
+    ).first()
+
+    if not profile:
+        await message.answer(utils.get_text("access_denied"))
+        return
+
+    dt = utils.parse_datetime_ru(message.text)
+    if not dt:
+        await message.answer(
+            "Неверный формат.\n"
+            "Введите дату и время так:\n"
+            "26.01.2026 14:30"
+        )
+        return
+
+    await state.update_data({"scheduled_at": dt.isoformat()})
+    await message.answer(utils.get_text("show_media_file"))
+    await state.set_state(BroadcastState.media_file)
+
+
+async def broadcast_media_file_handler(message: types.Message, state: FSMContext):
+    pass
 
 
 async def check_kyc_handler(message: types.Message):

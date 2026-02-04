@@ -552,6 +552,51 @@ class WorkerDispute(BaseModel):
         return f"{self.report.worker_data.profile.user} | {self.merchant.title} | {self.count} | {self.status}"
 
 
+class WorkerMerchantStat(BaseModel):
+    report = models.ForeignKey(
+        WorkerShiftReport,
+        on_delete=models.CASCADE,
+        related_name="merchant_stats",
+        verbose_name="Отчет по смене"
+    )
+
+    merchant = models.ForeignKey(
+        Merchant,
+        on_delete=models.PROTECT,
+        related_name="shift_stats",
+        verbose_name="Мерчант"
+    )
+
+    new_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Новые диспуты"
+    )
+
+    resolved_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Решенные диспуты"
+    )
+
+    unresolved_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Нерешенные диспуты"
+    )
+
+    class Meta:
+        verbose_name = "Статистика диспутов по мерчанту"
+        verbose_name_plural = "Статистика диспутов по мерчантам"
+        unique_together = ("report", "merchant")
+
+    def __str__(self):
+        return (
+            f"{self.report.worker_data.profile.user} | "
+            f"{self.merchant.title} | "
+            f"new={self.new_count}, "
+            f"resolved={self.resolved_count}, "
+            f"unresolved={self.unresolved_count}"
+        )
+
+
 class WorkerIssue(BaseModel):
     report = models.ForeignKey(
         WorkerShiftReport,

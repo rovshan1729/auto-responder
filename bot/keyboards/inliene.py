@@ -1,5 +1,5 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from responder import models
+from responder import models, choices
 
 
 def check_manager(chat_id):
@@ -53,3 +53,20 @@ def get_dispute_count_inline_button():
         ]
     )
     return keyboard
+
+def broadcast_group_keyboard(selected: list[str] | None = None):
+    selected = selected or []
+
+    buttons = []
+    for g in choices.GroupChoice:
+        mark = "✅ " if g.value in selected else ""
+        buttons.append(
+            InlineKeyboardButton(
+                text=f"{mark}{g.label}",
+                callback_data=f"broadcast_group|{g.value}"
+            )
+        )
+
+    rows = [buttons[i:i + 2] for i in range(0, len(buttons), 2)]
+
+    return InlineKeyboardMarkup(inline_keyboard=rows)

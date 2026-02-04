@@ -14,7 +14,7 @@ def prepare_router():
 
     router.message.register(support_worker_handler, Command("work")),
     router.message.register(kyc_command_handler, Command("kyc"))
-    router.message.register(command_handler, users.IsCommandFilter())
+    # router.message.register(command_handler, users.IsCommandFilter())
 
     router.message.register(get_user_start_verification_handler, RegistrationState.start)
     router.message.register(start_verification_after_close_handler, F.text == "Приступить к верификации")
@@ -45,7 +45,8 @@ def prepare_router():
                                    F.data.split("|")[0] == "merchant")
     router.message.register(get_problem_text_handler, WorkerState.get_problem)
     router.message.register(add_merchant_handler, Command("addmerchant"))
-    router.message.register(get_dispute_count_handler, WorkerState.dispute_count)
+    router.message.register(get_new_dispute_handler, WorkerState.new_dispute_count)
+    router.message.register(get_resolved_dispute_count_handler, WorkerState.resolved_dispute_count)
     router.callback_query.register(get_add_more_dispute_handler, StateFilter(WorkerState.cycle),
                                    (F.data == "add_more_dispute") | (F.data == "add_more_text"))
     router.callback_query.register(get_add_problem_support_handler, F.data == "add_problem")
@@ -55,7 +56,10 @@ def prepare_router():
     router.message.register(head_report_date_to_handler, HeadReportState.date_to)
 
     router.message.register(broadcast_command_handler, Command("broadcast"))
-    router.message.register(broadcast_text_handler, BroadcastState.text)
+    router.message.register(broadcast_title_handler, BroadcastState.title)
+    router.message.register(broadcast_template_id_handler, BroadcastState.template_id)
+    router.message.register(broadcast_content_handler, BroadcastState.content)
+    router.callback_query.register(broadcast_group_choice, BroadcastState.group_choice)
 
     router.message.register(check_kyc_handler, Command("check_kyc"))
 
