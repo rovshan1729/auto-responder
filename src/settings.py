@@ -153,7 +153,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru-ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
@@ -412,6 +412,11 @@ UNFOLD = {
                         "title": "Мерчанты",
                         "icon": "point_of_sale",
                         "link": lambda request: reverse_lazy("admin:responder_merchant_changelist"),
+                    },
+                    {
+                        "title": "Статистика диспутов по мерчантам",
+                        "icon": "analytics",
+                        "link": lambda request: reverse_lazy("admin:responder_workermerchantstat_changelist"),
                     }
                 ]
             },
