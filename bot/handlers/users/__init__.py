@@ -14,7 +14,7 @@ def prepare_router():
 
     router.message.register(support_worker_handler, Command("work")),
     router.message.register(kyc_command_handler, Command("kyc"))
-    # router.message.register(command_handler, users.IsCommandFilter())
+    router.message.register(command_handler, users.IsCommandFilter())
 
     router.message.register(get_user_start_verification_handler, RegistrationState.start)
     router.message.register(start_verification_after_close_handler, F.text == "Приступить к верификации")

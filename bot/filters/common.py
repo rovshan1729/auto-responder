@@ -19,7 +19,6 @@ class IsChannelFilter(Filter):
         pass
 
     async def __call__(self, event: types.ChatMemberUpdated):
-        # print(f"chat_type: {event.chat.type}")
         if event.chat.type == 'channel':
             return True
         return False
