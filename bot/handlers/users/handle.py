@@ -1153,9 +1153,9 @@ async def broadcast_group_done(callback: types.CallbackQuery, state: FSMContext)
         return
 
     await callback.message.answer(
-            "Неверный формат.\n"
-            "Введите дату и время так:\n"
-            "26.01.2026 14:30"
+        "Неверный формат.\n"
+        "Введите дату и время так:\n"
+        "26.01.2026 14:30"
     )
     await state.set_state(BroadcastState.scheduled_at)
     await callback.answer()
@@ -1592,47 +1592,80 @@ async def mask_add_handler(message: types.Message, state: FSMContext):
         return
 
     await state.clear()
-    await message.answer(
-        "Введите группы через запятую.\n"
-        "Доступные: RUB, KZT, UZS, TJS, CNY, GEL, AMD, TRANSGRAN, ALL"
-    )
+    await state.update_data(group_choice=[])
+
+    await message.answer(utils.get_text("group_choice"), reply_markup=inliene.broadcast_group_keyboard())
     await state.set_state(MaskState.groups)
 
 
-async def mask_add_groups_handler(message: types.Message, state: FSMContext):
-    raw = message.text.upper()
-    groups = [g.strip() for g in raw.split(",")]
+async def mask_add_groups_choice(callback: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    selected: list[str] = data.get("group_choice", [])
 
-    valid_groups = [g for g in groups if g in GroupChoice.values]
+    _, group = callback.data.split("|", 1)
 
-    if not valid_groups:
-        await message.answer("Некорректные группы. Попробуйте снова.")
+    if group == GroupChoice.ALL.value:
+        selected = [GroupChoice.ALL.value]
+    else:
+        if GroupChoice.ALL.value in selected:
+            selected.remove(GroupChoice.ALL.value)
+
+        if group in selected:
+            selected.remove(group)
+        else:
+            selected.append(group)
+
+    await state.update_data(group_choice=selected)
+
+    await callback.message.edit_reply_markup(
+        reply_markup=inliene.broadcast_group_keyboard(selected)
+    )
+    await callback.answer()
+
+
+async def mask_add_groups_done(callback: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    selected = data.get("group_choice")
+
+    if not selected:
+        await callback.answer(
+            "Выберите хотя бы одну группу.",
+            show_alert=True
+        )
         return
 
-    if GroupChoice.ALL in valid_groups:
-        valid_groups = [GroupChoice.ALL]
+    if GroupChoice.ALL.value in selected:
+        selected = [GroupChoice.ALL.value]
 
-    await state.update_data(groups=valid_groups)
-    await message.answer("Введите ключевые слова маски через запятую:")
+    await state.update_data(groups=selected)
+
+    await callback.message.answer(
+        "Введите ключевые слова маски через запятую:"
+    )
     await state.set_state(MaskState.text)
+    await callback.answer()
 
 
 async def mask_add_text_handler(message: types.Message, state: FSMContext):
-    await state.update_data(text=message.text.strip())
-    await message.answer("Введите текст ответа (HTML разрешен):")
+    text = message.text.strip()
+    if not text:
+        await message.answer("Введите хотя бы одно ключевое слово.")
+        return
+
+    keywords = [t.strip() for t in text.split(",") if t.strip()]
+    await state.update_data(text=",".join(keywords))
+    await message.answer("Введите контент маски:")
     await state.set_state(MaskState.content)
 
 
 async def mask_add_content_handler(message: types.Message, state: FSMContext):
     data = await state.get_data()
-
     models.Mask.objects.create(
-        groups=data["groups"],
-        text=data["text"],
+        groups=data.get("groups"),
+        text=data.get("text"),
         content=message.text
     )
-
-    await message.answer("Маска добавлена.")
+    await message.answer("Маска успешно создана.")
     await state.clear()
 
 
@@ -1727,12 +1760,69 @@ async def mask_edit_groups_handler(message: types.Message, state: FSMContext):
         await message.answer("Маска не найдена.")
         return
 
-    await state.update_data(mask_id=mask.id)
+    await state.update_data(
+        mask_id=mask.id,
+        group_choice=mask.groups or []
+    )
+
     await message.answer(
-        "Введите группы через запятую:\n"
-        "RUB, KZT, UZS, TJS, CNY, GEL, AMD, TRANSGRAN, ALL"
+        utils.get_text("group_choice"),
+        reply_markup=inliene.broadcast_group_keyboard(mask.groups or [])
     )
     await state.set_state(MaskEditGroupsState.groups)
+
+
+async def mask_edit_groups_choice(callback: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    selected: list[str] = data.get("group_choice", [])
+
+    _, group = callback.data.split("|", 1)
+
+    if group == GroupChoice.ALL.value:
+        selected = [GroupChoice.ALL.value]
+    else:
+        if GroupChoice.ALL.value in selected:
+            selected.remove(GroupChoice.ALL.value)
+
+        if group in selected:
+            selected.remove(group)
+        else:
+            selected.append(group)
+
+    await state.update_data(group_choice=selected)
+
+    await callback.message.edit_reply_markup(
+        reply_markup=inliene.broadcast_group_keyboard(selected)
+    )
+    await callback.answer()
+
+
+async def mask_edit_groups_done(callback: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+
+    selected = data.get("group_choice")
+    if not selected:
+        await callback.answer(
+            "Выберите хотя бы одну группу.",
+            show_alert=True
+        )
+        return
+
+    mask = models.Mask.objects.filter(id=data["mask_id"]).first()
+    if not mask:
+        await callback.message.answer("Маска не найдена.")
+        await state.clear()
+        return
+
+    if GroupChoice.ALL.value in selected:
+        selected = [GroupChoice.ALL.value]
+
+    mask.groups = selected
+    mask.save(update_fields=["groups"])
+    await callback.message.delete()
+    await callback.message.answer("Группы маски обновлены.")
+    await state.clear()
+    await callback.answer()
 
 
 async def mask_edit_groups_save_handler(message: types.Message, state: FSMContext):

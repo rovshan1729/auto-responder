@@ -59,18 +59,8 @@ def prepare_router():
     router.message.register(broadcast_title_handler, BroadcastState.title)
     router.message.register(broadcast_template_id_handler, BroadcastState.template_id)
     router.message.register(broadcast_content_handler, BroadcastState.content)
-    router.callback_query.register(
-        broadcast_group_choice,
-        BroadcastState.group_choice,
-        F.data.startswith("broadcast_group|")
-    )
-
-    router.callback_query.register(
-        broadcast_group_done,
-        BroadcastState.group_choice,
-        F.data == "broadcast_group_done"
-    )
-
+    router.callback_query.register(broadcast_group_choice, BroadcastState.group_choice, F.data.startswith("broadcast_group|"))
+    router.callback_query.register(broadcast_group_done, BroadcastState.group_choice,F.data == "broadcast_group_done")
     router.message.register(broadcast_scheduled_at_handler, BroadcastState.scheduled_at)
     router.message.register(broadcast_media_file_handler, BroadcastState.media_file)
     router.message.register(broadcast_media_position_handler, BroadcastState.media_position)
@@ -81,7 +71,19 @@ def prepare_router():
     router.message.register(check_kyc_handler, Command("check_kyc"))
 
     router.message.register(mask_add_handler, Command("mask_add"))
-    router.message.register(mask_add_groups_handler, MaskState.groups)
+
+    router.callback_query.register(
+        mask_add_groups_choice,
+        MaskState.groups,
+        F.data.startswith("broadcast_group|")
+    )
+
+    router.callback_query.register(
+        mask_add_groups_done,
+        MaskState.groups,
+        F.data == "broadcast_group_done"
+    )
+
     router.message.register(mask_add_text_handler, MaskState.text)
     router.message.register(mask_add_content_handler, MaskState.content)
 
@@ -91,8 +93,8 @@ def prepare_router():
     router.message.register(mask_edit_content_handler, MaskEditState.content)
 
     router.message.register(mask_edit_groups_handler, Command("mask_edit_groups"))
-    router.message.register(mask_edit_groups_save_handler, MaskEditGroupsState.groups)
-
+    router.callback_query.register(mask_edit_groups_choice, MaskEditGroupsState.groups, F.data.startswith("broadcast_group|"))
+    router.callback_query.register(mask_edit_groups_done, MaskEditGroupsState.groups, F.data == "broadcast_group_done")
     router.message.register(mask_delete_handler, Command("mask_delete"))
 
     router.message.register(mask_handler)
