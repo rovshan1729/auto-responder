@@ -880,10 +880,7 @@ async def get_problem_text_handler(message: types.Message, state: FSMContext):
             stats = grouped[merchant_title]
 
             lines.append(
-                f"{merchant_title} | "
-                f"новые {stats['new']}"
-                f"решенные {stats['resolved']} | "
-                f"не решенные {stats['unresolved']} | "
+                f"{merchant_title} | решенные {stats['resolved']} | не решенные {stats['unresolved']} | новые {stats['new']}"
             )
 
         disputes_block = "\n".join(lines) if lines else "Нет диспутов"
@@ -1044,11 +1041,11 @@ async def head_report_date_to_handler(message: types.Message, state: FSMContext)
         n = grouped[merchant_title]["new"]
         u = grouped[merchant_title]["unresolved"]
 
-        lines.append(f"{merchant_title}: решённые {r} новые {n} нерешённые {u}")
+        lines.append(f"{merchant_title} | решённые {r} | нерешённые {u} | новые {n}")
 
     lines.append("")
     lines.append(
-        f"ИТОГО: решённые {total['resolved']} новые {total['new']} нерешённые {total['unresolved']}"
+        f"ИТОГО: решённые {total['resolved']} | нерешённые {total['unresolved']} | новые {total['new']} "
     )
 
     await message.answer("\n".join(lines))
