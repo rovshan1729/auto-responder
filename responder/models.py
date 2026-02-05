@@ -591,9 +591,10 @@ class WorkerMerchantStat(BaseModel):
         return (
             f"{self.report.worker_data.profile.user} | "
             f"{self.merchant.title} | "
-            f"Новое - {self.new_count}, "
-            f"Решенный - {self.resolved_count}, "
-            f"Неразрешенный - {self.unresolved_count}"
+            f"Решенный - {self.resolved_count} | "
+            f"Неразрешенный - {self.unresolved_count} |"
+            f"Новое - {self.new_count}"
+
         )
 
 
