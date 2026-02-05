@@ -14,6 +14,15 @@ def prepare_router():
 
     router.message.register(support_worker_handler, Command("work")),
     router.message.register(kyc_command_handler, Command("kyc"))
+    router.message.register(broadcast_command_handler, Command("broadcast"))
+    router.message.register(head_report_command, Command("report"))
+    router.message.register(add_merchant_handler, Command("addmerchant"))
+    router.message.register(check_kyc_handler, Command("check_kyc"))
+    router.message.register(mask_add_handler, Command("mask_add"))
+    router.message.register(mask_find_handler, Command("mask_find"))
+    router.message.register(mask_edit_handler, Command("mask_edit"))
+    router.message.register(mask_edit_groups_handler, Command("mask_edit_groups"))
+    router.message.register(mask_delete_handler, Command("mask_delete"))
     router.message.register(command_handler, users.IsCommandFilter())
 
     router.message.register(get_user_start_verification_handler, RegistrationState.start)
@@ -44,18 +53,15 @@ def prepare_router():
     router.callback_query.register(get_merchant_handler, StateFilter(WorkerState.merchant),
                                    F.data.split("|")[0] == "merchant")
     router.message.register(get_problem_text_handler, WorkerState.get_problem)
-    router.message.register(add_merchant_handler, Command("addmerchant"))
     router.message.register(get_new_dispute_handler, WorkerState.new_dispute_count)
     router.message.register(get_resolved_dispute_count_handler, WorkerState.resolved_dispute_count)
     router.callback_query.register(get_add_more_dispute_handler, StateFilter(WorkerState.cycle),
                                    (F.data == "add_more_dispute") | (F.data == "add_more_text"))
     router.callback_query.register(get_add_problem_support_handler, F.data == "add_problem")
     router.message.register(get_add_problem_text_support_handler, WorkerState.add_problem)
-    router.message.register(head_report_command, Command("report"))
     router.message.register(head_report_date_from_handler, HeadReportState.date_from)
     router.message.register(head_report_date_to_handler, HeadReportState.date_to)
 
-    router.message.register(broadcast_command_handler, Command("broadcast"))
     router.message.register(broadcast_title_handler, BroadcastState.title)
     router.message.register(broadcast_template_id_handler, BroadcastState.template_id)
     router.message.register(broadcast_content_handler, BroadcastState.content)
@@ -68,9 +74,7 @@ def prepare_router():
     router.message.register(broadcast_button_url_handler, BroadcastState.get_button_url)
     router.message.register(broadcast_button_order, BroadcastState.get_button_order)
 
-    router.message.register(check_kyc_handler, Command("check_kyc"))
 
-    router.message.register(mask_add_handler, Command("mask_add"))
 
     router.callback_query.register(
         mask_add_groups_choice,
@@ -87,15 +91,11 @@ def prepare_router():
     router.message.register(mask_add_text_handler, MaskState.text)
     router.message.register(mask_add_content_handler, MaskState.content)
 
-    router.message.register(mask_find_handler, Command("mask_find"))
 
-    router.message.register(mask_edit_handler, Command("mask_edit"))
     router.message.register(mask_edit_content_handler, MaskEditState.content)
 
-    router.message.register(mask_edit_groups_handler, Command("mask_edit_groups"))
     router.callback_query.register(mask_edit_groups_choice, MaskEditGroupsState.groups, F.data.startswith("broadcast_group|"))
     router.callback_query.register(mask_edit_groups_done, MaskEditGroupsState.groups, F.data == "broadcast_group_done")
-    router.message.register(mask_delete_handler, Command("mask_delete"))
 
     router.message.register(mask_handler)
 
