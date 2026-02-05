@@ -59,7 +59,18 @@ def prepare_router():
     router.message.register(broadcast_title_handler, BroadcastState.title)
     router.message.register(broadcast_template_id_handler, BroadcastState.template_id)
     router.message.register(broadcast_content_handler, BroadcastState.content)
-    router.message.register(broadcast_group_choice, BroadcastState.group_choice)
+    router.callback_query.register(
+        broadcast_group_choice,
+        BroadcastState.group_choice,
+        F.data.startswith("broadcast_group|")
+    )
+
+    router.callback_query.register(
+        broadcast_group_done,
+        BroadcastState.group_choice,
+        F.data == "broadcast_group_done"
+    )
+
     router.message.register(broadcast_scheduled_at_handler, BroadcastState.scheduled_at)
     router.message.register(broadcast_media_file_handler, BroadcastState.media_file)
     router.message.register(broadcast_media_position_handler, BroadcastState.media_position)

@@ -1136,47 +1136,64 @@ async def broadcast_content_handler(message: types.Message, state: FSMContext):
 
     content = message.text.strip()
     await state.update_data({"content": content})
-    # await message.answer(utils.get_text("group_choice"), reply_markup=inliene.broadcast_group_keyboard())
-    await message.answer(
-        "Введите группы через запятую:\n"
-        "RUB, KZT, UZS, TJS, CNY, GEL, AMD, TRANSGRAN, ALL"
-    )
+    await message.answer(utils.get_text("group_choice"), reply_markup=inliene.broadcast_group_keyboard())
     await state.set_state(BroadcastState.group_choice)
 
 
-async def broadcast_group_choice(message: types.Message, state: FSMContext):
+async def broadcast_group_done(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.delete()
+    data = await state.get_data()
+    selected = data.get("group_choice")
+
+    if not selected:
+        await callback.answer(
+            "Выберите хотя бы одну группу.",
+            show_alert=True
+        )
+        return
+
+    await callback.message.answer(
+            "Неверный формат.\n"
+            "Введите дату и время так:\n"
+            "26.01.2026 14:30"
+    )
+    await state.set_state(BroadcastState.scheduled_at)
+    await callback.answer()
+
+
+async def broadcast_group_choice(callback: types.CallbackQuery, state: FSMContext):
     profile = models.Profile.objects.filter(
-        user__telegram_id=message.from_user.id,
+        user__telegram_id=callback.from_user.id,
         role__in=[UserRole.SUPPORT, UserRole.HEAD_SUPPORT, UserRole.ADMIN]
     ).first()
 
     if not profile:
-        await message.answer(utils.get_text("access_denied"))
+        await callback.answer(utils.get_text("access_denied"), show_alert=True)
         return
 
-    raw = message.text.upper()
-    raw_groups = [g.strip() for g in raw.split(",") if g.strip()]
+    _, group = callback.data.split("|", 1)
 
-    valid = []
+    data = await state.get_data()
+    selected: list[str] = data.get("group_choice", [])
 
-    for g in raw_groups:
-        if g in {"ALL", "ВСЕ", "ВСЕ ГРУППЫ"}:
-            valid.append(GroupChoice.ALL.value)
-            continue
+    if group == GroupChoice.ALL.value:
+        selected = [GroupChoice.ALL.value]
+    else:
+        if GroupChoice.ALL.value in selected:
+            selected.remove(GroupChoice.ALL.value)
 
-        if g in GroupChoice.values:
-            valid.append(g)
+        if group in selected:
+            selected.remove(group)
+        else:
+            selected.append(group)
 
-    if not valid:
-        await message.answer("Некорректные группы.")
-        return
+    await state.update_data(group_choice=selected)
 
-    if GroupChoice.ALL.value in valid:
-        valid = [GroupChoice.ALL.value]
+    await callback.message.edit_reply_markup(
+        reply_markup=inliene.broadcast_group_keyboard(selected)
+    )
 
-    await state.update_data({"group_choice": valid})
-    await message.answer(utils.get_text("show_scheduled_at"))
-    await state.set_state(BroadcastState.scheduled_at)
+    await callback.answer()
 
 
 async def broadcast_scheduled_at_handler(message: types.Message, state: FSMContext):
