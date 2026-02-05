@@ -54,6 +54,7 @@ def get_dispute_count_inline_button():
     )
     return keyboard
 
+
 def broadcast_group_keyboard(selected: list[str] | None = None):
     selected = selected or []
 
@@ -68,5 +69,12 @@ def broadcast_group_keyboard(selected: list[str] | None = None):
         )
 
     rows = [buttons[i:i + 2] for i in range(0, len(buttons), 2)]
+
+    rows.append([
+        InlineKeyboardButton(
+            text="Далее",
+            callback_data="broadcast_group_done"
+        )
+    ])
 
     return InlineKeyboardMarkup(inline_keyboard=rows)
