@@ -1150,7 +1150,6 @@ async def broadcast_group_done(callback: types.CallbackQuery, state: FSMContext)
         return
 
     await callback.message.answer(
-        "Неверный формат.\n"
         "Введите дату и время так:\n"
         "26.01.2026 14:30"
     )
@@ -1366,6 +1365,7 @@ async def broadcast_button_title_handler(message: types.Message, state: FSMConte
         await save_buttons_to_db(state, message.bot)
 
         await message.answer(utils.get_text("skip_btn"), reply_markup=ReplyKeyboardRemove())
+        await state.clear()
         return
 
     if text == "Далее":
@@ -1376,6 +1376,7 @@ async def broadcast_button_title_handler(message: types.Message, state: FSMConte
         await state.update_data(buttons=buttons_sorted)
         await save_buttons_to_db(state, message.bot)
         await message.answer("Кнопки сохранены ✅", reply_markup=ReplyKeyboardRemove())
+        await state.clear()
         return
 
     profile = models.Profile.objects.filter(
@@ -1389,7 +1390,7 @@ async def broadcast_button_title_handler(message: types.Message, state: FSMConte
 
     await state.update_data(temp_button={"title": text})
 
-    await message.answer(utils.get_text("get_button_url"))
+    await message.answer(utils.get_text("get_button_url"), reply_markup=ReplyKeyboardRemove())
     await state.set_state(BroadcastState.get_button_url)
 
 
