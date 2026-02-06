@@ -63,13 +63,9 @@ class AllVerificationAdmin(BaseModelAdmin, mixins.VerificationAdminMixin):
         }),
         ("Documents", {
             "fields": (
-                "main_page_passport",
                 "main_passport_preview",
-                "registration_page_passport",
                 "registration_passport_preview",
-                "additional_information_passport",
                 "additional_passport_preview",
-                "round_video",
                 "round_video_preview",
             )
         }),
@@ -104,13 +100,9 @@ class CurrentVerificationAdmin(BaseModelAdmin, mixins.VerificationAdminMixin):
         }),
         ("Documents", {
             "fields": (
-                "main_page_passport",
                 "main_passport_preview",
-                "registration_page_passport",
                 "registration_passport_preview",
-                "additional_information_passport",
                 "additional_passport_preview",
-                "round_video",
                 "round_video_preview",
             )
         }),
@@ -145,13 +137,9 @@ class ArchivedVerificationAdmin(BaseModelAdmin, mixins.VerificationAdminMixin):
         }),
         ("Documents", {
             "fields": (
-                "main_page_passport",
                 "main_passport_preview",
-                "registration_page_passport",
                 "registration_passport_preview",
-                "additional_information_passport",
                 "additional_passport_preview",
-                "round_video",
                 "round_video_preview",
             )
         }),
