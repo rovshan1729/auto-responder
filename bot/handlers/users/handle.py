@@ -884,9 +884,7 @@ async def get_problem_text_handler(message: types.Message, state: FSMContext):
             )
 
         disputes_block = "\n".join(lines) if lines else "Нет диспутов"
-
-        problems_block = report.comment.strip() if report.comment else "Нету"
-
+        models.Problem.objects.create(profile=profile, text=problem_text_input)
         head_text = (
             "Отчет о смене:\n"
             f"Саппорт: @{username}\n"
@@ -895,7 +893,7 @@ async def get_problem_text_handler(message: types.Message, state: FSMContext):
             "Диспуты:\n"
             f"{disputes_block}\n\n"
             "Проблемы:\n"
-            f"{problems_block}"
+            f"{problem_text_input}"
         )
 
         utils.send_text(
