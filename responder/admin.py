@@ -476,4 +476,10 @@ class WorkerMerchantStatAdmin(BaseModelAdmin):
 
 @admin.register(models.Problem)
 class ProblemAdmin(BaseModelAdmin):
-    pass
+    list_display = ('pk', 'profile_user', 'text', 'created_at')
+    list_display_links = ('pk', 'profile_user')
+
+    def profile_user(self, obj):
+        return obj.profile.user.username
+
+    profile_user.short_description = "Сотрудник"
