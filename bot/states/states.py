@@ -1,7 +1,5 @@
 from aiogram.fsm.state import StatesGroup, State
 
-class UserStartState(StatesGroup):
-    phone_number = State()
 
 class RegistrationState(StatesGroup):
     verification_id = State()

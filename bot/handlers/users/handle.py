@@ -15,7 +15,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from bot import utils
 from bot.keyboards import reply, inliene
 from bot.states.states import RegistrationState, WorkerState, HeadReportState, BroadcastState, MaskState, MaskEditState, \
-    MaskEditGroupsState, UserStartState
+    MaskEditGroupsState
 from responder import tasks, models
 import os
 from dotenv import load_dotenv
@@ -78,25 +78,6 @@ async def respond_handler(message: types.Message):
 
     elif "?" in message.text:
         tasks.create_faq.delay(message.text, telegram_id=message.from_user.id)
-
-
-async def start_handler(message: types.Message, state: FSMContext):
-    await state.set_state(UserStartState.phone_number)
-    await message.answer(utils.get_text("start"), reply_markup=reply.phone_number_button())
-
-
-async def start_phone_number_handler(message: types.Message, state: FSMContext):
-    phone_number = message.contact.phone_number
-    obj, created = models.TelegramUser.objects.get_or_create(
-        telegram_id=message.from_user.id,
-        defaults={"phone_number": phone_number, "username": message.from_user.username, "first_name": message.from_user.first_name}
-    )
-    if not created and obj.phone_number != phone_number:
-        obj.phone_number = phone_number
-        obj.save()
-
-    await message.answer(utils.get_text("registration"), reply_markup=ReplyKeyboardRemove())
-    await state.clear()
 
 
 async def kyc_command_handler(message: types.Message, state: FSMContext):
