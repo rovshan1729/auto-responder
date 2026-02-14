@@ -14,7 +14,7 @@ class SaveMessageMiddleware(BaseMiddleware):
         if isinstance(event, Message):
             user_tg = event.from_user
 
-            user, _ = await TelegramUser.objects.aget_or_create(
+            TelegramUser.objects.get_or_create(
                 telegram_id=user_tg.id,
                 defaults={
                     'username': user_tg.username,
