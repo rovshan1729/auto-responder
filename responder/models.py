@@ -100,6 +100,12 @@ class TelegramUser(BaseModel):
         null=True,
         verbose_name="Фамилия"
     )
+    phone_number = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        verbose_name="Номер телефона"
+    )
     is_blocked = models.BooleanField(
         default=False,
         verbose_name="Заблокирован"

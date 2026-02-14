@@ -12,7 +12,7 @@ def prepare_router():
     router.message.filter(F.chat.type == ChatType.PRIVATE)
     router.message.filter(common.IsSleepFilter())
 
-    router.message.register(support_worker_handler, Command("work")),
+    router.message.register(support_worker_handler, Command("work"))
     router.message.register(kyc_command_handler, Command("kyc"))
     router.message.register(broadcast_command_handler, Command("broadcast"))
     router.message.register(head_report_command, Command("report"))
