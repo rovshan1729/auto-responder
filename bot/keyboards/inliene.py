@@ -34,9 +34,7 @@ def finish_work_data_inline_button():
     return keyboard
 
 
-def merchant_choosing_inline_button():
-    merchants = models.Merchant.objects.all()
-
+def merchant_choosing_inline_button(merchants):
     keyboard = []
     for merchant in merchants:
         keyboard.append([InlineKeyboardButton(text=merchant.title, callback_data=f"merchant|{merchant.id}")])
