@@ -10,7 +10,7 @@ from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio.client import Redis
 
 from src.settings import API_TOKEN, REDIS_HOST, REDIS_PORT
-from bot import handlers
+from bot import handlers, middlewares
 
 
 logging.basicConfig(
@@ -24,14 +24,14 @@ def setup_handlers(dp: Dispatcher) -> None:
     dp.include_router(handlers.groups.prepare_router())
 
 def setup_middlewares(dp: Dispatcher) -> None:
+    # Register the SaveMessageMiddleware
+    dp.message.middleware(middlewares.SaveMessageMiddleware())
+    
     # dp.message.middleware(middlewares.ThrottlingMiddleware())
     # dp.message.middleware(middlewares.BlockingMiddleware())
     # dp.message.middleware(middlewares.SubscriptionMiddleware())
     # dp.message.middleware(middlewares.TimerMiddleware())
-
-
-    # dp.update.middleware(middlewares.LoggingMiddleware())  # Закомментировано, но если нужно — раскомментируйте
-    pass  # Здесь можно добавить мидлвары, если они есть
+    # dp.update.middleware(middlewares.LoggingMiddleware())
 
 class Webhook:
     def __init__(self) -> None:
@@ -64,8 +64,8 @@ class Webhook:
         return await self._process_update(request)  # Здесь return, но в views.py вы не используете результат
 
     async def _process_update(self, request):
-        update = types.Update.model_validate_json(request.body.decode("utf-8"))  # Pydantic для валидации — круто!
-        await self.dp.feed_update(bot=self.bot, update=update)  # Основная обработка
+        update = types.Update.model_validate_json(request.body.decode("utf-8"))
+        await self.dp.feed_update(bot=self.bot, update=update)
 
     async def process_body(self, body: str):
         try:
