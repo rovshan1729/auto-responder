@@ -6,7 +6,8 @@ from tinymce.models import HTMLField
 from solo.models import SingletonModel
 
 from .base import BaseModel
-from .choices import ChatMemberStatus, GroupChoice
+from .choices import ChatMemberStatus, GroupChoice, VerificationStatusChoice, AdminFieldType, UserRole, DisputeStatus
+from responder.managers import CurrentVerificationManager, ArchivedVerificationManager
 from bot import utils
 
 
@@ -25,7 +26,8 @@ class Data(SingletonModel):
     )
 
     class Meta:
-        verbose_name = 'Настройки'
+        verbose_name = 'Настройка'
+        verbose_name_plural = 'Настройки'
 
     def __str__(self):
         return "Data Model"
@@ -61,8 +63,8 @@ class TelegramGroup(BaseModel):
 
     class Meta:
         ordering = ('-created_at',)
-        verbose_name = 'Телеграм Группа'
-        verbose_name_plural = 'Телеграм Группы'
+        verbose_name = 'Группа'
+        verbose_name_plural = 'Группы'
         # abstract = True
 
     def __str__(self):
@@ -98,6 +100,12 @@ class TelegramUser(BaseModel):
         null=True,
         verbose_name="Фамилия"
     )
+    phone_number = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        verbose_name="Номер телефона"
+    )
     is_blocked = models.BooleanField(
         default=False,
         verbose_name="Заблокирован"
@@ -105,8 +113,8 @@ class TelegramUser(BaseModel):
 
     class Meta:
         # ordering = ('-created_at',)
-        verbose_name = 'телеграм пользователя'
-        verbose_name_plural = 'Телеграм Пользователи'
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
         # abstract = True
 
     def get_admin_url(self):
@@ -173,8 +181,8 @@ class TelegramMessage(BaseModel):
 
     class Meta:
         ordering = ('-created_at',)
-        verbose_name = "Телеграм сообщения"
-        verbose_name_plural = "Телеграм Сообщения"
+        verbose_name = "Сообщение"
+        verbose_name_plural = "Сообщения"
         # abstract = True
 
     def get_admin_url(self):
@@ -259,13 +267,12 @@ class TelegramCommand(BaseModel):
         blank=True,
         null=True,
         verbose_name="Файл ID"
-
     )
 
     class Meta:
         ordering = ('-created_at',)
-        verbose_name = 'команду'
-        verbose_name_plural = 'Телеграм команды'
+        verbose_name = 'Команда'
+        verbose_name_plural = 'Команды'
         # abstract = True
 
     def get_admin_url(self):
@@ -289,11 +296,6 @@ class Mask(BaseModel):
         null=True,
         default=list
     )
-    # groups = models.ManyToManyField(
-    #     TelegramGroup,
-    #     blank=True,
-    #     related_name='masks',
-    # )
     text = models.CharField(
         max_length=4095,
         verbose_name="Текст"
@@ -350,3 +352,302 @@ class FAQ(BaseModel):
 
     def __str__(self):
         return self.question
+
+
+class Country(BaseModel):
+    title = models.CharField(max_length=256, verbose_name="Страна")
+
+    class Meta:
+        verbose_name = "Страна"
+        verbose_name_plural = "Страны"
+
+    def __str__(self):
+        return self.title
+
+
+class StaticText(BaseModel):
+    code = models.CharField(max_length=256, unique=True, verbose_name="Код")
+    text = models.TextField(verbose_name="Текст")
+
+    class Meta:
+        verbose_name = "Статический текст"
+        verbose_name_plural = "Статические тексты"
+
+    def __str__(self):
+        return f"{self.code} - {self.text}"
+
+
+class Verification(BaseModel):
+    chat_id = models.CharField(max_length=128, verbose_name="Chat ID")
+
+    fullname = models.CharField(max_length=255, null=True, blank=True, verbose_name="ФИО")
+    username = models.CharField(max_length=255, null=True, blank=True, verbose_name="Имя пользователя")
+
+    live_address = models.TextField(null=True, blank=True, verbose_name="Адрес проживания")
+
+    phone_number = models.CharField(max_length=20, null=True, blank=True, verbose_name="Номер телефона")
+    add_phone = models.CharField(max_length=20, null=True, blank=True, verbose_name="Дополнительный телефон")
+
+    email = models.EmailField(verbose_name="Email", null=True, blank=True)
+    experience = models.CharField(max_length=50, null=True, blank=True, verbose_name="Опыт работы")
+
+    token = models.CharField(max_length=255, null=True, blank=True, verbose_name="Токен")
+
+    team_lead = models.CharField(max_length=100, null=True, blank=True, verbose_name="Тимлид")
+    recommend_user = models.CharField(max_length=100, null=True, blank=True, verbose_name="Рекомендовал")
+
+    status = models.CharField(
+        max_length=50,
+        choices=VerificationStatusChoice.choices,
+        verbose_name="Статус верификации"
+    )
+
+    geo = models.TextField(null=True, blank=True, verbose_name="Геолокация")
+    worked_platform = models.TextField(null=True, blank=True, verbose_name="Рабочие платформы")
+    recommendation_user_contact = models.TextField(null=True, blank=True, verbose_name="Контакт рекомендателя")
+    additionally = models.TextField(null=True, blank=True, verbose_name="Дополнительная информация")
+    commentary = models.TextField(null=True, blank=True, verbose_name="Комментарий администратора")
+
+    main_page_passport = models.ImageField(upload_to="verification/", null=True, blank=True,
+                                           verbose_name="Паспорт (главная страница)")
+    registration_page_passport = models.ImageField(upload_to="verification/", null=True, blank=True,
+                                                   verbose_name="Паспорт (страница регистрации)")
+    additional_information_passport = models.ImageField(upload_to="verification/", null=True, blank=True,
+                                                        verbose_name="Паспорт (дополнительная информация)")
+    round_video = models.FileField(upload_to="verification/", null=True, blank=True, verbose_name="Видео-круг")
+
+    country = models.ForeignKey(
+        Country,
+        on_delete=models.CASCADE, null=True, blank=True, verbose_name="Страна"
+    )
+    expires_at = models.DateTimeField(null=True, blank=True, verbose_name="Срок действия")
+    is_blacklisted = models.BooleanField(default=False, verbose_name="В черном списке")
+
+    class Meta:
+        verbose_name = "Верификация"
+        verbose_name_plural = "Верификации"
+
+    def __str__(self):
+        return f"{self.fullname} | {self.phone_number}"
+
+
+class AllVerification(Verification):
+    class Meta:
+        proxy = True
+        verbose_name = "Все верификации"
+        verbose_name_plural = "Все верификации"
+
+
+class CurrentVerification(Verification):
+    objects = CurrentVerificationManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "Текущие верификации"
+        verbose_name_plural = "Текущие верификации"
+
+
+class ArchivedVerification(Verification):
+    objects = ArchivedVerificationManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "Архив"
+        verbose_name_plural = "Архив"
+
+
+class VerificationAdminField(models.Model):
+    verification = models.ForeignKey(
+        Verification,
+        on_delete=models.CASCADE,
+        related_name="admin_fields"
+    )
+
+    label = models.CharField(
+        max_length=255,
+        verbose_name="Название поля"
+    )
+
+    field_type = models.CharField(
+        max_length=50,
+        choices=AdminFieldType.choices,
+        default=AdminFieldType.TEXT
+    )
+
+    value = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name="Значение"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Дополнительное поле"
+        verbose_name_plural = "Дополнительные поля"
+
+    def __str__(self):
+        return f"{self.label} ({self.get_field_type_display()})"
+
+
+class Profile(BaseModel):
+    user = models.ForeignKey(TelegramUser, on_delete=models.CASCADE, related_name="profile",
+                             verbose_name="Пользователь")
+    role = models.CharField(max_length=64, choices=UserRole.choices, default=UserRole.USER, verbose_name="Роль")
+
+    class Meta:
+        verbose_name = "Профиль"
+        verbose_name_plural = "Профили"
+
+
+class WorkerData(BaseModel):
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="profile", verbose_name="Сотрудник")
+    start_work_time = models.DateTimeField(verbose_name="Время начала смены")
+    finish_work_time = models.DateTimeField(null=True, blank=True, verbose_name="Время окончания смены")
+
+    class Meta:
+        verbose_name = "Смена сотрудника"
+        verbose_name_plural = "Смены сотрудников"
+
+    def __str__(self):
+        return f"{self.profile.user.username} | {self.start_work_time}"
+
+
+class Merchant(BaseModel):
+    title = models.CharField(max_length=512, verbose_name="Название мерчанта")
+
+    class Meta:
+        verbose_name = "Мерчант"
+        verbose_name_plural = "Мерчанты"
+
+    def __str__(self):
+        return f"{self.title}"
+
+
+class WorkerShiftReport(BaseModel):
+    worker_data = models.OneToOneField(WorkerData, on_delete=models.CASCADE, related_name="report",
+                                       verbose_name="Смена")
+    is_submitted = models.BooleanField(default=False, verbose_name="Отчет отправлен")
+    submitted_at = models.DateTimeField(null=True, blank=True, verbose_name="Дата отправки отчета")
+
+    comment = models.TextField(null=True, blank=True, verbose_name="Комментарий / проблема")
+
+    class Meta:
+        verbose_name = "Отчет по смене"
+        verbose_name_plural = "Отчеты по сменам"
+
+    def __str__(self):
+        return f"Report #{self.id} | {self.worker_data.profile.user}"
+
+
+class WorkerDispute(BaseModel):
+    report = models.ForeignKey(WorkerShiftReport, on_delete=models.CASCADE, related_name="disputes",
+                               verbose_name="Отчет по смене")
+    merchant = models.ForeignKey(Merchant, on_delete=models.PROTECT, related_name="dispute", verbose_name="Мерчант")
+
+    count = models.IntegerField(default=0, verbose_name="Количество диспутов")
+
+    status = models.CharField(max_length=32, choices=DisputeStatus.choices, default=DisputeStatus.NEW,
+                              verbose_name="Статус диспута")
+
+    class Meta:
+        verbose_name = "Диспут"
+        verbose_name_plural = "Диспуты"
+
+    def __str__(self):
+        return f"{self.report.worker_data.profile.user} | {self.merchant.title} | {self.count} | {self.status}"
+
+
+class WorkerMerchantStat(BaseModel):
+    report = models.ForeignKey(
+        WorkerShiftReport,
+        on_delete=models.CASCADE,
+        related_name="merchant_stats",
+        verbose_name="Отчет по смене"
+    )
+
+    merchant = models.ForeignKey(
+        Merchant,
+        on_delete=models.PROTECT,
+        related_name="shift_stats",
+        verbose_name="Мерчант"
+    )
+
+    new_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Новые диспуты"
+    )
+
+    resolved_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Решенные диспуты"
+    )
+
+    unresolved_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Нерешенные диспуты"
+    )
+
+    class Meta:
+        verbose_name = "Статистика диспутов по мерчанту"
+        verbose_name_plural = "Статистика диспутов по мерчантам"
+        unique_together = ("report", "merchant")
+
+    def __str__(self):
+        return (
+            f"{self.report.worker_data.profile.user} | "
+            f"{self.merchant.title} | "
+            f"Решенный - {self.resolved_count} | "
+            f"Неразрешенный - {self.unresolved_count} | "
+            f"Новое - {self.new_count}"
+        )
+
+
+class WorkerIssue(BaseModel):
+    report = models.ForeignKey(
+        WorkerShiftReport,
+        on_delete=models.CASCADE,
+        related_name="issues",
+        verbose_name="Отчет по смене"
+    )
+
+    merchant = models.ForeignKey(
+        Merchant,
+        on_delete=models.PROTECT,
+        related_name="issues",
+        verbose_name="Мерчант"
+    )
+
+    text = models.TextField(verbose_name="Описание проблемы")
+
+    class Meta:
+        verbose_name = "Проблема по смене"
+        verbose_name_plural = "Проблемы по сменам"
+
+    def __str__(self):
+        return f"{self.report.worker_data.profile.user} | {self.merchant.title}"
+
+
+class Problem(BaseModel):
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="problems", verbose_name="Сотрудник")
+    text = models.TextField(verbose_name="Описание проблемы")
+
+    class Meta:
+        verbose_name = "Проблема сотрудника"
+        verbose_name_plural = "Проблемы сотрудников"
+
+    def __str__(self):
+        return str(self.profile.user)
+
+
+class BlackList(BaseModel):
+    groups = models.ForeignKey(TelegramGroup, on_delete=models.CASCADE, verbose_name="Название группы")
+    verification = models.ManyToManyField(Verification, related_name="blacklists",
+                                          verbose_name="Найденные профили")
+
+    class Meta:
+        verbose_name = "Черные списки"
+        verbose_name_plural = "Черный список"
+
+    def __str__(self):
+        return f"{self.groups} | {self.verification}"

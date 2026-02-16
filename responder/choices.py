@@ -18,6 +18,34 @@ class GroupChoice(TextChoices):
     GEL = 'GEL', 'GEL'
     AMD = 'AMD', 'AMD'
     TRANSGRAN = 'TRANSGRAN', 'TRANSGRAN'
-    ALL = 'ВСЕ ГРУППЫ',  'ВСЕ ГРУППЫ'
+    ALL = 'ВСЕ ГРУППЫ', 'ВСЕ ГРУППЫ'
 
 
+class VerificationStatusChoice(TextChoices):
+    NO_PASSED = "Не пройдено", "Не пройдено"
+    WAITING = "В ожидании", "В ожидании"
+    VERIFIED = "Верифицирован", "Верифицирован"
+    NoVERIFIED = "Не верифицирован", "Не верифицирован"
+    ARCHIVE = "Архив", "Архив"
+
+
+class AdminFieldType(TextChoices):
+    TEXT = "text", "Текст"
+    NICKNAME = "nickname", "Никнейм"
+    FULLNAME = "fullname", "ФИО"
+    PHONE = "phone", "Номер телефона"
+
+
+class UserRole(TextChoices):
+    USER = "USER", "Пользователь"
+    SUPPORT = "SUPPORT", "Саппорт"
+    HEAD_SUPPORT = "HEAD_SUPPORT", "Хэд-Саппорт"
+    VERIFICATOR = "VERIFICATOR", "Верификатор"
+    ADMIN = "ADMIN", "Администратор",
+    PAYMENT_MANAGER = "PAYMENT_MANAGER", "Платёжный менеджер"
+
+
+class DisputeStatus(TextChoices):
+    NEW = "new", "Новый"
+    RESOLVED = "resolved", "Решено"
+    UNRESOLVED = "unresolved", "Нерешённый"

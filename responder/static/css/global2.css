@@ -1,0 +1,1304 @@
+#changelist-form div[class*="py-24"][class*="flex-col"][class*="items-center"][class*="px-8"],
+form#changelist-form div[class*="py-24"][class*="flex-col"][class*="items-center"][class*="px-8"],
+body.change-list div[class*="py-24"][class*="flex-col"][class*="items-center"][class*="px-8"] {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin-bottom: 30px !important;
+    padding-top: 10vh !important;
+    padding-bottom: 10vh !important;
+}
+
+body.change-list:has(table) div[class*="sticky"][class*="bottom-0"] {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 40 !important;
+    height: auto !important;
+    overflow: visible !important;
+}
+
+@media (min-width: 1280px) {
+    body.change-list:has(table):has(div[class*="xl:relative"][class*="w-[288px]"]):not(:has(div[class*="xl:hidden!"][class*="w-[288px]"])) div[class*="sticky"][class*="bottom-0"] > div[class*="flex"][class*="flex-row"][class*="grow"][class*="items-center"] {
+        margin-left: 288px !important;
+    }
+
+    body.change-list:has(table):has(div[class*="xl:hidden!"][class*="w-[288px]"]) div[class*="sticky"][class*="bottom-0"] > div[class*="flex"][class*="flex-row"][class*="grow"][class*="items-center"] {
+        margin-left: 0 !important;
+    }
+}
+
+body.change-list:has(table) div[class*="container"][class*="mx-auto"] {
+    overflow: visible !important;
+}
+
+body.change-list:has(table) div[class*="flex"][class*="flex-row"][class*="grow"][class*="items-center"][class*="lg:h-[64px]"],
+body.change-list:has(table) div[class*="flex"][class*="flex-row"][class*="grow"][class*="items-center"] {
+    overflow: visible !important;
+    min-width: 0 !important;
+    min-height: 64px !important;
+    height: auto !important;
+    max-height: none !important;
+}
+
+body.change-list:has(table) div[class*="flex"][class*="flex-row"][class*="grow"][class*="items-center"] div.py-4,
+body.change-list:has(table) div[class*="flex"][class*="flex-row"][class*="grow"][class*="items-center"] div[class*="py-4"] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    position: relative !important;
+    z-index: 50 !important;
+}
+
+body.change-list:not(:has(table)) div[class*="lg:sticky"][class*="lg:bottom-0"] {
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    margin-top: auto !important;
+    flex-shrink: 0 !important;
+}
+
+body.change-list:has(table) #changelist-form {
+    padding-bottom: 60px !important;
+    margin-bottom: 0 !important;
+}
+
+body.change-list:has(table) #content-main {
+    padding-bottom: 60px !important;
+}
+
+body.change-list #main {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+body.change-list #changelist-form {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+}
+
+body.change-list #content-main {
+    flex: 1 1 auto !important;
+    margin-bottom: 0 !important;
+    min-height: 0 !important;
+}
+
+body.change-list {
+    overflow-x: hidden !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+}
+
+body.change-list #main {
+    overflow-x: hidden !important;
+    height: auto !important;
+    min-height: 0 !important;
+}
+
+body.change-list:has(table) div[class*="sticky"][class*="bottom-0"],
+body.change-list:has(table) div[class*="lg:sticky"][class*="lg:bottom-0"] {
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+}
+
+@media (max-width: 1023px) {
+    body.change-list:has(table) div[class*="sticky"][class*="bottom-0"],
+    body.change-list:has(table) div[class*="lg:sticky"][class*="lg:bottom-0"] {
+        backdrop-filter: blur(6px) !important;
+        -webkit-backdrop-filter: blur(6px) !important;
+        background-color: rgba(255, 255, 255, 0.5) !important;
+    }
+
+    /* Темная тема - синий фон как на ПК */
+    body.dark.change-list:has(table) div[class*="sticky"][class*="bottom-0"],
+    html.dark body.change-list:has(table) div[class*="sticky"][class*="bottom-0"],
+    [data-theme="dark"] body.change-list:has(table) div[class*="sticky"][class*="bottom-0"],
+    .dark body.change-list:has(table) div[class*="sticky"][class*="bottom-0"],
+    body.dark.change-list:has(table) div[class*="lg:sticky"][class*="lg:bottom-0"],
+    html.dark body.change-list:has(table) div[class*="lg:sticky"][class*="lg:bottom-0"],
+    [data-theme="dark"] body.change-list:has(table) div[class*="lg:sticky"][class*="lg:bottom-0"],
+    .dark body.change-list:has(table) div[class*="lg:sticky"][class*="lg:bottom-0"] {
+        backdrop-filter: blur(6px) !important;
+        -webkit-backdrop-filter: blur(6px) !important;
+        background-color: rgba(15, 23, 42, 0.5) !important;
+    }
+}
+
+body:has(#submit-row) #content-main {
+    padding-bottom: 30px !important;
+    margin-bottom: 0 !important;
+}
+
+body:has(#submit-row) #content {
+    padding-bottom: 94px !important;
+    margin-bottom: 0 !important;
+}
+
+table:not(.inline-group):not(.form-row) th[class*="align"],
+table:not(.inline-group):not(.form-row) td[class*="align"],
+table:not(.inline-group):not(.form-row) thead th[class*="align"],
+table:not(.inline-group):not(.form-row) tbody td[class*="align"],
+table:not(.inline-group):not(.form-row) thead tr th[class*="align"],
+table:not(.inline-group):not(.form-row) tbody tr td[class*="align"] {
+    text-align: center !important;
+}
+
+table:not(.inline-group):not(.form-row) th[style*="text-align"],
+table:not(.inline-group):not(.form-row) td[style*="text-align"],
+table:not(.inline-group):not(.form-row) thead th[style*="text-align"],
+table:not(.inline-group):not(.form-row) tbody td[style*="text-align"],
+table:not(.inline-group):not(.form-row) thead tr th[style*="text-align"],
+table:not(.inline-group):not(.form-row) tbody tr td[style*="text-align"] {
+    text-align: center !important;
+}
+
+table:not(.inline-group):not(.form-row) td *:not(.addlink):not(.addlink *),
+table:not(.inline-group):not(.form-row) thead th *,
+table:not(.inline-group):not(.form-row) tbody td *:not(.addlink):not(.addlink *) {
+    text-align: center !important;
+}
+
+table tbody td a.addlink,
+table tbody tr td a.addlink,
+table tbody td div a.addlink,
+table tbody tr td div a.addlink,
+table tbody td div[class*="flex"] a.addlink,
+table tbody tr td div[class*="flex"] a.addlink,
+table tbody td div[class*="flex"][class*="items-center"] a.addlink,
+table tbody tr td div[class*="flex"][class*="items-center"] a.addlink {
+    text-align: left !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+}
+
+table tbody td a.addlink *,
+table tbody tr td a.addlink *,
+table tbody td div a.addlink *,
+table tbody tr td div a.addlink *,
+table tbody td div[class*="flex"] a.addlink *,
+table tbody tr td div[class*="flex"] a.addlink * {
+    text-align: left !important;
+}
+
+table tbody td a.addlink span,
+table tbody tr td a.addlink span,
+table tbody td div a.addlink span,
+table tbody tr td div a.addlink span,
+table tbody td div[class*="flex"] a.addlink span,
+table tbody tr td div[class*="flex"] a.addlink span {
+    text-align: left !important;
+    display: inline-block !important;
+}
+
+table tbody td a.addlink .material-symbols-outlined,
+table tbody tr td a.addlink .material-symbols-outlined,
+table tbody td div a.addlink .material-symbols-outlined,
+table tbody tr td div a.addlink .material-symbols-outlined,
+table tbody td div[class*="flex"] a.addlink .material-symbols-outlined,
+table tbody tr td div[class*="flex"] a.addlink .material-symbols-outlined {
+    text-align: left !important;
+    display: inline-block !important;
+}
+
+table tbody td div[class*="flex"][class*="justify-end"] a.addlink {
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
+
+table tbody td div[class*="flex"][class*="justify-end"] a.addlink * {
+    text-align: left !important;
+}
+
+.field-key textarea,
+.field-key input[type="text"],
+.field-key input,
+.stacked .field-key textarea,
+.stacked .field-key input[type="text"],
+.stacked .field-key input,
+.inline-group .field-key textarea,
+.inline-group .field-key input[type="text"],
+.inline-group .field-key input,
+div[class*="inline"] .field-key textarea,
+div[class*="inline"] .field-key input[type="text"],
+div[class*="inline"] .field-key input,
+div[class*="stacked"] .field-key textarea,
+div[class*="stacked"] .field-key input[type="text"],
+div[class*="stacked"] .field-key input,
+fieldset .field-key textarea,
+fieldset .field-key input[type="text"],
+fieldset .field-key input,
+.form-row .field-key textarea,
+.form-row .field-key input[type="text"],
+.form-row .field-key input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    font-family: monospace !important;
+    font-size: 13px !important;
+    word-break: break-all !important;
+    resize: vertical !important;
+    overflow-wrap: break-word !important;
+    white-space: pre-wrap !important;
+}
+
+.field-key,
+.stacked .field-key,
+.inline-group .field-key,
+div[class*="inline"] .field-key,
+fieldset .field-key {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+}
+
+@media (max-width: 1024px) {
+    .field-key textarea,
+    .field-key input[type="text"],
+    .field-key input {
+        font-size: 12px !important;
+        padding: 8px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .field-key textarea,
+    .field-key input[type="text"],
+    .field-key input,
+    .stacked .field-key textarea,
+    .stacked .field-key input,
+    .inline-group .field-key textarea,
+    .inline-group .field-key input,
+    div[class*="inline"] .field-key textarea,
+    div[class*="inline"] .field-key input {
+        width: 100% !important;
+        max-width: 100% !important;
+        font-size: 11px !important;
+        padding: 6px !important;
+        min-height: 60px !important;
+    }
+
+    .field-key,
+    .stacked .field-key,
+    .inline-group .field-key,
+    div[class*="inline"] .field-key {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .field-key textarea,
+    .field-key input[type="text"],
+    .field-key input {
+        width: 100% !important;
+        max-width: 100% !important;
+        font-size: 10px !important;
+        padding: 4px 6px !important;
+        min-height: 50px !important;
+    }
+}
+
+.inline-group,
+.stacked,
+div[class*="inline"] {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+}
+
+.inline-group .field-key,
+.stacked .field-key,
+div[class*="inline"] .field-key {
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+
+@media (max-width: 768px) {
+    .field-file input[type="checkbox"][name$="-clear"],
+    .field-file input[type="checkbox"][id$="-clear"],
+    .field-file label[for*="-clear"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .field-file div[class*="bg-base-50"][class*="border-r"][class*="flex"][class*="flex-none"],
+    .field-file > div > div[class*="bg-base-50"][class*="border-r"],
+    .field-file div[class*="bg-base-50"][class*="border-base-200"][class*="flex"] {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        overflow: hidden !important;
+    }
+
+    .field-file > div[class*="flex"] > label[class*="grow"] {
+        border-left: none !important;
+    }
+}
+
+.inline-group a[style*="color: orange"],
+.inline-group a[style*="color:orange"],
+.inline-group a[style*="color: orange;"],
+.inline-group a[style*="color:orange;"],
+.inline-group td a[style*="color: orange"],
+.inline-group td a[style*="color:orange"],
+.inline-group td a[style*="color: orange;"],
+.inline-group td a[style*="color:orange;"],
+.inline-group tbody td a[style*="color: orange"],
+.inline-group tbody td a[style*="color:orange"],
+.inline-group tbody td a[style*="color: orange;"],
+.inline-group tbody td a[style*="color:orange;"],
+table.inline-group a[style*="color: orange"],
+table.inline-group a[style*="color:orange"],
+table.inline-group a[style*="color: orange;"],
+table.inline-group a[style*="color:orange;"],
+table.inline-group td a[style*="color: orange"],
+table.inline-group td a[style*="color:orange"],
+table.inline-group td a[style*="color: orange;"],
+table.inline-group td a[style*="color:orange;"],
+table.inline-group tbody td a[style*="color: orange"],
+table.inline-group tbody td a[style*="color:orange"],
+table.inline-group tbody td a[style*="color: orange;"],
+table.inline-group tbody td a[style*="color:orange;"],
+.inline-group .form-row a[style*="color: orange"],
+.inline-group .form-row a[style*="color:orange"],
+.inline-group .form-row a[style*="color: orange;"],
+.inline-group .form-row a[style*="color:orange;"] {
+    text-align: left !important;
+    display: inline-block !important;
+    margin: 0 !important;
+}
+
+.inline-group * a[style*="color: orange"],
+.inline-group * a[style*="color:orange"],
+.inline-group * a[style*="color: orange;"],
+.inline-group * a[style*="color:orange;"],
+table.inline-group * a[style*="color: orange"],
+table.inline-group * a[style*="color:orange"],
+table.inline-group * a[style*="color: orange;"],
+table.inline-group * a[style*="color:orange;"] {
+    text-align: left !important;
+    display: inline-block !important;
+}
+
+@media (min-width: 769px) {
+    .inline-group thead th,
+    .inline-group thead th *,
+    table.inline-group thead th,
+    table.inline-group thead th *,
+    .inline-group table thead th,
+    .inline-group table thead th * {
+        text-align: center !important;
+        justify-content: center !important;
+    }
+
+    .inline-group tbody td:not(.original),
+    .inline-group tbody td:not(.original) *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    table.inline-group tbody td:not(.original),
+    table.inline-group tbody td:not(.original) *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    .inline-group table tbody td:not(.original),
+    .inline-group table tbody td:not(.original) *:not(a[style*="color: orange"]):not(a[style*="color:orange"]) {
+        text-align: center !important;
+    }
+
+    .inline-group tbody td:not(.original) div:not(:has(a[style*="color: orange"])):not(:has(a[style*="color:orange"])),
+    .inline-group tbody td:not(.original) span:not(:has(a[style*="color: orange"])):not(:has(a[style*="color:orange"])),
+    .inline-group tbody td:not(.original) p:not(:has(a[style*="color: orange"])):not(:has(a[style*="color:orange"])),
+    .inline-group tbody td:not(.original) label,
+    .inline-group thead th div,
+    .inline-group thead th span,
+    .inline-group thead th p,
+    .inline-group thead th label,
+    table.inline-group tbody td:not(.original) div:not(:has(a[style*="color: orange"])):not(:has(a[style*="color:orange"])),
+    table.inline-group tbody td:not(.original) span:not(:has(a[style*="color: orange"])):not(:has(a[style*="color:orange"])),
+    table.inline-group tbody td:not(.original) p:not(:has(a[style*="color: orange"])):not(:has(a[style*="color:orange"])),
+    table.inline-group tbody td:not(.original) label,
+    table.inline-group thead th div,
+    table.inline-group thead th span,
+    table.inline-group thead th p,
+    table.inline-group thead th label {
+        text-align: center !important;
+        margin: 0 auto !important;
+    }
+
+    .inline-group tbody td div:has(a[style*="color: orange"]),
+    .inline-group tbody td div:has(a[style*="color:orange"]),
+    .inline-group tbody td span:has(a[style*="color: orange"]),
+    .inline-group tbody td span:has(a[style*="color:orange"]),
+    table.inline-group tbody td div:has(a[style*="color: orange"]),
+    table.inline-group tbody td div:has(a[style*="color:orange"]),
+    table.inline-group tbody td span:has(a[style*="color: orange"]),
+    table.inline-group tbody td span:has(a[style*="color:orange"]) {
+        text-align: left !important;
+        margin: 0 !important;
+        justify-content: flex-start !important;
+    }
+
+    .inline-group .field-field,
+    .inline-group .field-lines,
+    .inline-group .field-order,
+    .inline-group .field-is_space,
+    .inline-group .field-is_active,
+    .inline-group .field-created_at,
+    .inline-group td.field-field,
+    .inline-group td.field-lines,
+    .inline-group td.field-order,
+    .inline-group td.field-is_space,
+    .inline-group td.field-is_active,
+    .inline-group td.field-created_at,
+    table.inline-group .field-field,
+    table.inline-group .field-lines,
+    table.inline-group .field-order,
+    table.inline-group .field-is_space,
+    table.inline-group .field-is_active,
+    table.inline-group .field-created_at,
+    table.inline-group td.field-field,
+    table.inline-group td.field-lines,
+    table.inline-group td.field-order,
+    table.inline-group td.field-is_space,
+    table.inline-group td.field-is_active,
+    table.inline-group td.field-created_at {
+        text-align: center !important;
+    }
+
+    .inline-group .field-field *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    .inline-group .field-lines *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    .inline-group .field-order *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    .inline-group .field-is_space *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    .inline-group .field-is_active *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    .inline-group .field-created_at *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    .inline-group td.field-field *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    .inline-group td.field-lines *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    .inline-group td.field-order *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    .inline-group td.field-is_space *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    .inline-group td.field-is_active *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    .inline-group td.field-created_at *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    table.inline-group .field-field *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    table.inline-group .field-lines *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    table.inline-group .field-order *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    table.inline-group .field-is_space *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    table.inline-group .field-is_active *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    table.inline-group .field-created_at *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    table.inline-group td.field-field *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    table.inline-group td.field-lines *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    table.inline-group td.field-order *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    table.inline-group td.field-is_space *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    table.inline-group td.field-is_active *:not(a[style*="color: orange"]):not(a[style*="color:orange"]),
+    table.inline-group td.field-created_at *:not(a[style*="color: orange"]):not(a[style*="color:orange"]) {
+        text-align: center !important;
+    }
+
+    .inline-group tbody td input[type="text"],
+    .inline-group tbody td input[type="number"],
+    .inline-group tbody td select,
+    table.inline-group tbody td input[type="text"],
+    table.inline-group tbody td input[type="number"],
+    table.inline-group tbody td select {
+        margin: 0 auto !important;
+        display: block !important;
+        text-align: center !important;
+    }
+
+    .inline-group tbody td input[type="checkbox"],
+    table.inline-group tbody td input[type="checkbox"] {
+        margin: 0 auto !important;
+    }
+
+    .inline-group tbody td:not(.original) > div:not(:has(a[style*="color: orange"])):not(:has(a[style*="color:orange"])),
+    .inline-group tbody td:not(.original) > label:not(:has(a[style*="color: orange"])):not(:has(a[style*="color:orange"])),
+    .inline-group thead th > div:not(:has(a[style*="color: orange"])):not(:has(a[style*="color:orange"])),
+    .inline-group thead th > label:not(:has(a[style*="color: orange"])):not(:has(a[style*="color:orange"])),
+    table.inline-group tbody td:not(.original) > div:not(:has(a[style*="color: orange"])):not(:has(a[style*="color:orange"])),
+    table.inline-group tbody td:not(.original) > label:not(:has(a[style*="color: orange"])):not(:has(a[style*="color:orange"])),
+    table.inline-group thead th > div:not(:has(a[style*="color: orange"])):not(:has(a[style*="color:orange"])),
+    table.inline-group thead th > label:not(:has(a[style*="color: orange"])):not(:has(a[style*="color:orange"])) {
+        display: flex !important;
+        justify-content: center !important;
+    align-items: center !important;
+        text-align: center !important;
+    }
+
+    .inline-group tbody td > div:has(a[style*="color: orange"]),
+    .inline-group tbody td > div:has(a[style*="color:orange"]),
+    table.inline-group tbody td > div:has(a[style*="color: orange"]),
+    table.inline-group tbody td > div:has(a[style*="color:orange"]) {
+    justify-content: flex-start !important;
+        text-align: left !important;
+    }
+
+    .inline-group .field-created_at,
+    .inline-group td.field-created_at,
+    .inline-group th.field-created_at,
+    .inline-group tbody td.field-created_at,
+    .inline-group thead th.field-created_at,
+    table.inline-group .field-created_at,
+    table.inline-group td.field-created_at,
+    table.inline-group th.field-created_at,
+    table.inline-group tbody td.field-created_at,
+    table.inline-group thead th.field-created_at {
+        text-align: center !important;
+    }
+
+    .inline-group .field-created_at *,
+    .inline-group td.field-created_at *,
+    .inline-group th.field-created_at *,
+    .inline-group tbody td.field-created_at *,
+    .inline-group thead th.field-created_at *,
+    table.inline-group .field-created_at *,
+    table.inline-group td.field-created_at *,
+    table.inline-group th.field-created_at *,
+    table.inline-group tbody td.field-created_at *,
+    table.inline-group thead th.field-created_at * {
+        text-align: center !important;
+        margin: 0 auto !important;
+        display: block !important;
+    }
+
+    .inline-group thead th,
+    .inline-group thead th > *,
+    .inline-group thead th > div > *,
+    .inline-group thead th > div,
+    .inline-group thead th > span,
+    table.inline-group thead th,
+    table.inline-group thead th > *,
+    table.inline-group thead th > div > *,
+    table.inline-group thead th > div,
+    table.inline-group thead th > span {
+        text-align: center !important;
+        justify-content: center !important;
+    }
+
+    .inline-group thead th[class*="flex"],
+    table.inline-group thead th[class*="flex"] {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+    .inline-group thead th span,
+    .inline-group thead th div,
+    .inline-group thead th label,
+    .inline-group thead th a,
+    table.inline-group thead th span,
+    table.inline-group thead th div,
+    table.inline-group thead th label,
+    table.inline-group thead th a {
+        text-align: center !important;
+        width: 100% !important;
+    }
+
+    .inline-group thead th[style*="text-align"],
+    .inline-group tbody td[style*="text-align"],
+    table.inline-group thead th[style*="text-align"],
+    table.inline-group tbody td[style*="text-align"] {
+        text-align: center !important;
+    }
+}
+
+@media (max-width: 768px) {
+
+    .inline-group .field-order,
+    .inline-group td.field-order,
+    .inline-group th.field-order,
+    .inline-group tbody td.field-order,
+    .inline-group thead th.field-order,
+    .inline-group .field-order *,
+    .inline-group td.field-order *,
+    .inline-group th.field-order *,
+    .inline-group tbody td.field-order *,
+    .inline-group thead th.field-order *,
+    table.inline-group .field-order,
+    table.inline-group td.field-order,
+    table.inline-group th.field-order,
+    table.inline-group tbody td.field-order,
+    table.inline-group thead th.field-order,
+    table.inline-group .field-order *,
+    table.inline-group td.field-order *,
+    table.inline-group th.field-order *,
+    table.inline-group tbody td.field-order *,
+    table.inline-group thead th.field-order *,
+    .inline-group .form-row .field-order,
+    .inline-group .form-row td.field-order,
+    .inline-group .form-row .field-order *,
+    .inline-group .form-row td.field-order *,
+    .inline-group.stacked .field-order,
+    .inline-group.stacked .field-order *,
+    .inline-group .stacked .field-order,
+    .inline-group .stacked .field-order *,
+    div.inline-group .field-order,
+    div.inline-group .field-order * {
+    text-align: left !important;
+    }
+
+    .inline-group .field-order input,
+    .inline-group .field-order input[type="number"],
+    .inline-group .field-order input[type="text"],
+    .inline-group td.field-order input,
+    .inline-group td.field-order input[type="number"],
+    .inline-group td.field-order input[type="text"],
+    table.inline-group .field-order input,
+    table.inline-group .field-order input[type="number"],
+    table.inline-group .field-order input[type="text"],
+    table.inline-group td.field-order input,
+    table.inline-group td.field-order input[type="number"],
+    table.inline-group td.field-order input[type="text"],
+    .inline-group .form-row .field-order input,
+    .inline-group .form-row .field-order input[type="number"],
+    .inline-group .form-row .field-order input[type="text"],
+    .inline-group.stacked .field-order input,
+    .inline-group.stacked .field-order input[type="number"],
+    .inline-group.stacked .field-order input[type="text"],
+    .inline-group .stacked .field-order input,
+    .inline-group .stacked .field-order input[type="number"],
+    .inline-group .stacked .field-order input[type="text"],
+    div.inline-group .field-order input,
+    div.inline-group .field-order input[type="number"],
+    div.inline-group .field-order input[type="text"] {
+    text-align: left !important;
+        margin: 0 !important;
+    display: inline-block !important;
+        width: auto !important;
+    }
+
+    .inline-group .field-order > div,
+    .inline-group .field-order > label,
+    .inline-group td.field-order > div,
+    .inline-group td.field-order > label,
+    table.inline-group .field-order > div,
+    table.inline-group .field-order > label,
+    table.inline-group td.field-order > div,
+    table.inline-group td.field-order > label,
+    .inline-group .form-row .field-order > div,
+    .inline-group .form-row .field-order > label,
+    .inline-group.stacked .field-order > div,
+    .inline-group.stacked .field-order > label,
+    .inline-group .stacked .field-order > div,
+    .inline-group .stacked .field-order > label,
+    div.inline-group .field-order > div,
+    div.inline-group .field-order > label {
+        text-align: left !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
+    }
+
+    .inline-group .field-order[class*="flex"],
+    .inline-group td.field-order[class*="flex"],
+    table.inline-group .field-order[class*="flex"],
+    table.inline-group td.field-order[class*="flex"] {
+    justify-content: flex-start !important;
+        align-items: flex-start !important;
+    }
+
+    [class*="field-order"] input,
+    [class*="field-order"] input[type="number"],
+    [class*="field-order"] input[type="text"],
+    input[id*="order"],
+    input[name*="order"] {
+        text-align: left !important;
+        margin-left: 0 !important;
+    margin-right: 0 !important;
+    }
+
+    input[style*="text-align: center"][id*="order"],
+    input[style*="text-align:center"][id*="order"],
+    input[style*="text-align: center"][name*="order"],
+    input[style*="text-align:center"][name*="order"] {
+        text-align: left !important;
+    }
+
+    * .field-order input,
+    * [class*="field-order"] input,
+    * td[class*="order"] input,
+    * th[class*="order"] input {
+    text-align: left !important;
+    }
+}
+
+.inline-group a[style*="color: orange"],
+.inline-group a[style*="color:orange"],
+.inline-group a[style*="color: orange;"],
+.inline-group a[style*="color:orange;"],
+.inline-group td a[style*="color: orange"],
+.inline-group td a[style*="color:orange"],
+.inline-group td a[style*="color: orange;"],
+.inline-group td a[style*="color:orange;"],
+.inline-group tbody td a[style*="color: orange"],
+.inline-group tbody td a[style*="color:orange"],
+.inline-group tbody td a[style*="color: orange;"],
+.inline-group tbody td a[style*="color:orange;"],
+table.inline-group a[style*="color: orange"],
+table.inline-group a[style*="color:orange"],
+table.inline-group a[style*="color: orange;"],
+table.inline-group a[style*="color:orange;"],
+table.inline-group td a[style*="color: orange"],
+table.inline-group td a[style*="color:orange"],
+table.inline-group td a[style*="color: orange;"],
+table.inline-group td a[style*="color:orange;"],
+table.inline-group tbody td a[style*="color: orange"],
+table.inline-group tbody td a[style*="color:orange"],
+table.inline-group tbody td a[style*="color: orange;"],
+table.inline-group tbody td a[style*="color:orange;"],
+a[style*="color: orange"],
+a[style*="color:orange"],
+a[style*="color: orange;"],
+a[style*="color:orange;"] {
+    text-align: left !important;
+    display: inline-block !important;
+    margin: 0 !important;
+}
+
+.inline-group tbody td:has(a[style*="color: orange"]),
+.inline-group tbody td:has(a[style*="color:orange"]),
+table.inline-group tbody td:has(a[style*="color: orange"]),
+table.inline-group tbody td:has(a[style*="color:orange"]) {
+    text-align: left !important;
+}
+
+.inline-group tbody td:has(a[style*="color: orange"]) *,
+.inline-group tbody td:has(a[style*="color:orange"]) *,
+table.inline-group tbody td:has(a[style*="color: orange"]) *,
+table.inline-group tbody td:has(a[style*="color:orange"]) * {
+    text-align: left !important;
+}
+
+@media (min-width: 769px) {
+    body.change-list #result_list tbody tr,
+    body.change-list #result_list tbody tr td {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    body.change-list #result_list tbody td {
+        white-space: nowrap !important;
+        max-width: 200px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    body.change-list #result_list .status-badge {
+        white-space: nowrap !important;
+        display: inline-block !important;
+    }
+}
+
+body.change-list #result_list .pdf-open-btn,
+body.change-list #result_list tbody td a.pdf-open-btn {
+    color: #2563EB !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+    padding: 6px 12px !important;
+    border: 1px solid #2563EB !important;
+    border-radius: 6px !important;
+    display: inline-block !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+}
+
+body.change-list #result_list .pdf-open-btn:hover {
+    background: #2563EB !important;
+    color: white !important;
+}
+
+.pdf-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.pdf-modal.show {
+    display: flex;
+    opacity: 1;
+}
+
+.pdf-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+}
+
+.pdf-modal-content {
+    position: relative;
+    width: 50%;
+    max-width: 600px;
+    min-width: 450px;
+    height: 80%;
+    max-height: 80vh;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    z-index: 10000;
+    margin: auto;
+}
+
+.pdf-modal.show .pdf-modal-content {
+    transform: scale(1);
+}
+
+.pdf-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+    border-radius: 12px 12px 0 0;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.pdf-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    flex: 1;
+}
+
+.pdf-modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pdf-modal-open-new-tab {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: #6b7280;
+    font-size: 16px;
+    line-height: 1;
+    text-decoration: none;
+}
+
+.pdf-modal-open-new-tab:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+    color: #374151;
+}
+
+.pdf-modal-close {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: #6b7280;
+    font-size: 24px;
+    line-height: 1;
+    font-weight: 300;
+}
+
+.pdf-modal-close:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+    color: #374151;
+}
+
+.pdf-modal-body {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+    background: white;
+    padding: 10px;
+    min-height: 0;
+    max-height: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    margin: 0;
+}
+
+.pdf-modal-body canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-width: calc(100% - 20px);
+    display: block;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin: 0 auto;
+}
+
+.pdf-modal-body iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: white;
+    display: block;
+    margin: 0;
+    padding: 0;
+}
+
+.pdf-modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+    border-radius: 0 0 12px 12px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
+
+.pdf-nav-btn {
+    padding: 8px 16px;
+    background: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pdf-nav-btn:hover:not(:disabled) {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+.pdf-nav-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pdf-download-btn {
+    padding: 10px 20px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.pdf-download-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+}
+
+.pdf-close-btn {
+    padding: 10px 20px;
+    background: #6b7280;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pdf-close-btn:hover {
+    background: #4b5563;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+}
+
+body.dark .pdf-modal-content,
+html.dark .pdf-modal-content,
+[data-theme="dark"] .pdf-modal-content,
+.dark .pdf-modal-content {
+    background: #1f2937 !important;
+    border-color: #374151 !important;
+}
+
+body.dark .pdf-modal-header,
+html.dark .pdf-modal-header,
+[data-theme="dark"] .pdf-modal-header,
+.dark .pdf-modal-header {
+    background: #111827 !important;
+    border-color: #374151 !important;
+}
+
+body.dark .pdf-modal-header h3,
+html.dark .pdf-modal-header h3,
+[data-theme="dark"] .pdf-modal-header h3,
+.dark .pdf-modal-header h3 {
+    color: #f9fafb !important;
+}
+
+body.dark .pdf-modal-open-new-tab,
+html.dark .pdf-modal-open-new-tab,
+[data-theme="dark"] .pdf-modal-open-new-tab,
+.dark .pdf-modal-open-new-tab,
+body.dark .pdf-modal-close,
+html.dark .pdf-modal-close,
+[data-theme="dark"] .pdf-modal-close,
+.dark .pdf-modal-close {
+    background: #374151 !important;
+    border-color: #4b5563 !important;
+    color: #d1d5db !important;
+}
+
+body.dark .pdf-modal-open-new-tab:hover,
+html.dark .pdf-modal-open-new-tab:hover,
+[data-theme="dark"] .pdf-modal-open-new-tab:hover,
+.dark .pdf-modal-open-new-tab:hover {
+    background: #4b5563 !important;
+    border-color: #6b7280 !important;
+    color: #f3f4f6 !important;
+}
+
+body.dark .pdf-modal-close:hover,
+html.dark .pdf-modal-close:hover,
+[data-theme="dark"] .pdf-modal-close:hover,
+.dark .pdf-modal-close:hover {
+    background: #374151 !important;
+    border-color: #4b5563 !important;
+    color: #f3f4f6 !important;
+}
+
+body.dark .pdf-modal-body,
+html.dark .pdf-modal-body,
+[data-theme="dark"] .pdf-modal-body,
+.dark .pdf-modal-body {
+    background: white !important;
+}
+
+body.dark .pdf-modal-footer,
+html.dark .pdf-modal-footer,
+[data-theme="dark"] .pdf-modal-footer,
+.dark .pdf-modal-footer {
+    background: #111827 !important;
+    border-color: #374151 !important;
+}
+
+@media (max-width: 768px) {
+    .pdf-modal-content {
+        width: 95vw;
+        height: 95vh;
+        max-width: 95vw;
+        max-height: 95vh;
+        border-radius: 12px;
+        min-width: 95vw;
+    }
+
+    .pdf-modal-header {
+        border-radius: 12px 12px 0 0;
+    }
+
+    .pdf-modal-footer {
+        border-radius: 0 0 12px 12px;
+    }
+
+    .pdf-download-btn {
+        display: inline-block !important;
+    }
+}
+
+html {
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+.inline-group td.original,
+table.inline-group td.original,
+td.original[colspan],
+td.original[colspan] *,
+td.original[colspan] p,
+td.original[colspan] span,
+td.original[colspan="7"],
+td.original[colspan="7"] *,
+td.original[colspan="7"] p,
+td.original[colspan="7"] span,
+td.original[colspan="7"] p span {
+    text-align: left !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+    margin-left: 0 !important;
+    margin-right: auto !important;
+}
+
+.inline-group td.original p,
+table.inline-group td.original p,
+td.original[colspan] p,
+td.original[colspan="7"] p,
+.inline-group td.original p.flex,
+table.inline-group td.original p.flex,
+td.original[colspan] p.flex,
+td.original[colspan="7"] p.flex {
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    text-align: left !important;
+}
+
+.inline-group tbody td .material-symbols-outlined,
+table.inline-group tbody td .material-symbols-outlined {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+    line-height: 18px !important;
+}
+
+.inline-group tbody td span.material-symbols-outlined,
+table.inline-group tbody td span.material-symbols-outlined {
+    font-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+
+
+body {
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    position: relative !important;
+}
+
+#container,
+#content,
+#main {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+}
+
+body.change-list.model-bankemail table#result_list tbody td.field-spf_enabled,
+body.change-list.model-bankemail table#result_list tbody td.field-dmarc_enabled,
+body.change-list.model-bankemail table#result_list tbody td.field-dkim_enabled,
+body.change-list.model-bankemail table#result_list thead th.field-spf_enabled,
+body.change-list.model-bankemail table#result_list thead th.field-dmarc_enabled,
+body.change-list.model-bankemail table#result_list thead th.field-dkim_enabled {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+body.change-list.model-bankemail table#result_list tbody td.field-spf_enabled input[type="checkbox"],
+body.change-list.model-bankemail table#result_list tbody td.field-dmarc_enabled input[type="checkbox"],
+body.change-list.model-bankemail table#result_list tbody td.field-dkim_enabled input[type="checkbox"] {
+    margin: 0 auto !important;
+    display: block !important;
+    cursor: pointer !important;
+}
+
+body.change-list.model-bankemail table#result_list tbody td.field-spf_enabled > div,
+body.change-list.model-bankemail table#result_list tbody td.field-dmarc_enabled > div,
+body.change-list.model-bankemail table#result_list tbody td.field-dkim_enabled > div {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+
+
+/*   =============================NEW CODES===========================*/
+/*   =============================30.01.2025===========================*/
+
+/* === FIX: center table headers in django-unfold === */
+/* Универсальные правила для всех таблиц (не только result_list) */
+table:not(.inline-group):not(.form-row) thead th,
+table:not(.inline-group):not(.form-row) thead tr th {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+/* основной контейнер заголовка (sortable / flex) */
+table:not(.inline-group):not(.form-row) thead th > div,
+table:not(.inline-group):not(.form-row) thead th > div.flex,
+table:not(.inline-group):not(.form-row) thead tr th > div,
+table:not(.inline-group):not(.form-row) thead tr th > div.flex {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 0.25rem !important;
+}
+
+/* текст + ссылка */
+table:not(.inline-group):not(.form-row) thead th a,
+table:not(.inline-group):not(.form-row) thead th span,
+table:not(.inline-group):not(.form-row) thead th label,
+table:not(.inline-group):not(.form-row) thead tr th a,
+table:not(.inline-group):not(.form-row) thead tr th span,
+table:not(.inline-group):not(.form-row) thead tr th label {
+    text-align: center !important;
+    margin: 0 auto !important;
+}
+
+/* Дополнительная поддержка для result_list */
+body.change-list table#result_list thead th {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+body.change-list table#result_list thead th > div,
+body.change-list table#result_list thead th > div.flex {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 0.25rem !important;
+}
+
+body.change-list table#result_list thead th a,
+body.change-list table#result_list thead th span,
+body.change-list table#result_list thead th label {
+    text-align: center !important;
+    margin: 0 auto !important;
+}

@@ -10,14 +10,13 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from bot import handlers
-
+from bot import handlers, middlewares
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-    )
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
 
 
 def setup_handlers(dp: Dispatcher) -> None:
@@ -27,7 +26,7 @@ def setup_handlers(dp: Dispatcher) -> None:
 
 
 def setup_middlewares(dp: Dispatcher) -> None:
-    pass
+    dp.message.outer_middleware(middlewares.SaveMessageMiddleware())
 
 
 async def setup_aiogram(dp: Dispatcher) -> None:

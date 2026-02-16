@@ -19,7 +19,6 @@ class IsChannelFilter(Filter):
         pass
 
     async def __call__(self, event: types.ChatMemberUpdated):
-        # print(f"chat_type: {event.chat.type}")
         if event.chat.type == 'channel':
             return True
         return False
@@ -41,6 +40,6 @@ class IsCommandFilter(Filter):
         pass
 
     async def __call__(self, message: types.Message):
-        if message.text and len(message.text.split(' ')) == 1 and message.text.startswith('/'):
+        if message and message.text and len(message.text.split(' ')) == 1 and message.text.startswith('/'):
             return True
         return False

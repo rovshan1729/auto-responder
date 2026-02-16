@@ -2,10 +2,11 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+user_session.session
+sessions
 # C extensions
 *.so
-
+*.sessions
 # Distribution / packaging
 .Python
 build/
@@ -195,4 +196,5 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 messages
-media
+media/
+staticfiles/

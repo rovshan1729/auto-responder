@@ -59,17 +59,29 @@ async def command_handler(message: types.Message, state: FSMContext):
 
 
 async def respond_handler(message: types.Message):
+    if utils.is_service_or_blocked_user(message.from_user.id):
+        return
+
+    if not message.text:
+        return
 
     username = message.from_user.username
     credential = username if username else message.from_user.id
-    title = message.chat.title
+    title = message.chat.title or ""
 
     text_list = utils.get_clean_sorted_text_list(message.text)
-    mask = await utils.get_mask(text_list, credential, title)
+
+    mask = await utils.get_mask(
+        text_list=text_list,
+        credential=credential,
+        title=title
+    )
 
     if mask is not None:
         await message.reply(mask.cleaned_content)
+
         tasks.create_faq.delay(message.text, mask.id)
+
         tasks.mark_message.delay(
             message.message_id,
             message.chat.id,

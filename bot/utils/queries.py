@@ -3,6 +3,7 @@ from django.db import models
 from django.db.models import functions
 
 from responder import models as r_models
+from responder.choices import UserRole
 
 
 class RegexpReplace(models.Func):
@@ -20,7 +21,7 @@ async def get_mask(text_list: str, credential: str | int, title: str = None):
     ).exists()
 
     if not is_blocked:
-        mask= r_models.Mask.objects.filter(
+        mask = r_models.Mask.objects.filter(
             text_list=text_list
         ).first()
 
@@ -79,3 +80,30 @@ async def remove_chat(chat_id: int):
 
 async def get_data_model():
     return r_models.Data.get_solo()
+
+
+def get_text(code):
+    obj, created = r_models.StaticText.objects.get_or_create(
+        code=code,
+        defaults={"text": code}
+    )
+    return obj.text.replace("\\n", "\n")
+
+
+def is_service_or_blocked_user(telegram_id: int) -> bool:
+    if r_models.TelegramUser.objects.filter(
+            telegram_id=telegram_id,
+            is_blocked=True
+    ).exists():
+        return True
+
+    return r_models.Profile.objects.filter(
+        user__telegram_id=telegram_id,
+        role__in=[
+            UserRole.SUPPORT,
+            UserRole.HEAD_SUPPORT,
+            UserRole.VERIFICATOR,
+            UserRole.PAYMENT_MANAGER,
+            UserRole.ADMIN,
+        ]
+    ).exists()

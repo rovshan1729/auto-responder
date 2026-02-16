@@ -1,16 +1,18 @@
+import logging
+
 from django.contrib import messages
-from django.db import models
-from django.contrib.admin.sites import site
+
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Count, Min, F
+from django.contrib import admin
+from django.db.models import Count
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
-from django.urls import reverse
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_date
 
-from bot import utils
-from responder.forms import ReplyMessageForm
-from responder.models import TelegramMessage, TelegramUser, ReplyMessage
+from bot.webhook import webhook
+from responder.models import TelegramMessage, TelegramUser
 
 
 @staff_member_required
@@ -42,116 +44,277 @@ def admin_send_reply_view(request,  object_id):
     # return redirect(reverse('admin:responder_telegrammessage_changelist'))
 
 
+# @staff_member_required
+# def admin_dashboard_view(request):
+#     app_list = site.get_app_list(request)
+#
+#     start_date = request.GET.get('start_date')
+#     end_date = request.GET.get('end_date')
+#
+#     # top_faq = FAQ.objects
+#     top_questions =  TelegramMessage.objects.filter(user__is_blocked=False)
+#     top_answers = TelegramMessage.objects.filter(answer__isnull=False)
+#     top_not_answered = TelegramMessage.objects.filter(answer__isnull=True, user__is_blocked=False)
+#     top_users = TelegramUser.objects
+#
+#     if start_date:
+#         # top_faq = top_faq.filter(created_at__date__gte=parse_date(start_date))
+#         top_questions = top_questions.filter(created_at__date__gte=parse_date(start_date))
+#         top_answers = top_answers.filter(created_at__date__gte=parse_date(start_date))
+#         top_not_answered = top_not_answered.filter(created_at__date__gte=parse_date(start_date))
+#         top_users = top_users.filter(messages__created_at__date__gte=parse_date(start_date))
+#     if end_date:
+#         # top_faq = top_faq.filter(created_at__date__lte=parse_date(end_date))
+#         top_questions = top_questions.filter(created_at__date__lte=parse_date(end_date))
+#         top_answers = top_answers.filter(created_at__date__lte=parse_date(end_date))
+#         top_not_answered = top_not_answered.filter(created_at__date__lte=parse_date(end_date))
+#         top_users = top_users.filter(messages__created_at__date__lte=parse_date(end_date))
+#
+#     top_users = (
+#         top_users
+#         .exclude(username="GroupAnonymousBot")
+#         .exclude(is_blocked=True)
+#         .annotate(message_count=models.Count("messages", distinct=True))
+#         .order_by("-message_count")[:20]
+#     )
+#     # Top questions
+#     top_questions = top_questions.values('text_list').annotate(
+#         count=Count('id'),
+#         min_id=Min('id')
+#     ).order_by('-count')[:20]
+#
+#     ids = [g['min_id'] for g in top_questions]
+#     texts = TelegramMessage.objects.annotate(
+#         date=F("created_at__date")
+#     ).in_bulk(ids)
+#
+#     top_questions_result = [
+#         {
+#             "text": texts[g['min_id']].text,
+#             "date": texts[g['min_id']].date,
+#             "count": g['count']
+#         } for g in top_questions
+#     ]
+#
+#     # Top answers
+#     top_answers = top_answers.values('answer_list').annotate(
+#         count=Count('id'),
+#         min_id=Min('id')
+#     ).order_by('-count')[:20]
+#
+#     aids = [a['min_id'] for a in top_answers]
+#     answers = TelegramMessage.objects.annotate(
+#         date=F("created_at__date")
+#     ).in_bulk(aids)
+#
+#     top_answers_result = [
+#         {
+#             "text": answers[a['min_id']].answer,
+#             "date": answers[a['min_id']].date,
+#             "count": a['count']
+#         } for a in top_answers
+#     ]
+#
+#     # Top not answered questions
+#     top_not_answered = top_not_answered.values('text_list').annotate(
+#         count=Count('id'),
+#         min_id=Min('id')
+#     ).order_by('-count')[:20]
+#
+#     not_ids = [g['min_id'] for g in top_not_answered]
+#     not_ans_texts = TelegramMessage.objects.annotate(
+#         date=F("created_at__date")
+#     ).in_bulk(not_ids)
+#
+#     top_not_answered_result = [
+#         {
+#             "text": not_ans_texts[g['min_id']].text,
+#             "date": not_ans_texts[g['min_id']].date,
+#             "count": g['count'],
+#         } for g in top_not_answered
+#     ]
+#
+#     context = {
+#         'title': 'Аналитика',
+#         'available_apps': app_list,
+#         'top_users': top_users,
+#         'top_questions': top_questions_result,
+#         'top_answers': top_answers_result,
+#         'top_not_answers': top_not_answered_result,
+#     }
+#     return TemplateResponse(request, "admin/custom_dashboard.html", context)
+
+
+# @staff_member_required
+# def admin_dashboard_view(request):
+#
+#     start_date = request.GET.get("start_date")
+#     end_date = request.GET.get("end_date")
+#
+#     top_questions = TelegramMessage.objects.filter(user__is_blocked=False)
+#     top_answers = TelegramMessage.objects.filter(answer__isnull=False)
+#     top_not_answered = TelegramMessage.objects.filter(
+#         answer__isnull=True,
+#         user__is_blocked=False
+#     )
+#     top_users = TelegramUser.objects
+#
+#     if start_date:
+#         d = parse_date(start_date)
+#         top_questions = top_questions.filter(created_at__date__gte=d)
+#         top_answers = top_answers.filter(created_at__date__gte=d)
+#         top_not_answered = top_not_answered.filter(created_at__date__gte=d)
+#         top_users = top_users.filter(messages__created_at__date__gte=d)
+#
+#     if end_date:
+#         d = parse_date(end_date)
+#         top_questions = top_questions.filter(created_at__date__lte=d)
+#         top_answers = top_answers.filter(created_at__date__lte=d)
+#         top_not_answered = top_not_answered.filter(created_at__date__lte=d)
+#         top_users = top_users.filter(messages__created_at__date__lte=d)
+#
+#     top_users = (
+#         top_users
+#         .exclude(username="GroupAnonymousBot")
+#         .exclude(is_blocked=True)
+#         .annotate(message_count=Count("messages", distinct=True))
+#         .order_by("-message_count")[:20]
+#     )
+#
+#     context = dict(
+#         admin.site.each_context(request),
+#         title="Аналитика",
+#         top_users=top_users,
+#         top_questions=top_questions,
+#         top_answers=top_answers,
+#         top_not_answers=top_not_answered,
+#     )
+#
+#     return TemplateResponse(
+#         request,
+#         "admin/custom_dashboard.html",
+#         context,
+#     )
+
+
+# @csrf_exempt
+# async def telegram_webhook(request: HttpRequest):
+#     if request.method != 'POST':
+#         return HttpResponse(status=405)
+#     try:
+#         body = request.body.decode("utf-8")
+#         await webhook.process_body(body)  # Await напрямую
+#         return HttpResponse(status=200)
+#     except Exception as e:
+#         logging.error(f"Webhook error: {e}")
+#         return HttpResponse(status=200)
+
+
 @staff_member_required
 def admin_dashboard_view(request):
-    app_list = site.get_app_list(request)
+    """
+    Представление аналитической панели администратора
 
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
+    Показывает:
+    - Топ активных пользователей по количеству сообщений
+    - Последние вопросы
+    - Последние ответы
+    - Вопросы без ответов
 
-    # top_faq = FAQ.objects
-    top_questions =  TelegramMessage.objects.filter(user__is_blocked=False)
-    top_answers = TelegramMessage.objects.filter(answer__isnull=False)
-    top_not_answered = TelegramMessage.objects.filter(answer__isnull=True, user__is_blocked=False)
-    top_users = TelegramUser.objects
+    Фильтрация по датам через GET параметры:
+    - start_date: дата начала периода (YYYY-MM-DD)
+    - end_date: дата окончания периода (YYYY-MM-DD)
+    """
 
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+
+    # Базовые querysets
+    all_messages = TelegramMessage.objects.all()
+    all_users = TelegramUser.objects.all()
+
+    # Применяем фильтры по датам
     if start_date:
-        # top_faq = top_faq.filter(created_at__date__gte=parse_date(start_date))
-        top_questions = top_questions.filter(created_at__date__gte=parse_date(start_date))
-        top_answers = top_answers.filter(created_at__date__gte=parse_date(start_date))
-        top_not_answered = top_not_answered.filter(created_at__date__gte=parse_date(start_date))
-        top_users = top_users.filter(messages__created_at__date__gte=parse_date(start_date))
-    if end_date:
-        # top_faq = top_faq.filter(created_at__date__lte=parse_date(end_date))
-        top_questions = top_questions.filter(created_at__date__lte=parse_date(end_date))
-        top_answers = top_answers.filter(created_at__date__lte=parse_date(end_date))
-        top_not_answered = top_not_answered.filter(created_at__date__lte=parse_date(end_date))
-        top_users = top_users.filter(messages__created_at__date__lte=parse_date(end_date))
+        d = parse_date(start_date)
+        if d:
+            all_messages = all_messages.filter(created_at__date__gte=d)
+            all_users = all_users.filter(messages__created_at__date__gte=d)
 
+    if end_date:
+        d = parse_date(end_date)
+        if d:
+            all_messages = all_messages.filter(created_at__date__lte=d)
+            all_users = all_users.filter(messages__created_at__date__lte=d)
+
+    # Топ пользователей по активности
     top_users = (
-        top_users
+        all_users
         .exclude(username="GroupAnonymousBot")
         .exclude(is_blocked=True)
-        .annotate(message_count=models.Count("messages", distinct=True))
+        .annotate(message_count=Count("messages", distinct=True))
+        .filter(message_count__gt=0)
         .order_by("-message_count")[:20]
     )
-    # Top questions
-    top_questions = top_questions.values('text_list').annotate(
-        count=Count('id'),
-        min_id=Min('id')
-    ).order_by('-count')[:20]
 
-    ids = [g['min_id'] for g in top_questions]
-    texts = TelegramMessage.objects.annotate(
-        date=F("created_at__date")
-    ).in_bulk(ids)
+    # Все вопросы (сообщения от незаблокированных пользователей)
+    top_questions = (
+        all_messages
+        .filter(user__is_blocked=False)
+        .select_related('user')
+        .order_by('-created_at')
+    )
 
-    top_questions_result = [
-        {
-            "text": texts[g['min_id']].text,
-            "date": texts[g['min_id']].date,
-            "count": g['count']
-        } for g in top_questions
-    ]
+    # Вопросы с ответами
+    top_answers = (
+        all_messages
+        .filter(answer__isnull=False)
+        .select_related('user')
+        .order_by('-created_at')
+    )
 
-    # Top answers
-    top_answers = top_answers.values('answer_list').annotate(
-        count=Count('id'),
-        min_id=Min('id')
-    ).order_by('-count')[:20]
+    # Вопросы без ответов (требуют внимания)
+    top_not_answers = (
+        all_messages
+        .filter(
+            answer__isnull=True,
+            user__is_blocked=False
+        )
+        .select_related('user')
+        .order_by('-created_at')
+    )
 
-    aids = [a['min_id'] for a in top_answers]
-    answers = TelegramMessage.objects.annotate(
-        date=F("created_at__date")
-    ).in_bulk(aids)
+    context = dict(
+        admin.site.each_context(request),
+        title="Аналитика",
+        top_users=top_users,
+        top_questions=top_questions,
+        top_answers=top_answers,
+        top_not_answers=top_not_answers,
+    )
 
-    top_answers_result = [
-        {
-            "text": answers[a['min_id']].answer,
-            "date": answers[a['min_id']].date,
-            "count": a['count']
-        } for a in top_answers
-    ]
+    return TemplateResponse(
+        request,
+        "admin/custom_dashboard.html",
+        context,
+    )
 
-    # Top not answered questions
-    top_not_answered = top_not_answered.values('text_list').annotate(
-        count=Count('id'),
-        min_id=Min('id')
-    ).order_by('-count')[:20]
 
-    not_ids = [g['min_id'] for g in top_not_answered]
-    not_ans_texts = TelegramMessage.objects.annotate(
-        date=F("created_at__date")
-    ).in_bulk(not_ids)
+@csrf_exempt
+async def telegram_webhook(request):
 
-    top_not_answered_result = [
-        {
-            "text": not_ans_texts[g['min_id']].text,
-            "date": not_ans_texts[g['min_id']].date,
-            "count": g['count'],
-        } for g in top_not_answered
-    ]
+    if request.method != "POST":
+        return HttpResponse(status=405)
 
-    # top_faq = (
-    #     top_faq.annotate(
-    #         date=models.F("created_at__date"),
-    #     ).order_by("-count")
-    # )
-    #
-    # top_questions = top_faq[:20]
-    # top_answers = top_faq.filter(answer__isnull=False)[:20]
-    # top_not_answers = top_faq.filter(answer__isnull=True)[:20]
+    try:
+        body_bytes = request.body  # ❗ БЕЗ await
+        body = body_bytes.decode("utf-8")
 
-    context = {
-        'title': 'Аналитика',
-        'available_apps': app_list,
-        # 'user_daily_stats': json.dumps(list(user_daily_stats), cls=DjangoJSONEncoder),
-        'top_users': top_users,
-        # 'top_questions': list(top_questions),
-        'top_questions': top_questions_result,
-        # 'top_answers': list(top_answers),
-        'top_answers': top_answers_result,
-        # 'top_not_answers': list(top_not_answers),
-        'top_not_answers': top_not_answered_result,
-    }
-    return TemplateResponse(request, "admin/custom_dashboard.html", context)
+        await webhook.process_body(body)
+
+        return HttpResponse(status=200)
+
+    except Exception:
+        logging.exception("Webhook error")
+        return HttpResponse(status=200)
+
+
