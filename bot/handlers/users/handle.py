@@ -2,6 +2,8 @@ from aiogram import types, Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import ReplyKeyboardRemove, InputMediaPhoto, FSInputFile
 from django.db.models import Q
+from pyrogram.filters import reply_keyboard
+
 from responder.choices import VerificationStatusChoice, UserRole, DisputeStatus, GroupChoice
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
@@ -629,7 +631,7 @@ async def worker_finish_work_handler(callback: types.CallbackQuery, state: FSMCo
 
     chat_id = callback.from_user.id
     work_data = models.WorkerData.objects.filter(profile__user__telegram_id=chat_id, finish_work_time__isnull=True)
-
+    await callback.message.delete()
     if work_data.exists():
         await callback.message.answer(utils.get_text("choice_finish_work"),
                                       reply_markup=inliene.finish_work_data_inline_button())
@@ -654,9 +656,14 @@ async def dispute_add_handler(callback: types.CallbackQuery, state: FSMContext):
         return
 
     await callback.message.delete()
-    await callback.message.answer(utils.get_text("choice_merchant"),
-                                  reply_markup=inliene.merchant_choosing_inline_button())
-    await state.set_state(WorkerState.merchant)
+    merchants = models.Merchant.objects.all()
+    if merchants.count() > 0:
+        await callback.message.answer(utils.get_text("choice_merchant"),
+                                      reply_markup=inliene.merchant_choosing_inline_button(merchants))
+        await state.set_state(WorkerState.merchant)
+    else:
+        await callback.message.answer(utils.get_text("no_merchant"), reply_markup=inliene.worker_choosing_action())
+        await state.clear()
 
 
 async def get_merchant_handler(callback: types.CallbackQuery, state: FSMContext):
@@ -779,8 +786,9 @@ async def get_add_more_dispute_handler(callback: types.CallbackQuery, state: FSM
         pass
 
     if callback.data == "add_more_dispute":
+        merchants = models.Merchant.objects.all()
         await callback.message.answer(utils.get_text("choice_merchant"),
-                                      reply_markup=inliene.merchant_choosing_inline_button())
+                                      reply_markup=inliene.merchant_choosing_inline_button(merchants))
         await state.set_state(WorkerState.merchant)
 
     elif callback.data == "add_more_text":
@@ -1003,7 +1011,7 @@ async def head_report_date_to_handler(message: types.Message, state: FSMContext)
     ).select_related("merchant")
 
     if not disputes.exists():
-        await message.answer(utils.get_text("access_denied"))
+        await message.answer(utils.get_text("none_dispute"))
         await state.clear()
         return
 

@@ -56,17 +56,15 @@ class AllVerificationAdmin(BaseModelAdmin, mixins.VerificationAdminMixin):
 
     fieldsets = (
         ("User info", {
-            "fields": ("chat_id", "fullname", "username", "live_address", "phone_number", "add_phone", "email",
-                       "experience", "token", "team_lead", "recommend_user", "status", "geo", "worked_platform",
-                       "recommendation_user_contact", "additionally", "commentary", "country", "expires_at",
-                       "is_blacklisted")
+            "fields": (("chat_id", "fullname"), ("username", "live_address"), ("phone_number", "add_phone"),
+                       ("email", "experience"), ("token", "team_lead"), ("recommend_user", "status"),
+                       ("geo", "worked_platform"), ("recommendation_user_contact", "additionally"),
+                       ("commentary", "country"), ("expires_at", "is_blacklisted"))
         }),
         ("Documents", {
             "fields": (
-                "main_passport_preview",
-                "registration_passport_preview",
-                "additional_passport_preview",
-                "round_video_preview",
+                ("main_passport_preview", "registration_passport_preview"),
+                ("additional_passport_preview", "round_video_preview"),
             )
         }),
     )
@@ -93,17 +91,15 @@ class CurrentVerificationAdmin(BaseModelAdmin, mixins.VerificationAdminMixin):
 
     fieldsets = (
         ("User info", {
-            "fields": ("chat_id", "fullname", "username", "live_address", "phone_number", "add_phone", "email",
-                       "experience", "token", "team_lead", "recommend_user", "status", "geo", "worked_platform",
-                       "recommendation_user_contact", "additionally", "commentary", "country", "expires_at",
-                       "is_blacklisted")
+            "fields": (("chat_id", "fullname"), ("username", "live_address"), ("phone_number", "add_phone"),
+                       ("email", "experience"), ("token", "team_lead"), ("recommend_user", "status"),
+                       ("geo", "worked_platform"), ("recommendation_user_contact", "additionally"),
+                       ("commentary", "country"), ("expires_at", "is_blacklisted"))
         }),
         ("Documents", {
             "fields": (
-                "main_passport_preview",
-                "registration_passport_preview",
-                "additional_passport_preview",
-                "round_video_preview",
+                ("main_passport_preview", "registration_passport_preview"),
+                ("additional_passport_preview", "round_video_preview"),
             )
         }),
     )
@@ -130,17 +126,15 @@ class ArchivedVerificationAdmin(BaseModelAdmin, mixins.VerificationAdminMixin):
 
     fieldsets = (
         ("User info", {
-            "fields": ("chat_id", "fullname", "username", "live_address", "phone_number", "add_phone", "email",
-                       "experience", "token", "team_lead", "recommend_user", "status", "geo", "worked_platform",
-                       "recommendation_user_contact", "additionally", "commentary", "country", "expires_at",
-                       "is_blacklisted")
+            "fields": (("chat_id", "fullname"), ("username", "live_address"), ("phone_number", "add_phone"),
+                       ("email", "experience"), ("token", "team_lead"), ("recommend_user", "status"),
+                       ("geo", "worked_platform"), ("recommendation_user_contact", "additionally"),
+                       ("commentary", "country"), ("expires_at", "is_blacklisted"))
         }),
         ("Documents", {
             "fields": (
-                "main_passport_preview",
-                "registration_passport_preview",
-                "additional_passport_preview",
-                "round_video_preview",
+                ("main_passport_preview", "registration_passport_preview"),
+                ("additional_passport_preview", "round_video_preview"),
             )
         }),
     )
