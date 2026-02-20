@@ -4,6 +4,7 @@ import os
 
 from pathlib import Path
 
+from django.conf.urls.static import static
 from django.urls import reverse_lazy
 from environs import Env
 # from sentry_sdk.integrations.django import DjangoIntegration
@@ -242,12 +243,12 @@ UNFOLD = {
     "SITE_URL": "/admin/",
     "SITE_SYMBOL": "receipt",
     "SITE_FAVICONS": [
-        # {
-        #     "rel": "icon",
-        #     "sizes": "32x32",
-        #     "type": "image/svg+xml",
-        #     # "href": lambda request: static("logo.svg"),
-        # },
+        {
+            "rel": "icon",
+            "sizes": "32x32",
+            "type": "image/svg+xml",
+            "href": lambda request: static("images/logo.svg"),
+        },
     ],
     "SHOW_HISTORY": False,
     "SHOW_VIEW_ON_SITE": False,
