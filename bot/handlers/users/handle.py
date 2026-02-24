@@ -918,6 +918,7 @@ async def get_add_problem_support_handler(callback: types.CallbackQuery, state: 
         user__telegram_id=callback.from_user.id,
         role__in=[UserRole.SUPPORT, UserRole.ADMIN]
     ).first()
+    await callback.message.delete()
     if not profile:
         await callback.answer("Нет доступа", show_alert=True)
         return
